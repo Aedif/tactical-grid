@@ -1,8 +1,10 @@
+// Canvas grid
 let GRID = null;
 
-let GRID_MASK = null;
+// Texturen used to apply masks
+let maskTexture = null;
 
-Hooks.on('canvasReady', () => {
+Hooks.on('canvasReady', (canvas) => {
   GRID = canvas.grid.children.find((c) => c instanceof SquareGrid || c instanceof HexagonalGrid);
 });
 
@@ -11,20 +13,14 @@ Hooks.on('controlToken', (token, controlled) => {
 });
 
 function destroyGridMask() {
-  if (GRID_MASK) {
-    const grid = canvas.grid.children.find(
-      (c) => c instanceof SquareGrid || c instanceof HexagonalGrid
-    );
-    grid.mask = null;
-    // canvas.primary.removeChild(GRID_MASK)
-    console.log('removing from primary', canvas.primary.removeChild(GRID_MASK));
-    GRID_MASK = null;
+  if (GRID.mask) {
+    canvas.primary.removeChild(GRID.mask)?.destroy();
+    GRID.mask = null;
   }
 }
 
 function onControlToken(token, controlled) {
-  console.log('Control', token, controlled);
-  if (!controlled && GRID_MASK && GRID_MASK.tokenId === token.id) {
+  if (!controlled && GRID.mask && GRID.mask.tokenId === token.id) {
     destroyGridMask();
     return;
   } else if (!controlled) {
@@ -33,45 +29,49 @@ function onControlToken(token, controlled) {
 
   destroyGridMask();
 
-  const grid = canvas.grid.children.find(
-    (c) => c instanceof SquareGrid || c instanceof HexagonalGrid
-  );
+  const allControlled = canvas.tokens.placeables.filter((p) => p.controlled);
+  if (allControlled.length === 0) return;
 
-  // Inner radius of the circle
-  const radius = 300;
+  if (!maskTexture) {
+    const radius = 300;
+    const blurSize = 32;
 
-  // The blur amount
-  const blurSize = 32;
+    const circle = new PIXI.Graphics()
+      .beginFill(0xff0000)
+      .drawCircle(radius + blurSize, radius + blurSize, radius)
+      .endFill();
+    circle.filters = [new PIXI.filters.BlurFilter(blurSize)];
 
-  const circle = new PIXI.Graphics()
-    .beginFill(0xff0000)
-    .drawCircle(radius + blurSize, radius + blurSize, radius)
-    .endFill();
-  circle.filters = [new PIXI.filters.BlurFilter(blurSize)];
+    const bounds = new PIXI.Rectangle(0, 0, (radius + blurSize) * 2, (radius + blurSize) * 2);
+    maskTexture = canvas.app.renderer.generateTexture(circle, PIXI.SCALE_MODES.NEAREST, 1, bounds);
+  }
 
-  const bounds = new PIXI.Rectangle(0, 0, (radius + blurSize) * 2, (radius + blurSize) * 2);
-  const texture = canvas.app.renderer.generateTexture(circle, PIXI.SCALE_MODES.NEAREST, 1, bounds);
-  GRID_MASK = new PIXI.Sprite(texture);
+  let maskContainer = new PIXI.Container();
+  for (const p of allControlled) {
+    let gridMask = new PIXI.Sprite(maskTexture);
+    gridMask = maskContainer.addChild(gridMask);
+    gridMask.placeableId = p.id;
+  }
 
-  let tempContainer = new PIXI.Container();
-  tempContainer.addChild(GRID_MASK);
-  GRID_MASK = tempContainer;
+  canvas.primary.addChild(maskContainer);
 
-  setGridMaskPosition(token);
-
-  canvas.primary.addChild(GRID_MASK);
-  GRID_MASK.tokenId = token.id;
-
-  grid.mask = GRID_MASK;
+  GRID.mask = maskContainer;
+  console.log(GRID);
+  for (const p of allControlled) {
+    setGridMaskPosition(p);
+  }
 }
 
 Hooks.on('refreshToken', (token) => {
-  if (GRID_MASK && GRID_MASK.tokenId === token.id) {
+  if (GRID?.mask) {
     setGridMaskPosition(token);
   }
 });
 
-function setGridMaskPosition(token) {
-  const { x, y } = token.center;
-  GRID_MASK.position.set(x - GRID_MASK.width / 2, y - GRID_MASK.height / 2);
+function setGridMaskPosition(placeable) {
+  const sprite = GRID.mask?.children.find((c) => c.placeableId === placeable.id);
+  if (sprite) {
+    const { x, y } = placeable.center;
+    sprite.position.set(x - sprite.width / 2, y - sprite.height / 2);
+  }
 }
