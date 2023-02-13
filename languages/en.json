@@ -1,7 +1,30 @@
 {
-  "tactical-grid": {
-    "controls": {
-      "overlay": ""
+  "aedifs-tactical-grid": {
+    "settings": {
+      "defaultViewDistance": {
+        "name": "Default Grid View Distance",
+        "hint": "Number of grid spaces to be displayed."
+      },
+      "defaultViewShape": {
+        "name": "Default Grid View Shape",
+        "hint": "The shape of the grid mask."
+      },
+      "tacticalGridCombatOnly": {
+        "name": "Only show Tactical Grid while in combat",
+        "hint": "When enabled the tactical grid view will only be shown on the Token layer when combat is started."
+      }
+    },
+    "keybindings": {
+      "toggleGrid": {
+        "name": "Toggle Module ON and OFF",
+        "hint": ""
+      }
+    },
+    "common": {
+      "circle": "Circle",
+      "square": "Square",
+      "hexagonCol": "Hexagon (Column)",
+      "hexagonRow": "Hexagon (Row)"
     }
   }
 }
