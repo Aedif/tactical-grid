@@ -1,27 +1,87 @@
 // Config
-let DEFAULT_VIEW_LENGTH = 4;
-let DEFAULT_VIEW_SHAPE = 'circle-soft';
-let TACTICAL_GRID_ENABLED = true;
-let ENABLE_IN_COMBAT_ONLY = false;
+const MODULE_CONFIG = {
+  defaultViewLength: 4,
+  defaultViewShape: 'circle-soft',
+  tacticalGridEnabled: true,
+  controlled: true,
+  hover: true,
+  enableInCombatOnly: false,
+};
+
+// Canvas grid
+let GRID = null;
 
 // Sprites/Graphics used as a mask
 let GRID_MASK;
-let GRID_MASK_GROUP;
+let GRID_MASK_CONTAINER;
+
+/** =================================
+ *  Register Settings and keybindings
+ *  =================================
+ */
 
 Hooks.on('init', () => {
+  game.settings.register('aedifs-tactical-grid', 'enableForControlled', {
+    name: game.i18n.localize('aedifs-tactical-grid.settings.enableForControlled.name'),
+    hint: game.i18n.localize('aedifs-tactical-grid.settings.enableForControlled.hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: MODULE_CONFIG.controlled,
+    onChange: async (val) => {
+      MODULE_CONFIG.controlled = val;
+      drawMask();
+    },
+  });
+  MODULE_CONFIG.controlled = game.settings.get('aedifs-tactical-grid', 'enableForControlled');
+
+  game.settings.register('aedifs-tactical-grid', 'enableForHover', {
+    name: game.i18n.localize('aedifs-tactical-grid.settings.enableForHover.name'),
+    hint: game.i18n.localize('aedifs-tactical-grid.settings.enableForHover.hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: MODULE_CONFIG.hover,
+    onChange: async (val) => {
+      MODULE_CONFIG.hover = val;
+      drawMask();
+    },
+  });
+  MODULE_CONFIG.hover = game.settings.get('aedifs-tactical-grid', 'enableForHover');
+
   game.settings.register('aedifs-tactical-grid', 'tacticalGridCombatOnly', {
     name: game.i18n.localize('aedifs-tactical-grid.settings.tacticalGridCombatOnly.name'),
     hint: game.i18n.localize('aedifs-tactical-grid.settings.tacticalGridCombatOnly.hint'),
     scope: 'world',
     config: true,
     type: Boolean,
-    default: ENABLE_IN_COMBAT_ONLY,
+    default: MODULE_CONFIG.enableInCombatOnly,
     onChange: async (val) => {
-      ENABLE_IN_COMBAT_ONLY = val;
+      MODULE_CONFIG.enableInCombatOnly = val;
       drawMask();
     },
   });
-  ENABLE_IN_COMBAT_ONLY = game.settings.get('aedifs-tactical-grid', 'tacticalGridCombatOnly');
+  MODULE_CONFIG.enableInCombatOnly = game.settings.get(
+    'aedifs-tactical-grid',
+    'tacticalGridCombatOnly'
+  );
+
+  game.settings.register('aedifs-tactical-grid', 'tacticalGridCombatOnly', {
+    name: game.i18n.localize('aedifs-tactical-grid.settings.tacticalGridCombatOnly.name'),
+    hint: game.i18n.localize('aedifs-tactical-grid.settings.tacticalGridCombatOnly.hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: MODULE_CONFIG.enableInCombatOnly,
+    onChange: async (val) => {
+      MODULE_CONFIG.enableInCombatOnly = val;
+      drawMask();
+    },
+  });
+  MODULE_CONFIG.enableInCombatOnly = game.settings.get(
+    'aedifs-tactical-grid',
+    'tacticalGridCombatOnly'
+  );
 
   game.settings.register('aedifs-tactical-grid', 'defaultViewDistance', {
     name: game.i18n.localize('aedifs-tactical-grid.settings.defaultViewDistance.name'),
@@ -29,12 +89,15 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: Number,
-    default: DEFAULT_VIEW_LENGTH,
+    default: MODULE_CONFIG.defaultViewLength,
     onChange: async (val) => {
-      DEFAULT_VIEW_LENGTH = val ? val : 0;
+      MODULE_CONFIG.defaultViewLength = val ? val : 0;
     },
   });
-  DEFAULT_VIEW_LENGTH = game.settings.get('aedifs-tactical-grid', 'defaultViewDistance');
+  MODULE_CONFIG.defaultViewLength = game.settings.get(
+    'aedifs-tactical-grid',
+    'defaultViewDistance'
+  );
 
   let options = getShapeOptions();
   game.settings.register('aedifs-tactical-grid', 'defaultViewShape', {
@@ -43,13 +106,13 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: String,
-    default: DEFAULT_VIEW_SHAPE,
+    default: MODULE_CONFIG.defaultViewShape,
     choices: options,
     onChange: async (val) => {
-      DEFAULT_VIEW_SHAPE = val;
+      MODULE_CONFIG.defaultViewShape = val;
     },
   });
-  DEFAULT_VIEW_SHAPE = game.settings.get('aedifs-tactical-grid', 'defaultViewShape');
+  MODULE_CONFIG.defaultViewShape = game.settings.get('aedifs-tactical-grid', 'defaultViewShape');
 
   game.settings.register('aedifs-tactical-grid', 'tacticalGridEnabled', {
     scope: 'world',
@@ -57,11 +120,14 @@ Hooks.on('init', () => {
     type: Boolean,
     default: true,
     onChange: async (val) => {
-      TACTICAL_GRID_ENABLED = val;
+      MODULE_CONFIG.tacticalGridEnabled = val;
       drawMask();
     },
   });
-  TACTICAL_GRID_ENABLED = game.settings.get('aedifs-tactical-grid', 'tacticalGridEnabled');
+  MODULE_CONFIG.tacticalGridEnabled = game.settings.get(
+    'aedifs-tactical-grid',
+    'tacticalGridEnabled'
+  );
 
   game.keybindings.register('aedifs-tactical-grid', 'toggleGrid', {
     name: game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.name'),
@@ -76,7 +142,10 @@ Hooks.on('init', () => {
   });
 });
 
-// Insert token specific viewDistance and viewShape flags
+/** =======================================================
+ *  Insert token specific viewDistance and viewShape flags
+ *  =======================================================
+ */
 Hooks.on('renderTokenConfig', (tokenConfig) => {
   const viewDistance = tokenConfig.object.getFlag('aedifs-tactical-grid', 'viewDistance') ?? '';
   const viewShape = tokenConfig.object.getFlag('aedifs-tactical-grid', 'viewShape') ?? '';
@@ -130,48 +199,66 @@ function getShapeOptions() {
   return options;
 }
 
-// Canvas grid
-let GRID = null;
+/** =============================================
+ *  Initialize mask containers and find the grid
+ *  =============================================
+ */
 
 Hooks.on('canvasReady', (canvas) => {
-  if (!TACTICAL_GRID_ENABLED) return;
-
+  if (GRID_MASK) {
+    destroyGridMask();
+  }
   GRID_MASK = new PIXI.Sprite();
-  GRID_MASK_GROUP = new CachedContainer(GRID_MASK);
-  GRID_MASK_GROUP.renderable = true;
+  GRID_MASK_CONTAINER = new CachedContainer(GRID_MASK);
+  GRID_MASK_CONTAINER.renderable = true;
 
   GRID = canvas.grid.children.find((c) => c instanceof SquareGrid || c instanceof HexagonalGrid);
-  GRID.visible = false;
+
+  if (MODULE_CONFIG.tacticalGridEnabled && canvas.tokens.active) GRID.visible = false;
 });
 
+/** ========================
+ *  Handle layer activations
+ *  ========================
+ */
+
 Hooks.on('activateTokenLayer', () => {
-  if (!TACTICAL_GRID_ENABLED) return;
+  if (!MODULE_CONFIG.tacticalGridEnabled) return;
   if (GRID) GRID.visible = false;
 });
 
 Hooks.on('deactivateTokenLayer', () => {
-  if (!TACTICAL_GRID_ENABLED) return;
+  if (!MODULE_CONFIG.tacticalGridEnabled) return;
   if (GRID) GRID.visible = true;
 });
 
+/** ===============================
+ *  Draw masks in response to hooks
+ *  ===============================
+ */
+
 Hooks.on('controlToken', () => {
-  if (!TACTICAL_GRID_ENABLED) return;
+  if (!MODULE_CONFIG.tacticalGridEnabled) return;
   drawMask(canvas.tokens);
 });
 
 Hooks.on('deleteCombat', () => {
+  if (!MODULE_CONFIG.tacticalGridEnabled) return;
   drawMask();
 });
 
 Hooks.on('combatStart', () => {
+  if (!MODULE_CONFIG.tacticalGridEnabled) return;
   drawMask();
 });
 
-Hooks.on('hoverToken', (token, hoverIn) => {
+Hooks.on('hoverToken', () => {
+  if (!MODULE_CONFIG.tacticalGridEnabled) return;
   drawMask();
 });
 
 Hooks.on('highlightObjects', () => {
+  if (!MODULE_CONFIG.tacticalGridEnabled) return;
   drawMask();
 });
 
@@ -179,34 +266,44 @@ Hooks.on('highlightObjects', () => {
 //   drawMask(canvas.templates);
 // });
 
+/**
+ * Util to destroy the currently assigned mask
+ */
 function destroyGridMask() {
   if (GRID?.mask) {
-    GRID_MASK_GROUP.removeChildren();
-    canvas.primary.removeChild(GRID_MASK_GROUP);
+    GRID_MASK_CONTAINER.removeChildren().forEach((c) => c.destroy());
+    canvas.primary.removeChild(GRID_MASK_CONTAINER);
     GRID.mask = null;
   }
 }
 
+/**
+ * Identifies the Tokens that masks need to be drawn for and
+ * assigns them one
+ */
 async function drawMask(layer = canvas.tokens) {
   if (!GRID) return;
   destroyGridMask();
-  if (!TACTICAL_GRID_ENABLED) {
+  if (!MODULE_CONFIG.tacticalGridEnabled) {
     GRID.visible = true;
     return;
   }
   GRID.visible = false;
 
-  if (ENABLE_IN_COMBAT_ONLY && !game.combat?.started) return;
+  if (MODULE_CONFIG.enableInCombatOnly && !game.combat?.started) return;
 
-  const allControlled = layer.placeables.filter((p) => p.controlled || p.hover);
-  if (allControlled.length === 0) return;
+  const applicableTokens = layer.placeables.filter(
+    (p) => (MODULE_CONFIG.controlled && p.controlled) || (MODULE_CONFIG.hover && p.hover)
+  );
+  if (applicableTokens.length === 0) return;
 
-  for (const p of allControlled) {
+  for (const p of applicableTokens) {
     let viewDistance = p.document.getFlag('aedifs-tactical-grid', 'viewDistance');
-    if (viewDistance == null) viewDistance = DEFAULT_VIEW_LENGTH;
+    if (viewDistance == null) viewDistance = MODULE_CONFIG.defaultViewLength;
     if (!viewDistance) continue;
 
-    let viewShape = p.document.getFlag('aedifs-tactical-grid', 'viewShape') || DEFAULT_VIEW_SHAPE;
+    let viewShape =
+      p.document.getFlag('aedifs-tactical-grid', 'viewShape') || MODULE_CONFIG.defaultViewShape;
 
     let sprite;
     switch (viewShape) {
@@ -248,28 +345,31 @@ async function drawMask(layer = canvas.tokens) {
       sprite.height = size;
     }
 
-    sprite = GRID_MASK_GROUP.addChild(sprite);
+    sprite = GRID_MASK_CONTAINER.addChild(sprite);
     sprite.placeableId = p.id;
   }
 
-  canvas.primary.addChild(GRID_MASK_GROUP);
+  canvas.primary.addChild(GRID_MASK_CONTAINER);
 
   GRID.mask = GRID_MASK;
   GRID.visible = true;
 
-  for (const p of allControlled) {
+  for (const p of applicableTokens) {
     setGridMaskPosition(p);
   }
 }
 
+/**
+ * Update mask positions
+ */
 Hooks.on('refreshToken', (token) => {
-  if (TACTICAL_GRID_ENABLED && GRID?.mask) {
+  if (MODULE_CONFIG.tacticalGridEnabled && GRID?.mask) {
     setGridMaskPosition(token);
   }
 });
 
 function setGridMaskPosition(placeable) {
-  const shapeMask = GRID_MASK_GROUP?.children.find((c) => c.placeableId === placeable.id);
+  const shapeMask = GRID_MASK_CONTAINER?.children.find((c) => c.placeableId === placeable.id);
   if (shapeMask) {
     const { x, y } = placeable.center;
     shapeMask.position.set(x - shapeMask.width / 2, y - shapeMask.height / 2);

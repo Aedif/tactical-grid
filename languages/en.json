@@ -12,6 +12,14 @@
       "tacticalGridCombatOnly": {
         "name": "Only show Tactical Grid while in combat",
         "hint": "When enabled the tactical grid view will only be shown on the Token layer when combat is started."
+      },
+      "enableForControlled": {
+        "name": "Grid Enable: Controlled",
+        "hint": "Grid will be shown for controlled tokens."
+      },
+      "enableForHover": {
+        "name": "Grid Enable: Hover",
+        "hint": "Grid will be shown for hovered over tokens."
       }
     },
     "keybindings": {
