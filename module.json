@@ -2,12 +2,12 @@
   "id": "aedifs-tactical-grid",
   "title": "Tactical Grid",
   "description": "Only show the grid when needed.",
-  "version": "1.0.0",
-  "manifest": "https://drive.google.com/uc?export=download&id=1SUNMOYPs9tNuq5BUvkmpDpblHeED76Nr",
-  "download": "https://drive.google.com/uc?export=download&id=15-sDu6NnQIh20Gw6yLvJ61rciT2NVgVF",
+  "version": "1.1.0",
+  "manifest": "https://drive.google.com/uc?export=download&id=1wyIX2YIWkX-rdvxF-00asTzFA_Sy4y0y",
+  "download": "https://drive.google.com/uc?export=download&id=1SPhH5TR0HU7cQk-v29eCay1Tpwdo32eb",
   "compatibility": {
     "minimum": 10,
-    "verified": "10.286",
+    "verified": "10.291",
     "maximum": 10
   },
   "authors": [
@@ -17,7 +17,8 @@
       "discord": "Aedif#7268"
     }
   ],
-  "scripts": ["tactical-grid.js"],
+  "esmodules": ["tactical-grid.js"],
+  "scripts": [],
   "styles": [],
   "packs": [],
   "languages": [

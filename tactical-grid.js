@@ -1,7 +1,12 @@
+// Config
 let DEFAULT_VIEW_LENGTH = 4;
-let DEFAULT_VIEW_SHAPE = 'circle';
+let DEFAULT_VIEW_SHAPE = 'circle-soft';
 let TACTICAL_GRID_ENABLED = true;
 let ENABLE_IN_COMBAT_ONLY = false;
+
+// Sprites/Graphics used as a mask
+let GRID_MASK;
+let GRID_MASK_GROUP;
 
 Hooks.on('init', () => {
   game.settings.register('aedifs-tactical-grid', 'tacticalGridCombatOnly', {
@@ -31,6 +36,7 @@ Hooks.on('init', () => {
   });
   DEFAULT_VIEW_LENGTH = game.settings.get('aedifs-tactical-grid', 'defaultViewDistance');
 
+  let options = getShapeOptions();
   game.settings.register('aedifs-tactical-grid', 'defaultViewShape', {
     name: game.i18n.localize('aedifs-tactical-grid.settings.defaultViewShape.name'),
     hint: game.i18n.localize('aedifs-tactical-grid.settings.defaultViewShape.hint'),
@@ -38,12 +44,7 @@ Hooks.on('init', () => {
     config: true,
     type: String,
     default: DEFAULT_VIEW_SHAPE,
-    choices: {
-      circle: 'aedifs-tactical-grid.common.circle',
-      square: 'aedifs-tactical-grid.common.square',
-      hexagonRow: 'aedifs-tactical-grid.common.hexagonRow',
-      hexagonCol: 'aedifs-tactical-grid.common.hexagonCol',
-    },
+    choices: options,
     onChange: async (val) => {
       DEFAULT_VIEW_SHAPE = val;
     },
@@ -80,6 +81,12 @@ Hooks.on('renderTokenConfig', (tokenConfig) => {
   const viewDistance = tokenConfig.object.getFlag('aedifs-tactical-grid', 'viewDistance') ?? '';
   const viewShape = tokenConfig.object.getFlag('aedifs-tactical-grid', 'viewShape') ?? '';
 
+  let shapeOptions = getShapeOptions();
+  let options = '<option value=""></option>';
+  for (const [k, v] of Object.entries(shapeOptions)) {
+    options += `<option value="${k}" ${viewShape === k ? 'selected' : ''}>${v}</option>`;
+  }
+
   const control = $(`
   <fieldset>
     <legend>Tactical Grid</legend>
@@ -96,19 +103,7 @@ Hooks.on('renderTokenConfig', (tokenConfig) => {
       <label>View Shape</label>
       <div class="form-fields">
           <select name="flags.aedifs-tactical-grid.viewShape">
-              <option value="" ${viewShape === '' ? 'selected' : ''}></option>
-              <option value="circle" ${
-                viewShape === 'circle' ? 'selected' : ''
-              }>${game.i18n.localize('aedifs-tactical-grid.common.circle')}</option>
-  <option value="square" ${viewShape === 'square' ? 'selected' : ''}>${game.i18n.localize(
-    'aedifs-tactical-grid.common.square'
-  )}</option>
-  <option value="hexagonCol" ${viewShape === 'hexagonCol' ? 'selected' : ''}>${game.i18n.localize(
-    'aedifs-tactical-grid.common.hexagonCol'
-  )}</option>
-  <option value="hexagonRow" ${viewShape === 'hexagonRow' ? 'selected' : ''}>${game.i18n.localize(
-    'aedifs-tactical-grid.common.hexagonRow'
-  )}</option>
+            ${options}
           </select>
       </div>
       <p class="hint">${game.i18n.localize(
@@ -123,11 +118,28 @@ Hooks.on('renderTokenConfig', (tokenConfig) => {
   tokenConfig.setPosition({ height: 'auto' });
 });
 
+function getShapeOptions() {
+  let options = {
+    circle: 'Circle',
+    'circle-soft': 'Circle (Soft)',
+    square: 'Square',
+    'square-soft': 'Square (Soft)',
+    hexagonRow: 'Hexagon (Row)',
+    hexagonCol: 'Hexagon (Column)',
+  };
+  return options;
+}
+
 // Canvas grid
 let GRID = null;
 
 Hooks.on('canvasReady', (canvas) => {
   if (!TACTICAL_GRID_ENABLED) return;
+
+  GRID_MASK = new PIXI.Sprite();
+  GRID_MASK_GROUP = new CachedContainer(GRID_MASK);
+  GRID_MASK_GROUP.renderable = true;
+
   GRID = canvas.grid.children.find((c) => c instanceof SquareGrid || c instanceof HexagonalGrid);
   GRID.visible = false;
 });
@@ -155,18 +167,28 @@ Hooks.on('combatStart', () => {
   drawMask();
 });
 
+Hooks.on('hoverToken', (token, hoverIn) => {
+  drawMask();
+});
+
+Hooks.on('highlightObjects', () => {
+  drawMask();
+});
+
 // Hooks.on('controlMeasuredTemplate', () => {
 //   drawMask(canvas.templates);
 // });
 
 function destroyGridMask() {
-  if (GRID.mask) {
-    canvas.grid.removeChild(GRID.mask)?.destroy();
+  if (GRID?.mask) {
+    GRID_MASK_GROUP.removeChildren();
+    canvas.primary.removeChild(GRID_MASK_GROUP);
     GRID.mask = null;
   }
 }
 
 async function drawMask(layer = canvas.tokens) {
+  if (!GRID) return;
   destroyGridMask();
   if (!TACTICAL_GRID_ENABLED) {
     GRID.visible = true;
@@ -176,10 +198,9 @@ async function drawMask(layer = canvas.tokens) {
 
   if (ENABLE_IN_COMBAT_ONLY && !game.combat?.started) return;
 
-  const allControlled = layer.placeables.filter((p) => p.controlled);
+  const allControlled = layer.placeables.filter((p) => p.controlled || p.hover);
   if (allControlled.length === 0) return;
 
-  let maskContainer = new PIXI.Container();
   for (const p of allControlled) {
     let viewDistance = p.document.getFlag('aedifs-tactical-grid', 'viewDistance');
     if (viewDistance == null) viewDistance = DEFAULT_VIEW_LENGTH;
@@ -187,40 +208,53 @@ async function drawMask(layer = canvas.tokens) {
 
     let viewShape = p.document.getFlag('aedifs-tactical-grid', 'viewShape') || DEFAULT_VIEW_SHAPE;
 
-    let gridMask;
-
-    let scale;
-    let points;
+    let sprite;
     switch (viewShape) {
       case 'square':
         let length = viewDistance * canvas.grid.w * 2 + p.document.width * canvas.grid.w + 1;
-        gridMask = new PIXI.Graphics().beginFill(0xff0000).drawRect(0, 0, length, length).endFill();
+        sprite = new PIXI.Graphics().beginFill(0xff0000).drawRect(0, 0, length, length).endFill();
+        break;
+      case 'square-soft':
+        sprite = PIXI.Sprite.from('modules\\aedifs-tactical-grid\\images\\square_mask.png');
         break;
       case 'hexagonRow':
         scale = canvas.grid.w * viewDistance * 2;
-        points = HexagonalGrid.pointyHexPoints.flat().map((v) => v * scale);
-        gridMask = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(points).endFill();
+        let pointsRow = HexagonalGrid.pointyHexPoints
+          .flat()
+          .map((v) => v * canvas.grid.w * viewDistance * 2);
+        sprite = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(pointsRow).endFill();
         break;
       case 'hexagonCol':
-        scale = canvas.grid.w * viewDistance * 2;
-        points = HexagonalGrid.flatHexPoints.flat().map((v) => v * scale);
-        gridMask = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(points).endFill();
+        let pointsCol = HexagonalGrid.flatHexPoints
+          .flat()
+          .map((v) => v * canvas.grid.w * viewDistance * 2);
+        sprite = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(pointsCol).endFill();
+        break;
+      case 'circle-soft':
+        sprite = PIXI.Sprite.from('modules\\aedifs-tactical-grid\\images\\circle_mask.png');
         break;
       case 'circle':
       default:
         const radius = viewDistance * canvas.grid.w + (p.document.width * canvas.grid.w) / 2;
-        gridMask = new PIXI.Graphics()
+        sprite = new PIXI.Graphics()
           .beginFill(0xff0000)
           .drawCircle(radius, radius, radius)
           .endFill();
     }
-    gridMask = maskContainer.addChild(gridMask);
-    gridMask.placeableId = p.id;
+
+    if (sprite instanceof PIXI.Sprite) {
+      const size = (viewDistance + 1) * canvas.grid.w * 2 + p.document.width * canvas.grid.w;
+      sprite.width = size;
+      sprite.height = size;
+    }
+
+    sprite = GRID_MASK_GROUP.addChild(sprite);
+    sprite.placeableId = p.id;
   }
 
-  canvas.grid.addChild(maskContainer);
+  canvas.primary.addChild(GRID_MASK_GROUP);
 
-  GRID.mask = maskContainer;
+  GRID.mask = GRID_MASK;
   GRID.visible = true;
 
   for (const p of allControlled) {
@@ -235,7 +269,7 @@ Hooks.on('refreshToken', (token) => {
 });
 
 function setGridMaskPosition(placeable) {
-  const shapeMask = GRID.mask?.children.find((c) => c.placeableId === placeable.id);
+  const shapeMask = GRID_MASK_GROUP?.children.find((c) => c.placeableId === placeable.id);
   if (shapeMask) {
     const { x, y } = placeable.center;
     shapeMask.position.set(x - shapeMask.width / 2, y - shapeMask.height / 2);

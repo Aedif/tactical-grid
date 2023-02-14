@@ -19,12 +19,6 @@
         "name": "Toggle Module ON and OFF",
         "hint": ""
       }
-    },
-    "common": {
-      "circle": "Circle",
-      "square": "Square",
-      "hexagonCol": "Hexagon (Column)",
-      "hexagonRow": "Hexagon (Row)"
     }
   }
 }
