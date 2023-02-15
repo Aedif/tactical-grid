@@ -10,8 +10,8 @@
         "hint": "The shape of the grid mask."
       },
       "tacticalGridCombatOnly": {
-        "name": "Only show Tactical Grid while in combat",
-        "hint": "When enabled the tactical grid view will only be shown on the Token layer when combat is started."
+        "name": "Grid Enable: Combat Only",
+        "hint": "Grid will only be shown when in combat."
       },
       "enableForControlled": {
         "name": "Grid Enable: Controlled",

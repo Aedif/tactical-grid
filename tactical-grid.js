@@ -277,85 +277,126 @@ function destroyGridMask() {
   }
 }
 
+function updateGridMask(placeables) {
+  // Destroy sprites that are not in the placeable list
+  let originalChildren = GRID_MASK_CONTAINER.children;
+  originalChildren.forEach((c) => {
+    if (!placeables.find((p) => p.id === c.placeableId))
+      GRID_MASK_CONTAINER.removeChild(c)?.destroy();
+  });
+
+  for (const p of placeables) {
+    if (originalChildren.find((c) => c.placeableId === p.id)) {
+      // Do nothing
+    } else {
+      let viewDistance = p.document.getFlag('aedifs-tactical-grid', 'viewDistance');
+      if (viewDistance == null) viewDistance = MODULE_CONFIG.defaultViewLength;
+      if (!viewDistance) continue;
+
+      let viewShape =
+        p.document.getFlag('aedifs-tactical-grid', 'viewShape') || MODULE_CONFIG.defaultViewShape;
+
+      let sprite;
+      switch (viewShape) {
+        case 'square':
+          let length = viewDistance * canvas.grid.w * 2 + p.document.width * canvas.grid.w + 1;
+          sprite = new PIXI.Graphics().beginFill(0xff0000).drawRect(0, 0, length, length).endFill();
+          break;
+        case 'square-soft':
+          sprite = PIXI.Sprite.from('modules\\aedifs-tactical-grid\\images\\square_mask.webp');
+          break;
+        case 'hexagonRow':
+          scale = canvas.grid.w * viewDistance * 2;
+          let pointsRow = HexagonalGrid.pointyHexPoints
+            .flat()
+            .map((v) => v * canvas.grid.w * viewDistance * 2);
+          sprite = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(pointsRow).endFill();
+          break;
+        case 'hexagonCol':
+          let pointsCol = HexagonalGrid.flatHexPoints
+            .flat()
+            .map((v) => v * canvas.grid.w * viewDistance * 2);
+          sprite = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(pointsCol).endFill();
+          break;
+        case 'circle-soft':
+          sprite = PIXI.Sprite.from('modules\\aedifs-tactical-grid\\images\\circle_mask.webp');
+          break;
+        case 'circle':
+        default:
+          const radius = viewDistance * canvas.grid.w + (p.document.width * canvas.grid.w) / 2;
+          sprite = new PIXI.Graphics()
+            .beginFill(0xff0000)
+            .drawCircle(radius, radius, radius)
+            .endFill();
+      }
+
+      if (sprite instanceof PIXI.Sprite) {
+        const size = (viewDistance + 1) * canvas.grid.w * 2 + p.document.width * canvas.grid.w;
+        sprite.width = size;
+        sprite.height = size;
+      }
+
+      sprite = GRID_MASK_CONTAINER.addChild(sprite);
+      sprite.placeableId = p.id;
+    }
+  }
+
+  if (GRID_MASK_CONTAINER.children.length === 0) {
+    destroyGridMask();
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Utility to check if a placeable has a preview drawn which occurs when it is being dragged
+ */
+function hasPreview(placeable) {
+  return Boolean(
+    placeable.layer.preview?.children?.find((c) => c.id === placeable.id && placeable !== c)
+  );
+}
+
 /**
  * Identifies the Tokens that masks need to be drawn for and
  * assigns them one
  */
 async function drawMask(layer = canvas.tokens) {
   if (!GRID) return;
-  destroyGridMask();
+
   if (!MODULE_CONFIG.tacticalGridEnabled) {
+    destroyGridMask();
     GRID.visible = true;
     return;
   }
+
   GRID.visible = false;
 
-  if (MODULE_CONFIG.enableInCombatOnly && !game.combat?.started) return;
-
-  const applicableTokens = layer.placeables.filter(
-    (p) => (MODULE_CONFIG.controlled && p.controlled) || (MODULE_CONFIG.hover && p.hover)
-  );
-  if (applicableTokens.length === 0) return;
-
-  for (const p of applicableTokens) {
-    let viewDistance = p.document.getFlag('aedifs-tactical-grid', 'viewDistance');
-    if (viewDistance == null) viewDistance = MODULE_CONFIG.defaultViewLength;
-    if (!viewDistance) continue;
-
-    let viewShape =
-      p.document.getFlag('aedifs-tactical-grid', 'viewShape') || MODULE_CONFIG.defaultViewShape;
-
-    let sprite;
-    switch (viewShape) {
-      case 'square':
-        let length = viewDistance * canvas.grid.w * 2 + p.document.width * canvas.grid.w + 1;
-        sprite = new PIXI.Graphics().beginFill(0xff0000).drawRect(0, 0, length, length).endFill();
-        break;
-      case 'square-soft':
-        sprite = PIXI.Sprite.from('modules\\aedifs-tactical-grid\\images\\square_mask.png');
-        break;
-      case 'hexagonRow':
-        scale = canvas.grid.w * viewDistance * 2;
-        let pointsRow = HexagonalGrid.pointyHexPoints
-          .flat()
-          .map((v) => v * canvas.grid.w * viewDistance * 2);
-        sprite = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(pointsRow).endFill();
-        break;
-      case 'hexagonCol':
-        let pointsCol = HexagonalGrid.flatHexPoints
-          .flat()
-          .map((v) => v * canvas.grid.w * viewDistance * 2);
-        sprite = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(pointsCol).endFill();
-        break;
-      case 'circle-soft':
-        sprite = PIXI.Sprite.from('modules\\aedifs-tactical-grid\\images\\circle_mask.png');
-        break;
-      case 'circle':
-      default:
-        const radius = viewDistance * canvas.grid.w + (p.document.width * canvas.grid.w) / 2;
-        sprite = new PIXI.Graphics()
-          .beginFill(0xff0000)
-          .drawCircle(radius, radius, radius)
-          .endFill();
-    }
-
-    if (sprite instanceof PIXI.Sprite) {
-      const size = (viewDistance + 1) * canvas.grid.w * 2 + p.document.width * canvas.grid.w;
-      sprite.width = size;
-      sprite.height = size;
-    }
-
-    sprite = GRID_MASK_CONTAINER.addChild(sprite);
-    sprite.placeableId = p.id;
+  if (MODULE_CONFIG.enableInCombatOnly && !game.combat?.started) {
+    destroyGridMask();
+    return;
   }
 
-  canvas.primary.addChild(GRID_MASK_CONTAINER);
+  const applicableTokens = layer.placeables.filter(
+    (p) =>
+      (MODULE_CONFIG.controlled && p.controlled) ||
+      (MODULE_CONFIG.hover && (p.hover || hasPreview(p)))
+  );
+  if (applicableTokens.length === 0) {
+    destroyGridMask();
+    return;
+  }
 
-  GRID.mask = GRID_MASK;
-  GRID.visible = true;
+  if (updateGridMask(applicableTokens)) {
+    for (const p of applicableTokens) {
+      setGridMaskPosition(p);
+    }
 
-  for (const p of applicableTokens) {
-    setGridMaskPosition(p);
+    if (!GRID.mask) {
+      canvas.primary.addChild(GRID_MASK_CONTAINER);
+      GRID.mask = GRID_MASK;
+    }
+    GRID.visible = true;
   }
 }
 
@@ -369,9 +410,12 @@ Hooks.on('refreshToken', (token) => {
 });
 
 function setGridMaskPosition(placeable) {
+  if (hasPreview(placeable)) return;
   const shapeMask = GRID_MASK_CONTAINER?.children.find((c) => c.placeableId === placeable.id);
+
   if (shapeMask) {
     const { x, y } = placeable.center;
+    // console.log(x, y, hasPreview(placeable));
     shapeMask.position.set(x - shapeMask.width / 2, y - shapeMask.height / 2);
   }
 }
