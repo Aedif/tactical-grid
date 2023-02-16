@@ -15,11 +15,14 @@
       },
       "enableForControlled": {
         "name": "Grid Enable: Controlled",
-        "hint": "Grid will be shown for controlled tokens."
+        "hint": "Grid will be shown for controlled placeables."
       },
       "enableForHover": {
         "name": "Grid Enable: Hover",
-        "hint": "Grid will be shown for hovered over tokens."
+        "hint": "Grid will be shown for hovered over placeables."
+      },
+      "layerEnable": {
+        "hint": "Enable tactical grid for \"{layerName}\""
       }
     },
     "keybindings": {

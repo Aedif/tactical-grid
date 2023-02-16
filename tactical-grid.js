@@ -2,11 +2,13 @@
 const MODULE_CONFIG = {
   defaultViewLength: 4,
   defaultViewShape: 'circle-soft',
-  tacticalGridEnabled: true,
+  tacticalGridDisabled: {},
   controlled: true,
   hover: true,
   enableInCombatOnly: false,
 };
+
+let layerHooks = [];
 
 // Canvas grid
 let GRID = null;
@@ -14,6 +16,17 @@ let GRID = null;
 // Sprites/Graphics used as a mask
 let GRID_MASK;
 let GRID_MASK_CONTAINER;
+
+const embedsAndLayers = [
+  ['Token', 'TokenLayer'],
+  ['MeasuredTemplate', 'TemplateLayer'],
+  ['Tile', 'TilesLayer'],
+  ['Drawing', 'DrawingsLayer'],
+  ['Wall', 'WallsLayer'],
+  ['AmbientLight', 'LightingLayer'],
+  ['AmbientSound', 'SoundsLayer'],
+  ['Note', 'NotesLayer'],
+];
 
 /** =================================
  *  Register Settings and keybindings
@@ -114,28 +127,57 @@ Hooks.on('init', () => {
   });
   MODULE_CONFIG.defaultViewShape = game.settings.get('aedifs-tactical-grid', 'defaultViewShape');
 
-  game.settings.register('aedifs-tactical-grid', 'tacticalGridEnabled', {
+  game.settings.register('aedifs-tactical-grid', 'tacticalGridDisabled', {
     scope: 'world',
     config: false,
-    type: Boolean,
-    default: true,
+    type: Object,
+    default: MODULE_CONFIG.tacticalGridDisabled,
     onChange: async (val) => {
-      MODULE_CONFIG.tacticalGridEnabled = val;
+      MODULE_CONFIG.tacticalGridDisabled = val;
       drawMask();
     },
   });
-  MODULE_CONFIG.tacticalGridEnabled = game.settings.get(
+  MODULE_CONFIG.tacticalGridDisabled = game.settings.get(
     'aedifs-tactical-grid',
-    'tacticalGridEnabled'
+    'tacticalGridDisabled'
   );
+
+  for (const [embedName, layerName] of embedsAndLayers) {
+    const settingName = `${layerName}Enabled`;
+    game.settings.register('aedifs-tactical-grid', settingName, {
+      name: `Tactical Grid: ${layerName}`,
+      hint: `Enable tactical grid for \"${layerName}\"`,
+      scope: 'world',
+      config: true,
+      type: Boolean,
+      default: embedName === 'Token',
+      onChange: async (val) => {
+        MODULE_CONFIG[settingName] = val;
+        if (
+          MODULE_CONFIG.tacticalGridDisabled[canvas.activeLayer.name] &&
+          canvas.activeLayer.name === layerName
+        ) {
+          if (MODULE_CONFIG[settingName]) {
+            GRID.visible = false;
+            drawMask();
+          } else {
+            destroyGridMask();
+            GRID.visible = true;
+          }
+        }
+      },
+    });
+    MODULE_CONFIG[settingName] = game.settings.get('aedifs-tactical-grid', settingName);
+  }
 
   game.keybindings.register('aedifs-tactical-grid', 'toggleGrid', {
     name: game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.name'),
     hint: game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.hint'),
     editable: [],
     onDown: () => {
-      let val = game.settings.get('aedifs-tactical-grid', 'tacticalGridEnabled');
-      game.settings.set('aedifs-tactical-grid', 'tacticalGridEnabled', !val);
+      let config = game.settings.get('aedifs-tactical-grid', 'tacticalGridDisabled');
+      config[canvas.activeLayer.name] = !Boolean(config[canvas.activeLayer.name]);
+      game.settings.set('aedifs-tactical-grid', 'tacticalGridDisabled', config);
     },
     restricted: true,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
@@ -203,7 +245,6 @@ function getShapeOptions() {
  *  Initialize mask containers and find the grid
  *  =============================================
  */
-
 Hooks.on('canvasReady', (canvas) => {
   if (GRID_MASK) {
     destroyGridMask();
@@ -214,55 +255,72 @@ Hooks.on('canvasReady', (canvas) => {
 
   GRID = canvas.grid.children.find((c) => c instanceof SquareGrid || c instanceof HexagonalGrid);
 
-  if (MODULE_CONFIG.tacticalGridEnabled && canvas.tokens.active) GRID.visible = false;
+  if (
+    !MODULE_CONFIG.tacticalGridDisabled[canvas.activeLayer.name] &&
+    MODULE_CONFIG[`${canvas.activeLayer.name}Enabled`]
+  )
+    GRID.visible = false;
 });
 
-/** ========================
- *  Handle layer activations
- *  ========================
- */
+// Handle layer activations
+for (const [embedName, layerName] of embedsAndLayers) {
+  Hooks.on(`activate${layerName}`, (layer) => {
+    destroyGridMask();
+    if (!MODULE_CONFIG[`${layer.name}Enabled`]) {
+      if (GRID) GRID.visible = true;
+    }
+    registerLayerHooks(
+      layer,
+      [`control${embedName}`, `hover${embedName}`, `destroy${embedName}`],
+      [`refresh${embedName}`]
+    );
+    drawMask();
+  });
+}
 
-Hooks.on('activateTokenLayer', () => {
-  drawMask();
-});
+function unregisterLayerHooks() {
+  for (const [name, id] of layerHooks) {
+    Hooks.off(name, id);
+  }
+  layerHooks = [];
+}
 
-Hooks.on('deactivateTokenLayer', () => {
-  destroyGridMask();
-  if (GRID) GRID.visible = true;
-});
+function registerLayerHooks(layer, drawMaskFunctionNames = [], setPositionFunctionNames = []) {
+  unregisterLayerHooks();
+  for (const fnName of drawMaskFunctionNames) {
+    let id = Hooks.on(fnName, () => {
+      if (MODULE_CONFIG.tacticalGridDisabled[layer.name]) return;
+      drawMask(layer);
+    });
+    layerHooks.push([fnName, id]);
+  }
+  for (const fnName of setPositionFunctionNames) {
+    let id = Hooks.on(fnName, (placeable) => {
+      if (!MODULE_CONFIG.tacticalGridDisabled[placeable.layer.name] && GRID?.mask) {
+        setGridMaskPosition(placeable);
+      }
+    });
+    layerHooks.push([fnName, id]);
+  }
+}
 
 /** ===============================
  *  Draw masks in response to hooks
  *  ===============================
  */
 
-Hooks.on('controlToken', () => {
-  if (!MODULE_CONFIG.tacticalGridEnabled) return;
-  drawMask(canvas.tokens);
-});
-
 Hooks.on('deleteCombat', () => {
-  if (!MODULE_CONFIG.tacticalGridEnabled) return;
+  if (MODULE_CONFIG.tacticalGridDisabled[canvas.activeLayer.name]) return;
   drawMask();
 });
 
 Hooks.on('combatStart', () => {
-  if (!MODULE_CONFIG.tacticalGridEnabled) return;
-  drawMask();
-});
-
-Hooks.on('hoverToken', () => {
-  if (!MODULE_CONFIG.tacticalGridEnabled) return;
+  if (MODULE_CONFIG.tacticalGridDisabled[canvas.activeLayer.name]) return;
   drawMask();
 });
 
 Hooks.on('highlightObjects', () => {
-  if (!MODULE_CONFIG.tacticalGridEnabled) return;
-  drawMask();
-});
-
-Hooks.on('destroyToken', () => {
-  if (!MODULE_CONFIG.tacticalGridEnabled) return;
+  if (MODULE_CONFIG.tacticalGridDisabled[canvas.activeLayer.name]) return;
   drawMask();
 });
 
@@ -300,10 +358,16 @@ function updateGridMask(placeables) {
       let viewShape =
         p.document.getFlag('aedifs-tactical-grid', 'viewShape') || MODULE_CONFIG.defaultViewShape;
 
+      // const width = p.document.width ?? p.width;
+      // const height = p.document.height ?? p.height;
+
+      const width = p.width;
+      const height = p.height;
+
       let sprite;
       switch (viewShape) {
         case 'square':
-          let length = viewDistance * canvas.grid.w * 2 + p.document.width * canvas.grid.w + 1;
+          let length = viewDistance * canvas.grid.w * 2 + width + 1;
           sprite = new PIXI.Graphics().beginFill(0xff0000).drawRect(0, 0, length, length).endFill();
           break;
         case 'square-soft':
@@ -327,7 +391,7 @@ function updateGridMask(placeables) {
           break;
         case 'circle':
         default:
-          const radius = viewDistance * canvas.grid.w + (p.document.width * canvas.grid.w) / 2;
+          const radius = viewDistance * canvas.grid.w + width / 2;
           sprite = new PIXI.Graphics()
             .beginFill(0xff0000)
             .drawCircle(radius, radius, radius)
@@ -335,9 +399,8 @@ function updateGridMask(placeables) {
       }
 
       if (sprite instanceof PIXI.Sprite) {
-        const size = (viewDistance + 1) * canvas.grid.w * 2 + p.document.width * canvas.grid.w;
-        sprite.width = size;
-        sprite.height = size;
+        sprite.width = (viewDistance + 1) * canvas.grid.w * 2 + width;
+        sprite.height = (viewDistance + 1) * canvas.grid.h * 2 + height;
       }
 
       sprite = GRID_MASK_CONTAINER.addChild(sprite);
@@ -365,11 +428,11 @@ function hasPreview(placeable) {
  * Identifies the Tokens that masks need to be drawn for and
  * assigns them one
  */
-async function drawMask(layer = canvas.tokens) {
-  if (!canvas.tokens.active) return;
+async function drawMask(layer = canvas.activeLayer) {
   if (!GRID) return;
+  if (!MODULE_CONFIG[`${layer.name}Enabled`]) return;
 
-  if (!MODULE_CONFIG.tacticalGridEnabled) {
+  if (MODULE_CONFIG.tacticalGridDisabled[layer.name]) {
     destroyGridMask();
     GRID.visible = true;
     return;
@@ -387,6 +450,7 @@ async function drawMask(layer = canvas.tokens) {
       (MODULE_CONFIG.controlled && p.controlled) ||
       (MODULE_CONFIG.hover && (p.hover || hasPreview(p)))
   );
+
   if (applicableTokens.length === 0) {
     destroyGridMask();
     return;
@@ -408,11 +472,6 @@ async function drawMask(layer = canvas.tokens) {
 /**
  * Update mask positions
  */
-Hooks.on('refreshToken', (token) => {
-  if (MODULE_CONFIG.tacticalGridEnabled && GRID?.mask) {
-    setGridMaskPosition(token);
-  }
-});
 
 function setGridMaskPosition(placeable) {
   if (hasPreview(placeable)) return;
