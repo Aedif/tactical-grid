@@ -223,12 +223,11 @@ Hooks.on('canvasReady', (canvas) => {
  */
 
 Hooks.on('activateTokenLayer', () => {
-  if (!MODULE_CONFIG.tacticalGridEnabled) return;
-  if (GRID) GRID.visible = false;
+  drawMask();
 });
 
 Hooks.on('deactivateTokenLayer', () => {
-  if (!MODULE_CONFIG.tacticalGridEnabled) return;
+  destroyGridMask();
   if (GRID) GRID.visible = true;
 });
 
@@ -258,6 +257,11 @@ Hooks.on('hoverToken', () => {
 });
 
 Hooks.on('highlightObjects', () => {
+  if (!MODULE_CONFIG.tacticalGridEnabled) return;
+  drawMask();
+});
+
+Hooks.on('destroyToken', () => {
   if (!MODULE_CONFIG.tacticalGridEnabled) return;
   drawMask();
 });
@@ -362,6 +366,7 @@ function hasPreview(placeable) {
  * assigns them one
  */
 async function drawMask(layer = canvas.tokens) {
+  if (!canvas.tokens.active) return;
   if (!GRID) return;
 
   if (!MODULE_CONFIG.tacticalGridEnabled) {
