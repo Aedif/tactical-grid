@@ -23,6 +23,10 @@
       },
       "layerEnable": {
         "hint": "Enable tactical grid for \"{layerName}\""
+      },
+      "ruler": {
+        "name": "Ruler",
+        "hint": "Enabled grid for Ruler Measurements (requires libWrapper to be active)."
       }
     },
     "keybindings": {

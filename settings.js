@@ -7,6 +7,7 @@ export const MODULE_CONFIG = {
   controlled: true,
   hover: true,
   enableInCombatOnly: false,
+  ruler: true,
 };
 
 export const EMBEDS_AND_LAYERS = [
@@ -21,41 +22,6 @@ export const EMBEDS_AND_LAYERS = [
 ];
 
 export function init() {
-  if (typeof libWrapper === 'function') {
-    libWrapper.register(
-      'aedifs-tactical-grid',
-      'Ruler.prototype._onDragStart',
-      function (wrapped, ...args) {
-        let result = wrapped(...args);
-        GRID_MASK.container.drawMask();
-        return result;
-      },
-      'WRAPPER'
-    );
-
-    libWrapper.register(
-      'aedifs-tactical-grid',
-      'Ruler.prototype._endMeasurement',
-      function (wrapped, ...args) {
-        let result = wrapped(...args);
-        GRID_MASK.container.drawMask();
-        return result;
-      },
-      'WRAPPER'
-    );
-
-    libWrapper.register(
-      'aedifs-tactical-grid',
-      'Ruler.prototype._onMouseMove',
-      function (wrapped, ...args) {
-        let result = wrapped(...args);
-        GRID_MASK.container.setMaskPosition(this);
-        return result;
-      },
-      'WRAPPER'
-    );
-  }
-
   game.settings.register('aedifs-tactical-grid', 'enableForControlled', {
     name: game.i18n.localize('aedifs-tactical-grid.settings.enableForControlled.name'),
     hint: game.i18n.localize('aedifs-tactical-grid.settings.enableForControlled.hint'),
@@ -157,6 +123,25 @@ export function init() {
   });
   MODULE_CONFIG.defaultViewShape = game.settings.get('aedifs-tactical-grid', 'defaultViewShape');
 
+  game.settings.register('aedifs-tactical-grid', 'rulerEnabled', {
+    name: game.i18n.localize('aedifs-tactical-grid.settings.ruler.name'),
+    hint: game.i18n.localize('aedifs-tactical-grid.settings.ruler.hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: MODULE_CONFIG.ruler,
+    onChange: async (val) => {
+      unregisterLibwrapperMethods();
+      MODULE_CONFIG.ruler = val;
+      if (val) registerLibwrapperMethods();
+    },
+  });
+  MODULE_CONFIG.ruler = game.settings.get('aedifs-tactical-grid', 'rulerEnabled');
+
+  if (MODULE_CONFIG.ruler) {
+    registerLibwrapperMethods();
+  }
+
   for (const [embedName, layerName] of EMBEDS_AND_LAYERS) {
     const settingName = `${layerName}Enabled`;
     game.settings.register('aedifs-tactical-grid', settingName, {
@@ -238,4 +223,47 @@ export function init() {
     $(tokenConfig.form).find('[name="sight.visionMode"]').closest('.form-group').after(control);
     tokenConfig.setPosition({ height: 'auto' });
   });
+}
+
+function registerLibwrapperMethods() {
+  if (typeof libWrapper === 'function') {
+    libWrapper.register(
+      'aedifs-tactical-grid',
+      'Ruler.prototype._onDragStart',
+      function (wrapped, ...args) {
+        let result = wrapped(...args);
+        GRID_MASK.container.drawMask();
+        return result;
+      },
+      'WRAPPER'
+    );
+
+    libWrapper.register(
+      'aedifs-tactical-grid',
+      'Ruler.prototype._endMeasurement',
+      function (wrapped, ...args) {
+        let result = wrapped(...args);
+        GRID_MASK.container.drawMask();
+        return result;
+      },
+      'WRAPPER'
+    );
+
+    libWrapper.register(
+      'aedifs-tactical-grid',
+      'Ruler.prototype._onMouseMove',
+      function (wrapped, ...args) {
+        let result = wrapped(...args);
+        GRID_MASK.container.setMaskPosition(this);
+        return result;
+      },
+      'WRAPPER'
+    );
+  }
+}
+
+function unregisterLibwrapperMethods() {
+  if (typeof libWrapper === 'function') {
+    libWrapper.unregister_all('aedifs-tactical-grid');
+  }
 }

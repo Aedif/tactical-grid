@@ -37,15 +37,17 @@ export class GridMaskContainer extends CachedContainer {
         (MODULE_CONFIG.hover && (p.hover || hasPreview(p)))
     );
 
-    let ruler = canvas.controls.ruler;
-    if (ruler._state !== Ruler.STATES.INACTIVE) {
-      ruler.id = 'RULER';
-      if (!ruler.center) {
-        Object.defineProperty(ruler, 'center', {
-          get: () => ruler.destination,
-        });
+    if (MODULE_CONFIG.ruler && typeof libWrapper === 'function') {
+      let ruler = canvas.controls.ruler;
+      if (ruler._state !== Ruler.STATES.INACTIVE) {
+        ruler.id = 'RULER';
+        if (!ruler.center) {
+          Object.defineProperty(ruler, 'center', {
+            get: () => ruler.destination,
+          });
+        }
+        applicableTokens.push(ruler);
       }
-      applicableTokens.push(ruler);
     }
 
     if (applicableTokens.length === 0) {
