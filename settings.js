@@ -49,7 +49,7 @@ export function init() {
       'Ruler.prototype._onMouseMove',
       function (wrapped, ...args) {
         let result = wrapped(...args);
-        GRID_MASK.container.setGridMaskPosition(this);
+        GRID_MASK.container.setMaskPosition(this);
         return result;
       },
       'WRAPPER'

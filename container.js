@@ -1,15 +1,19 @@
 import { MODULE_CONFIG } from './settings.js';
 
 export class GridMaskContainer extends CachedContainer {
-  constructor(sprite) {
-    super(sprite);
+  constructor() {
+    super(new PIXI.Sprite());
   }
 
   onCanvasReady() {
-    this.destroyGridMask();
+    this.destroyMask();
     this._grid = canvas.grid.children.find(
       (c) => c instanceof SquareGrid || c instanceof HexagonalGrid
     );
+
+    if (MODULE_CONFIG[`${canvas.activeLayer.name}Enabled`]) {
+      this.activateMask();
+    }
   }
 
   /**
@@ -23,7 +27,7 @@ export class GridMaskContainer extends CachedContainer {
     this._grid.visible = false;
 
     if (MODULE_CONFIG.enableInCombatOnly && !game.combat?.started) {
-      this.destroyGridMask();
+      this.destroyMask();
       return;
     }
 
@@ -45,13 +49,13 @@ export class GridMaskContainer extends CachedContainer {
     }
 
     if (applicableTokens.length === 0) {
-      this.destroyGridMask();
+      this.destroyMask();
       return;
     }
 
     if (this.updateGridMask(applicableTokens)) {
       for (const p of applicableTokens) {
-        this.setGridMaskPosition(p);
+        this.setMaskPosition(p);
       }
 
       if (!this._grid.mask) {
@@ -134,7 +138,7 @@ export class GridMaskContainer extends CachedContainer {
     }
 
     if (this.children.length === 0) {
-      this.destroyGridMask();
+      this.destroyMask();
       return false;
     }
     return true;
@@ -144,7 +148,7 @@ export class GridMaskContainer extends CachedContainer {
    * Update mask positions
    * Expecting the object to have 'id', 'center', 'width' and 'height'
    */
-  setGridMaskPosition(target) {
+  setMaskPosition(target) {
     if (hasPreview(target)) return;
     const shapeMask = this.children.find((c) => c.placeableId === target.id);
 
@@ -161,11 +165,11 @@ export class GridMaskContainer extends CachedContainer {
   }
 
   deactivateMask() {
-    this.destroyGridMask();
+    this.destroyMask();
     this._grid.visible = true;
   }
 
-  destroyGridMask() {
+  destroyMask() {
     this.removeChildren().forEach((c) => c.destroy());
     if (this._grid?.mask) {
       canvas.primary.removeChild(this);

@@ -3,53 +3,47 @@ import { EMBEDS_AND_LAYERS, init, MODULE_CONFIG } from './settings.js';
 
 let layerHooks = [];
 
-// Canvas grid
-let GRID = null;
-
-// Sprite and Container used as Grid Mask
+// Container used as Grid Mask
 export const GRID_MASK = {
-  sprite: new PIXI.Sprite(),
   container: null,
 };
 
 /** =================================
- *  Register Settings and keybindings
+ *  Register Settings and Keybindings
  *  =================================
  */
-
 Hooks.on('init', () => {
   init();
 });
 
-/** =============================================
- *  Initialize mask containers and find the grid
- *  =============================================
+/** =========================
+ *  Initialize mask container
+ *  =========================
  */
 Hooks.on('canvasReady', (canvas) => {
-  console.log('CANVAS READY CALLED');
   if (!GRID_MASK.container) {
-    GRID_MASK.container = new GridMaskContainer(GRID_MASK.sprite);
+    GRID_MASK.container = new GridMaskContainer();
   }
   GRID_MASK.container.onCanvasReady();
-
-  GRID = canvas.grid.children.find((c) => c instanceof SquareGrid || c instanceof HexagonalGrid);
-
-  if (MODULE_CONFIG[`${canvas.activeLayer.name}Enabled`]) GRID.visible = false;
 });
 
-// Handle layer activations
+/** ========================
+ *  Handle Layer Activations
+ *  ========================
+ */
 for (const [embedName, layerName] of EMBEDS_AND_LAYERS) {
   Hooks.on(`activate${layerName}`, (layer) => {
-    GRID_MASK.container?.destroyGridMask();
-    if (!MODULE_CONFIG[`${layer.name}Enabled`]) {
-      if (GRID) GRID.visible = true;
-    }
     registerLayerHooks(
       layer,
       [`control${embedName}`, `hover${embedName}`, `destroy${embedName}`],
       [`refresh${embedName}`]
     );
-    GRID_MASK.container?.drawMask();
+
+    if (MODULE_CONFIG[`${layer.name}Enabled`]) {
+      GRID_MASK.container?.activateMask();
+    } else {
+      GRID_MASK.container?.deactivateMask();
+    }
   });
 }
 
@@ -71,8 +65,8 @@ function registerLayerHooks(layer, drawMaskFunctionNames = [], setPositionFuncti
   }
   for (const fnName of setPositionFunctionNames) {
     let id = Hooks.on(fnName, (placeable) => {
-      if (MODULE_CONFIG[`${placeable.layer.name}Enabled`] && GRID?.mask) {
-        GRID_MASK.container.setGridMaskPosition(placeable);
+      if (MODULE_CONFIG[`${placeable.layer.name}Enabled`]) {
+        GRID_MASK.container.setMaskPosition(placeable);
       }
     });
     layerHooks.push([fnName, id]);
@@ -83,18 +77,14 @@ function registerLayerHooks(layer, drawMaskFunctionNames = [], setPositionFuncti
  *  Draw masks in response to hooks
  *  ===============================
  */
-
 Hooks.on('deleteCombat', () => {
-  if (!MODULE_CONFIG[`${canvas.activeLayer.name}Enabled`]) return;
-  GRID_MASK.container.drawMask();
+  GRID_MASK.container?.drawMask();
 });
 
 Hooks.on('combatStart', () => {
-  if (!MODULE_CONFIG[`${canvas.activeLayer.name}Enabled`]) return;
-  GRID_MASK.container.drawMask();
+  GRID_MASK.container?.drawMask();
 });
 
 Hooks.on('highlightObjects', () => {
-  if (!MODULE_CONFIG[`${canvas.activeLayer.name}Enabled`]) return;
   GRID_MASK.container?.drawMask();
 });
