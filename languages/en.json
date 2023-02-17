@@ -27,7 +27,7 @@
     },
     "keybindings": {
       "toggleGrid": {
-        "name": "Toggle Module ON and OFF",
+        "name": "Toggle Grid on Current Layer",
         "hint": ""
       }
     }
