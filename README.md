@@ -16,6 +16,12 @@ https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b
   - Number of grid spaces to be displayed.
 - Default Grid View Shape
   - The shape of the grid mask.
+    - Circle
+    - Circle (Soft)
+    - Square
+    - Square (Soft)
+    - Hexagon (Row)
+    - Hexagon (Column)
 - Ruler
   - Enabled grid for Ruler Measurements (requires libWrapper to be active)
 - {layer name} Layer
@@ -25,3 +31,9 @@ https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b
   
 - Toggle Grid on Current Layer
   - When pressed the "{layer name} Layer" setting will be toggled for the currently active layer
+
+## Token Settings
+
+Global `Default Grid View Distance` and `Default Grid View Shape` can be overrided for each Token by going to vision settings:
+
+![image](https://user-images.githubusercontent.com/7693704/220395236-ac4fd117-bc65-499a-a010-aff7d537a518.png)
