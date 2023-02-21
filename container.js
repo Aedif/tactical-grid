@@ -21,8 +21,7 @@ export class GridMaskContainer extends CachedContainer {
    * assigns them one
    */
   drawMask(layer = canvas.activeLayer) {
-    if (!this._grid) return;
-    if (!MODULE_CONFIG[`${layer.name}Enabled`]) return;
+    if (!this._grid || !MODULE_CONFIG[`${layer.name}Enabled`]) return;
 
     this._grid.visible = false;
 
