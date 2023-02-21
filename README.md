@@ -16,6 +16,12 @@ https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b
   - Number of grid spaces to be displayed.
 - Default Grid View Shape
   - The shape of the grid mask.
+    - Circle
+    - Circle (Soft)
+    - Square
+    - Square (Soft)
+    - Hexagon (Row)
+    - Hexagon (Column)
 - Ruler
   - Enabled grid for Ruler Measurements (requires libWrapper to be active)
 - {layer name} Layer
