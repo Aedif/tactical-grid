@@ -3,8 +3,8 @@
   "title": "Tactical Grid",
   "description": "Only show the grid when needed.",
   "version": "1.4.1",
-  "download": "https://github.com/Aedif/aedfis-tactical-grid/releases/download/1.4.1/aedfis-tactical-grid.zip",
-  "manifest": "https://github.com/Aedif/aedfis-tactical-grid/releases/latest/download/module.json",
+  "download": "https://github.com/Aedif/tactical-grid/releases/download/1.4.1/aedifs-tactical-grid.zip",
+  "manifest": "https://github.com/Aedif/tactical-grid/releases/download/1.4.1/module.json",
   "compatibility": {
     "minimum": 10,
     "verified": "10.291",
