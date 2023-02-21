@@ -153,7 +153,7 @@ export function init() {
       default: embedName === 'Token',
       onChange: async (val) => {
         MODULE_CONFIG[settingName] = val;
-        if (canvas.activeLayer.name === layerName) {
+        if (cleanLayerName(canvas.activeLayer) === layerName) {
           if (MODULE_CONFIG[settingName]) {
             GRID_MASK.container.activateMask();
           } else {
@@ -171,8 +171,15 @@ export function init() {
     editable: [],
     onDown: () => {
       try {
-        let val = game.settings.get('aedifs-tactical-grid', `${canvas.activeLayer.name}Enabled`);
-        game.settings.set('aedifs-tactical-grid', `${canvas.activeLayer.name}Enabled`, !val);
+        let val = game.settings.get(
+          'aedifs-tactical-grid',
+          `${cleanLayerName(canvas.activeLayer)}Enabled`
+        );
+        game.settings.set(
+          'aedifs-tactical-grid',
+          `${cleanLayerName(canvas.activeLayer)}Enabled`,
+          !val
+        );
       } catch (e) {
         GRID_MASK.container.deactivateMask();
       }
@@ -266,4 +273,9 @@ function unregisterLibwrapperMethods() {
   if (typeof libWrapper === 'function') {
     libWrapper.unregister_all('aedifs-tactical-grid');
   }
+}
+
+// Because PF2e is a special snowflake
+export function cleanLayerName(layer) {
+  return layer.name.replace('PF2e', '');
 }

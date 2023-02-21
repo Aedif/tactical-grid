@@ -1,4 +1,4 @@
-import { MODULE_CONFIG } from './settings.js';
+import { cleanLayerName, MODULE_CONFIG } from './settings.js';
 
 export class GridMaskContainer extends CachedContainer {
   constructor() {
@@ -11,7 +11,7 @@ export class GridMaskContainer extends CachedContainer {
       (c) => c instanceof SquareGrid || c instanceof HexagonalGrid
     );
 
-    if (MODULE_CONFIG[`${canvas.activeLayer.name}Enabled`]) {
+    if (MODULE_CONFIG[`${cleanLayerName(canvas.activeLayer)}Enabled`]) {
       this.activateMask();
     }
   }
@@ -21,7 +21,7 @@ export class GridMaskContainer extends CachedContainer {
    * assigns them one
    */
   drawMask(layer = canvas.activeLayer) {
-    if (!this._grid || !MODULE_CONFIG[`${layer.name}Enabled`]) return;
+    if (!this._grid || !MODULE_CONFIG[`${cleanLayerName(layer)}Enabled`]) return;
 
     this._grid.visible = false;
 

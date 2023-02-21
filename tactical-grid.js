@@ -1,5 +1,5 @@
 import { GridMaskContainer } from './container.js';
-import { EMBEDS_AND_LAYERS, init, MODULE_CONFIG } from './settings.js';
+import { cleanLayerName, EMBEDS_AND_LAYERS, init, MODULE_CONFIG } from './settings.js';
 
 let layerHooks = [];
 
@@ -39,7 +39,7 @@ for (const [embedName, layerName] of EMBEDS_AND_LAYERS) {
       [`refresh${embedName}`]
     );
 
-    if (MODULE_CONFIG[`${layer.name}Enabled`]) {
+    if (MODULE_CONFIG[`${cleanLayerName(layer)}Enabled`]) {
       GRID_MASK.container?.activateMask();
     } else {
       GRID_MASK.container?.deactivateMask();
@@ -58,14 +58,14 @@ function registerLayerHooks(layer, drawMaskFunctionNames = [], setPositionFuncti
   unregisterLayerHooks();
   for (const fnName of drawMaskFunctionNames) {
     let id = Hooks.on(fnName, () => {
-      if (!MODULE_CONFIG[`${layer.name}Enabled`]) return;
+      if (!MODULE_CONFIG[`${cleanLayerName(layer)}Enabled`]) return;
       GRID_MASK.container.drawMask(layer);
     });
     layerHooks.push([fnName, id]);
   }
   for (const fnName of setPositionFunctionNames) {
     let id = Hooks.on(fnName, (placeable) => {
-      if (MODULE_CONFIG[`${placeable.layer.name}Enabled`]) {
+      if (MODULE_CONFIG[`${cleanLayerName(placeable.layer)}Enabled`]) {
         GRID_MASK.container.setMaskPosition(placeable);
       }
     });
