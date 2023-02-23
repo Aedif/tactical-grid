@@ -1,3 +1,7 @@
+![GitHub Latest Version](https://img.shields.io/github/v/release/Aedif/tactical-grid?sort=semver)
+![GitHub Latest Release](https://img.shields.io/github/downloads/Aedif/tactical-grid/latest/aedifs-tactical-grid.zip)
+![GitHub All Releases](https://img.shields.io/github/downloads/Aedif/tactical-grid/aedifs-tactical-grid.zip)
+
 # FoundryVTT - Tactical Grid
 
 Provides settings to limit the display of the grid to a specific distance within the currently selected/hovered-over placeable or Measuring Tool.
