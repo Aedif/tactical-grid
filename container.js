@@ -38,7 +38,7 @@ export class GridMaskContainer extends CachedContainer {
 
     if (MODULE_CONFIG.ruler && typeof libWrapper === 'function') {
       let ruler = canvas.controls.ruler;
-      if (ruler._state !== Ruler.STATES.INACTIVE) {
+      if (ruler && ruler._state !== Ruler.STATES.INACTIVE) {
         ruler.id = 'RULER';
         if (!ruler.center) {
           Object.defineProperty(ruler, 'center', {
@@ -161,8 +161,10 @@ export class GridMaskContainer extends CachedContainer {
   }
 
   activateMask() {
-    this._grid.visible = false;
-    this.drawMask();
+    if (this._grid) {
+      this._grid.visible = false;
+      this.drawMask();
+    }
   }
 
   deactivateMask() {
