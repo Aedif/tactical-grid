@@ -87,16 +87,16 @@ export class GridMaskContainer extends CachedContainer {
           p.document?.getFlag('aedifs-tactical-grid', 'viewShape') ||
           MODULE_CONFIG.defaultViewShape;
 
-        // const width = p.document.width ?? p.width;
-        // const height = p.document.height ?? p.height;
-
         const width = p.width;
         const height = p.height;
 
         let shapeColor = p.document?.getFlag('aedifs-tactical-grid', 'color');
         if (shapeColor) {
           shapeColor = Number(Color.fromString(shapeColor));
-        } else if (MODULE_CONFIG.useDispositionColors && p.document.hasOwnProperty('disposition')) {
+        } else if (
+          MODULE_CONFIG.useDispositionColors &&
+          p.document?.hasOwnProperty('disposition')
+        ) {
           shapeColor = getDispositionColor(p);
         } else {
           shapeColor = Number(Color.fromString(getGridColorString()));

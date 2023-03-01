@@ -1,3 +1,7 @@
+# 1.5.1
+
+- Bad accessor fix
+
 # 1.5.0
 
 - New settings
