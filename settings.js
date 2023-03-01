@@ -1,3 +1,4 @@
+import { getGridColorString } from './scripts/utils.js';
 import { GRID_MASK } from './tactical-grid.js';
 
 // Config
@@ -8,6 +9,14 @@ export const MODULE_CONFIG = {
   hover: true,
   enableInCombatOnly: false,
   ruler: true,
+  mixColors: true,
+  useDispositionColors: true,
+  dispositionColors: {
+    playerOwner: 0x00ff00,
+    friendly: 0x00ff00,
+    neutral: 0x0000ff,
+    hostile: 0xff0000,
+  },
 };
 
 export const EMBEDS_AND_LAYERS = [
@@ -123,6 +132,46 @@ export function init() {
   });
   MODULE_CONFIG.defaultViewShape = game.settings.get('aedifs-tactical-grid', 'defaultViewShape');
 
+  game.settings.register('aedifs-tactical-grid', 'mixColors', {
+    name: game.i18n.localize('aedifs-tactical-grid.settings.mixColors.name'),
+    hint: game.i18n.localize('aedifs-tactical-grid.settings.mixColors.hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: MODULE_CONFIG.mixColors,
+    onChange: async (val) => {
+      MODULE_CONFIG.mixColors = val;
+    },
+  });
+  MODULE_CONFIG.mixColors = game.settings.get('aedifs-tactical-grid', 'mixColors');
+
+  game.settings.register('aedifs-tactical-grid', 'useDispositionColors', {
+    name: game.i18n.localize('aedifs-tactical-grid.settings.useDispositionColors.name'),
+    hint: game.i18n.localize('aedifs-tactical-grid.settings.useDispositionColors.hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: MODULE_CONFIG.useDispositionColors,
+    onChange: async (val) => {
+      MODULE_CONFIG.useDispositionColors = val;
+    },
+  });
+  MODULE_CONFIG.useDispositionColors = game.settings.get(
+    'aedifs-tactical-grid',
+    'useDispositionColors'
+  );
+
+  game.settings.register('aedifs-tactical-grid', 'dispositionColors', {
+    scope: 'world',
+    config: false,
+    type: Object,
+    default: MODULE_CONFIG.dispositionColors,
+    onChange: async (val) => {
+      mergeObject(MODULE_CONFIG.dispositionColors, val);
+    },
+  });
+  MODULE_CONFIG.dispositionColors = game.settings.get('aedifs-tactical-grid', 'dispositionColors');
+
   game.settings.register('aedifs-tactical-grid', 'rulerEnabled', {
     name: game.i18n.localize('aedifs-tactical-grid.settings.ruler.name'),
     hint: game.i18n.localize('aedifs-tactical-grid.settings.ruler.hint'),
@@ -195,6 +244,8 @@ export function init() {
   Hooks.on('renderTokenConfig', (tokenConfig) => {
     const viewDistance = tokenConfig.object.getFlag('aedifs-tactical-grid', 'viewDistance') ?? '';
     const viewShape = tokenConfig.object.getFlag('aedifs-tactical-grid', 'viewShape') ?? '';
+    const shapeColor = tokenConfig.object.getFlag('aedifs-tactical-grid', 'color') ?? '';
+    const gridColor = getGridColorString();
 
     let options = '<option value=""></option>';
     for (const [k, v] of Object.entries(shapeOptions)) {
@@ -223,6 +274,15 @@ export function init() {
       <p class="hint">${game.i18n.localize(
         'aedifs-tactical-grid.settings.defaultViewShape.hint'
       )}</p>
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <div class="form-fields">
+          <input class="color" type="text" name="flags.aedifs-tactical-grid.color" value="${shapeColor}">
+          <input type="color" value="${
+            shapeColor ?? gridColor
+          }" data-edit="flags.aedifs-tactical-grid.color">
+        </div>
       </div>
   </fieldset>
     `);

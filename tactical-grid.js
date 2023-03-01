@@ -23,8 +23,10 @@ Hooks.on('init', () => {
 Hooks.on('canvasReady', (canvas) => {
   if (!GRID_MASK.container) {
     GRID_MASK.container = new GridMaskContainer();
+    GRID_MASK.container.blendMode = PIXI.BLEND_MODES.ADD;
   }
   GRID_MASK.container.onCanvasReady();
+  game.GRID_MASK = GRID_MASK;
 });
 
 /** ========================

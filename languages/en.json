@@ -21,6 +21,14 @@
         "name": "Grid Enable: Hover",
         "hint": "Grid will be shown for hovered over placeables."
       },
+      "mixColors": {
+        "name": "Mix Colors",
+        "hint": "When enabled custom shape colors will be mixed/blended together."
+      },
+      "useDispositionColors": {
+        "name": "Default Color: Disposition",
+        "hint": "When enabled Token shape colors will default to their disposition."
+      },
       "layerEnable": {
         "hint": "Enable tactical grid for \"{layerName}\""
       },

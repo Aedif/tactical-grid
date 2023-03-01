@@ -1,6 +1,11 @@
+import { CustomSpriteMaskFilter } from './filters/CustomSpriteMaskFilter.js';
+import { getDispositionColor, getGridColorString } from './scripts/utils.js';
 import { cleanLayerName, MODULE_CONFIG } from './settings.js';
 
 export class GridMaskContainer extends CachedContainer {
+  /** @override */
+  clearColor = [0, 0, 0, 0];
+
   constructor() {
     super(new PIXI.Sprite());
   }
@@ -59,9 +64,11 @@ export class GridMaskContainer extends CachedContainer {
         this.setMaskPosition(p);
       }
 
-      if (!this._grid.mask) {
+      if (!this._grid.filters) {
         canvas.primary.addChild(this);
-        this._grid.mask = this.sprite;
+        // this._grid.filters = [new PIXI.SpriteMaskFilter(this.sprite)];
+        this._grid.filters = [new CustomSpriteMaskFilter(this.sprite)];
+        // this._grid.mask = this.sprite;
       }
       this._grid.visible = true;
     }
@@ -92,12 +99,21 @@ export class GridMaskContainer extends CachedContainer {
         const width = p.width;
         const height = p.height;
 
+        let shapeColor = p.document?.getFlag('aedifs-tactical-grid', 'color');
+        if (shapeColor) {
+          shapeColor = Number(Color.fromString(shapeColor));
+        } else if (MODULE_CONFIG.useDispositionColors && p.document.hasOwnProperty('disposition')) {
+          shapeColor = getDispositionColor(p);
+        } else {
+          shapeColor = Number(Color.fromString(getGridColorString()));
+        }
+
         let sprite;
         switch (viewShape) {
           case 'square':
             let length = viewDistance * canvas.grid.w * 2 + width + 1;
             sprite = new PIXI.Graphics()
-              .beginFill(0xff0000)
+              .beginFill(shapeColor)
               .drawRect(0, 0, length, length)
               .endFill();
             break;
@@ -108,13 +124,13 @@ export class GridMaskContainer extends CachedContainer {
             let pointsRow = HexagonalGrid.pointyHexPoints
               .flat()
               .map((v) => v * canvas.grid.w * viewDistance * 2);
-            sprite = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(pointsRow).endFill();
+            sprite = new PIXI.Graphics().beginFill(shapeColor).drawPolygon(pointsRow).endFill();
             break;
           case 'hexagonCol':
             let pointsCol = HexagonalGrid.flatHexPoints
               .flat()
               .map((v) => v * canvas.grid.w * viewDistance * 2);
-            sprite = new PIXI.Graphics().beginFill(0xff0000).drawPolygon(pointsCol).endFill();
+            sprite = new PIXI.Graphics().beginFill(shapeColor).drawPolygon(pointsCol).endFill();
             break;
           case 'circle-soft':
             sprite = PIXI.Sprite.from('modules\\aedifs-tactical-grid\\images\\circle_mask.webp');
@@ -123,7 +139,7 @@ export class GridMaskContainer extends CachedContainer {
           default:
             const radius = viewDistance * canvas.grid.w + width / 2;
             sprite = new PIXI.Graphics()
-              .beginFill(0xff0000)
+              .beginFill(shapeColor)
               .drawCircle(radius, radius, radius)
               .endFill();
         }
@@ -131,10 +147,12 @@ export class GridMaskContainer extends CachedContainer {
         if (sprite instanceof PIXI.Sprite) {
           sprite.width = (viewDistance + 1) * canvas.grid.w * 2 + width;
           sprite.height = (viewDistance + 1) * canvas.grid.h * 2 + height;
+          sprite.tint = shapeColor;
         }
 
         sprite = this.addChild(sprite);
         sprite.placeableId = p.id;
+        if (MODULE_CONFIG.mixColors) sprite.blendMode = PIXI.BLEND_MODES.ADD;
       }
     }
 
@@ -174,9 +192,9 @@ export class GridMaskContainer extends CachedContainer {
 
   destroyMask() {
     this.removeChildren().forEach((c) => c.destroy());
-    if (this._grid?.mask) {
+    if (this._grid?.filters) {
       canvas.primary.removeChild(this);
-      this._grid.mask = null;
+      this._grid.filters = null;
     }
   }
 }
