@@ -63,13 +63,7 @@ export class GridMaskContainer extends CachedContainer {
       for (const p of applicableTokens) {
         this.setMaskPosition(p);
       }
-
-      if (!this._grid.filters) {
-        canvas.primary.addChild(this);
-        // this._grid.filters = [new PIXI.SpriteMaskFilter(this.sprite)];
-        this._grid.filters = [new CustomSpriteMaskFilter(this.sprite)];
-        // this._grid.mask = this.sprite;
-      }
+      this._addMaskFilter();
       this._grid.visible = true;
     }
   }
@@ -192,9 +186,30 @@ export class GridMaskContainer extends CachedContainer {
 
   destroyMask() {
     this.removeChildren().forEach((c) => c.destroy());
+    this._removeMaskFilter();
+  }
+
+  _removeMaskFilter() {
     if (this._grid?.filters) {
-      canvas.primary.removeChild(this);
-      this._grid.filters = null;
+      let newFilters = [];
+      let filters = this._grid.filters;
+      for (const f of filters) {
+        if (f instanceof CustomSpriteMaskFilter) {
+          canvas.primary.removeChild(this);
+        } else {
+          newFilters.push(f);
+        }
+      }
+      this._grid.filters = newFilters;
+    }
+  }
+
+  _addMaskFilter() {
+    let filters = this._grid.filters ?? [];
+    if (!filters.find((f) => f instanceof CustomSpriteMaskFilter)) {
+      canvas.primary.addChild(this);
+      filters.push(new CustomSpriteMaskFilter(this.sprite));
+      this._grid.filters = filters;
     }
   }
 }
