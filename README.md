@@ -38,6 +38,6 @@ https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b
 
 ## Token Settings
 
-Global `Default Grid View Distance` and `Default Grid View Shape` can be overrided for each Token by going to vision settings:
+Global `Default Grid View Distance` and `Default Grid View Shape` can be overriden for each Token by going to vision settings:
 
 ![image](https://user-images.githubusercontent.com/7693704/220395236-ac4fd117-bc65-499a-a010-aff7d537a518.png)
