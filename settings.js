@@ -292,6 +292,33 @@ export function init() {
   });
 }
 
+/** =================================
+ *  Insert scene grid line width flag
+ *  =================================
+ */
+Hooks.on('renderSceneConfig', (sceneConfig) => {
+  if (typeof libWrapper === 'function') {
+    const lineWidth = sceneConfig.object.getFlag('aedifs-tactical-grid', 'gridLineWidth') ?? 1;
+
+    const control = $(`
+  <fieldset>
+    <legend>Tactical Grid</legend>
+    <div class="form-group">
+      <label>Grid Line Width <span class="units">(Pixels)</span></label> 
+      <div class="form-fields">
+        <input type="range" name="flags.aedifs-tactical-grid.gridLineWidth" value="${lineWidth}" min="1" max="30" step="1">
+        <span class="range-value">${lineWidth}</span>
+      </div>
+      <p class="notes"><b>(REQUIRES CANVAS RELOAD)</b></p>
+    </div>
+  </fieldset>
+    `);
+
+    $(sceneConfig.form).find('[name="grid.alpha"]').closest('.form-group').after(control);
+    sceneConfig.setPosition({ height: 'auto' });
+  }
+});
+
 function registerLibwrapperMethods() {
   if (typeof libWrapper === 'function') {
     libWrapper.register(

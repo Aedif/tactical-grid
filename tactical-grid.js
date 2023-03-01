@@ -1,4 +1,5 @@
 import { GridMaskContainer } from './container.js';
+import { registerGridWrappers, unregisterGridWrappers } from './scripts/utils.js';
 import { cleanLayerName, EMBEDS_AND_LAYERS, init, MODULE_CONFIG } from './settings.js';
 
 let layerHooks = [];
@@ -89,4 +90,13 @@ Hooks.on('combatStart', () => {
 
 Hooks.on('highlightObjects', () => {
   GRID_MASK.container?.drawMask();
+});
+
+Hooks.on('canvasInit', (canvas) => {
+  let tacticalLineWidth = canvas.scene.getFlag('aedifs-tactical-grid', 'gridLineWidth');
+  if (tacticalLineWidth && tacticalLineWidth > 1) {
+    registerGridWrappers(tacticalLineWidth);
+  } else {
+    unregisterGridWrappers();
+  }
 });
