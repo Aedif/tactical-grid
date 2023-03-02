@@ -31,13 +31,31 @@ https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b
 - {layer name} Layer
   - Enable tactical grid for this layer
   
+### Color Settings
+
+- Default Color: Disposition
+  - Token view shape colors will default to their disposition
+  - `game.settings.get('aedifs-tactical-grid', 'dispositionColors')`
+- Mix Colors
+  - Instead of view shape colors overriding each other when they overlap, they will get blended into a new color
+  
 ## Controls
   
-- Toggle Grid on Current Layer
+- Toggle Grid on Current Layer (Global)
   - When pressed the "{layer name} Layer" setting will be toggled for the currently active layer
+  - Long press will toggle the layer setting just for the current scene
+- Toggle Grid on Current Layer (Scene)
+  - When pressed the layer will be toggled just for the current scene
 
 ## Token Settings
 
-Global `Default Grid View Distance` and `Default Grid View Shape` can be overriden for each Token by going to vision settings:
+Global `Default Grid View Distance`, `Default Grid View Shape`, and `Color` can be overriden for each Token by going to vision settings:
 
-![image](https://user-images.githubusercontent.com/7693704/220395236-ac4fd117-bc65-499a-a010-aff7d537a518.png)
+![image](https://user-images.githubusercontent.com/7693704/222382319-a22fcebc-2a9b-4957-a783-4e58d9fdc2bb.png)
+
+## Scene Setting
+
+Module allows for the core Foundry's default grid width to be adjusted:
+
+![image](https://user-images.githubusercontent.com/7693704/222383155-24f6a9ac-bb2c-4658-bbe9-9d3bea6ed32f.png)
+
