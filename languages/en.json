@@ -39,7 +39,11 @@
     },
     "keybindings": {
       "toggleGrid": {
-        "name": "Toggle Grid on Current Layer",
+        "name": "Toggle Grid on Current Layer (Global)",
+        "hint": "Short Press will toggle the layer globally, a long press will toggle the layer just for the current Scene."
+      },
+      "sceneToggleGrid": {
+        "name": "Toggle Grid on Current Layer (Scene)",
         "hint": ""
       }
     }

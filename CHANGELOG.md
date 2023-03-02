@@ -1,3 +1,9 @@
+# 1.6.0
+
+- Added scene specific Tactical Grid toggle
+  - Triggered either by long pressing the old `Toggle Grid on Current Layer` key
+  - Or assigning a new key to the `Toggle Grid on Current Layer (Scene)` control
+
 # 1.5.1
 
 - Bad accessor fix

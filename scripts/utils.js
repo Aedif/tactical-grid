@@ -1,4 +1,4 @@
-import { MODULE_CONFIG } from '../settings.js';
+import { MODULE_CONFIG } from './settings.js';
 
 export function getGridColorString() {
   return canvas.scene?.grid?.color ?? '#000000';

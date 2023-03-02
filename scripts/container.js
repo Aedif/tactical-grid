@@ -1,5 +1,5 @@
-import { CustomSpriteMaskFilter } from './filters/CustomSpriteMaskFilter.js';
-import { getDispositionColor, getGridColorString } from './scripts/utils.js';
+import { CustomSpriteMaskFilter } from '../filters/CustomSpriteMaskFilter.js';
+import { getDispositionColor, getGridColorString } from './utils.js';
 import { cleanLayerName, MODULE_CONFIG } from './settings.js';
 
 export class GridMaskContainer extends CachedContainer {
@@ -15,10 +15,7 @@ export class GridMaskContainer extends CachedContainer {
     this._grid = canvas.grid.children.find(
       (c) => c instanceof SquareGrid || c instanceof HexagonalGrid
     );
-
-    if (MODULE_CONFIG[`${cleanLayerName(canvas.activeLayer)}Enabled`]) {
-      this.activateMask();
-    }
+    this.drawMask();
   }
 
   /**
@@ -26,7 +23,12 @@ export class GridMaskContainer extends CachedContainer {
    * assigns them one
    */
   drawMask(layer = canvas.activeLayer) {
-    if (!this._grid || !MODULE_CONFIG[`${cleanLayerName(layer)}Enabled`]) return;
+    if (!this._grid) this.deactivateMask();
+
+    const layerSetting = `${cleanLayerName(layer)}Enabled`;
+    let sceneEnabled = canvas.scene.getFlag('aedifs-tactical-grid', layerSetting);
+    if (sceneEnabled != null && !sceneEnabled) return this.deactivateMask();
+    if (sceneEnabled == null && !MODULE_CONFIG[layerSetting]) return this.deactivateMask();
 
     this._grid.visible = false;
 
@@ -175,7 +177,6 @@ export class GridMaskContainer extends CachedContainer {
   activateMask() {
     if (this._grid) {
       this._grid.visible = false;
-      this.drawMask();
     }
   }
 

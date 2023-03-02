@@ -1,5 +1,5 @@
-import { getGridColorString } from './scripts/utils.js';
-import { GRID_MASK } from './tactical-grid.js';
+import { getGridColorString } from './utils.js';
+import { GRID_MASK } from '../tactical-grid.js';
 
 // Config
 export const MODULE_CONFIG = {
@@ -202,36 +202,62 @@ export function init() {
       default: embedName === 'Token',
       onChange: async (val) => {
         MODULE_CONFIG[settingName] = val;
-        if (cleanLayerName(canvas.activeLayer) === layerName) {
-          if (MODULE_CONFIG[settingName]) {
-            GRID_MASK.container.activateMask();
-          } else {
-            GRID_MASK.container.deactivateMask();
-          }
-        }
+        if (cleanLayerName(canvas.activeLayer) === layerName) GRID_MASK.container.drawMask();
       },
     });
     MODULE_CONFIG[settingName] = game.settings.get('aedifs-tactical-grid', settingName);
   }
 
+  const toggleSceneGrid = async function () {
+    if (canvas.scene) {
+      let settingName = `${cleanLayerName(canvas.activeLayer)}Enabled`;
+      let val = canvas.scene.getFlag('aedifs-tactical-grid', settingName);
+      if (val != null && !val) {
+        await canvas.scene.unsetFlag('aedifs-tactical-grid', settingName);
+        ui.notifications.info(`Tactical Grid: Scene Setting REMOVED { ${settingName} }`);
+      } else {
+        await canvas.scene.setFlag('aedifs-tactical-grid', settingName, !val);
+        ui.notifications.info(
+          `Tactical Grid: Scene Setting ADDED { ${settingName} = ${val ? 'False' : 'True'} }`
+        );
+      }
+    }
+  };
+
+  let lastPress;
   game.keybindings.register('aedifs-tactical-grid', 'toggleGrid', {
     name: game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.name'),
     hint: game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.hint'),
     editable: [],
-    onDown: () => {
-      try {
-        let val = game.settings.get(
-          'aedifs-tactical-grid',
-          `${cleanLayerName(canvas.activeLayer)}Enabled`
-        );
-        game.settings.set(
-          'aedifs-tactical-grid',
-          `${cleanLayerName(canvas.activeLayer)}Enabled`,
-          !val
-        );
-      } catch (e) {
-        GRID_MASK.container.deactivateMask();
+    onUp: async () => {
+      if (lastPress) {
+        let settingName = `${cleanLayerName(canvas.activeLayer)}Enabled`;
+        const diff = new Date().getTime() - lastPress;
+        lastPress = null;
+        if (diff < 1200) {
+          try {
+            let val = game.settings.get('aedifs-tactical-grid', settingName);
+            game.settings.set('aedifs-tactical-grid', settingName, !val);
+          } catch (e) {}
+        } else {
+          toggleSceneGrid();
+        }
+        GRID_MASK.container?.drawMask();
       }
+    },
+    onDown: () => {
+      lastPress = new Date().getTime();
+    },
+    restricted: true,
+    precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
+  });
+
+  game.keybindings.register('aedifs-tactical-grid', 'sceneToggleGrid', {
+    name: game.i18n.localize('aedifs-tactical-grid.keybindings.sceneToggleGrid.name'),
+    hint: game.i18n.localize('aedifs-tactical-grid.keybindings.sceneToggleGrid.hint'),
+    editable: [],
+    onDown: () => {
+      toggleSceneGrid();
     },
     restricted: true,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,

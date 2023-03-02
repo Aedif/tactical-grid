@@ -1,6 +1,6 @@
-import { GridMaskContainer } from './container.js';
+import { GridMaskContainer } from './scripts/container.js';
 import { registerGridWrappers, unregisterGridWrappers } from './scripts/utils.js';
-import { cleanLayerName, EMBEDS_AND_LAYERS, init, MODULE_CONFIG } from './settings.js';
+import { cleanLayerName, EMBEDS_AND_LAYERS, init, MODULE_CONFIG } from './scripts/settings.js';
 
 let layerHooks = [];
 
@@ -42,11 +42,7 @@ for (const [embedName, layerName] of EMBEDS_AND_LAYERS) {
       [`refresh${embedName}`]
     );
 
-    if (MODULE_CONFIG[`${cleanLayerName(layer)}Enabled`]) {
-      GRID_MASK.container?.activateMask();
-    } else {
-      GRID_MASK.container?.deactivateMask();
-    }
+    GRID_MASK.container?.drawMask();
   });
 }
 
