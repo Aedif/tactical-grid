@@ -1,5 +1,6 @@
 import { getGridColorString } from './utils.js';
 import { GRID_MASK } from '../tactical-grid.js';
+import { DistanceMeasurer } from './measurer.js';
 
 // Config
 export const MODULE_CONFIG = {
@@ -263,6 +264,16 @@ export function init() {
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
   });
 
+  game.keybindings.register('aedifs-tactical-grid', 'displayDistance', {
+    name: 'Display Distance',
+    hint: '',
+    editable: [],
+    onUp: DistanceMeasurer.onTriggerKeyUp,
+    onDown: DistanceMeasurer.onTriggerKeyDown,
+    restricted: false,
+    precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
+  });
+
   /** =======================================================
    *  Insert token specific viewDistance and viewShape flags
    *  =======================================================
@@ -316,6 +327,25 @@ export function init() {
     $(tokenConfig.form).find('[name="sight.visionMode"]').closest('.form-group').after(control);
     tokenConfig.setPosition({ height: 'auto' });
   });
+
+  if (typeof libWrapper === 'function') {
+    ['Token', 'TokenLayer'].forEach((clsName) => {
+      libWrapper.register(
+        'aedifs-tactical-grid',
+        `${clsName}.prototype._onClickLeft`,
+        function (wrapped, ...args) {
+          let result = wrapped(...args);
+          try {
+            DistanceMeasurer.clickLeft(args[0].data?.origin);
+          } catch (e) {
+            console.log(e);
+          }
+          return result;
+        },
+        'WRAPPER'
+      );
+    });
+  }
 }
 
 /** =================================

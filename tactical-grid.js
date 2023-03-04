@@ -58,14 +58,14 @@ function registerLayerHooks(layer, drawMaskFunctionNames = [], setPositionFuncti
   for (const fnName of drawMaskFunctionNames) {
     let id = Hooks.on(fnName, () => {
       if (!MODULE_CONFIG[`${cleanLayerName(layer)}Enabled`]) return;
-      GRID_MASK.container.drawMask(layer);
+      GRID_MASK.container?.drawMask(layer);
     });
     layerHooks.push([fnName, id]);
   }
   for (const fnName of setPositionFunctionNames) {
     let id = Hooks.on(fnName, (placeable) => {
       if (MODULE_CONFIG[`${cleanLayerName(placeable.layer)}Enabled`]) {
-        GRID_MASK.container.setMaskPosition(placeable);
+        GRID_MASK.container?.setMaskPosition(placeable);
       }
     });
     layerHooks.push([fnName, id]);

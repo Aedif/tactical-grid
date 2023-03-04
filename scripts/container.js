@@ -72,13 +72,12 @@ export class GridMaskContainer extends CachedContainer {
 
   updateGridMask(placeables) {
     // Destroy sprites that are not in the placeable list
-    let originalChildren = this.children;
-    originalChildren.forEach((c) => {
-      if (!placeables.find((p) => p.id === c.placeableId)) this.removeChild(c)?.destroy();
-    });
+    this.children
+      .filter((ch) => !placeables.find((p) => p.id === ch.placeableId))
+      .forEach((ch) => this.removeChild(ch)?.destroy());
 
     for (const p of placeables) {
-      if (originalChildren.find((c) => c.placeableId === p.id)) {
+      if (this.children.find((c) => c.placeableId === p.id)) {
         // Do nothing
       } else {
         let viewDistance = p.document?.getFlag('aedifs-tactical-grid', 'viewDistance');
