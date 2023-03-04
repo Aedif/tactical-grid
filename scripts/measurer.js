@@ -1,11 +1,10 @@
 export class DistanceMeasurer {
   static hlName = 'ATG';
   static shape;
-  static isPressed = false;
+  static gridSpaces = true;
 
-  static onTriggerKeyDown() {
-    DistanceMeasurer.isPressed = true;
-
+  static onTriggerKeyDown({ gridSpaces = true }) {
+    DistanceMeasurer.gridSpaces = gridSpaces;
     if (!canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
       canvas.grid.addHighlightLayer(DistanceMeasurer.hlName);
     }
@@ -51,7 +50,7 @@ export class DistanceMeasurer {
     }
 
     const visibleTokens = canvas.tokens.placeables.filter(
-      (p) => p.visible && p.id !== controlledToken?.id
+      (p) => p.visible //&& p.id !== controlledToken?.id
     );
     for (const token of visibleTokens) {
       for (let h = 0; h < token.h / canvas.grid.size; h++) {
@@ -63,7 +62,7 @@ export class DistanceMeasurer {
             y: token.y + offsetY,
           };
           const distanceLabel = DistanceMeasurer._getDistanceLabel(origin, target, token, {
-            gridSpaces: true,
+            gridSpaces: DistanceMeasurer.gridSpaces,
             originToken: controlledToken,
           });
           let pText = new PreciseText(distanceLabel, CONFIG.canvasTextStyle);
@@ -84,45 +83,29 @@ export class DistanceMeasurer {
   }
 
   static onTriggerKeyUp() {
-    DistanceMeasurer.isPressed = false;
     DistanceMeasurer.deleteLabels();
     canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
   }
 
-  // _getGridHighlightPositions
-
   static clickLeft(pos) {
     DistanceMeasurer.highlightPosition(pos);
     DistanceMeasurer.drawLabels();
-    // if (!DistanceMeasurer.shape) {
-    //   DistanceMeasurer.shape = new PIXI.Rectangle(
-    //     0,
-    //     0,
-    //     canvas.grid.size,
-    //     canvas.grid.size
-    //   ).normalize();
-    // }
   }
 
   static _getDistanceLabel(origin, target, targetToken, options) {
-    const units = canvas.scene.grid.units;
-    let distance = canvas.grid.measureDistance(origin, target, options);
-    if (options.originToken) {
-      const originToken = options.originToken;
-      if (options.gridSpaces) {
-        distance +=
-          Math.round(
-            Math.abs(originToken.document.elevation - targetToken.document.elevation) /
-              canvas.dimensions.distance
-          ) * canvas.dimensions.distance;
-      } else {
-        distance += Math.round(
-          Math.abs(originToken.document.elevation - targetToken.document.elevation)
-        );
-      }
+    // If the tokens have elevation we want to create a faux target coordinate in 2d space
+    // so that we can then let foundry utils calculate the appropriate distance based on diagonal rules
+    let originElevation = options.originToken ? options.originToken.document.elevation : 0;
+    if (targetToken.document.elevation != 0) {
+      let verticalDistance =
+        (canvas.grid.size / canvas.dimensions.distance) *
+        Math.abs(targetToken.document.elevation - originElevation);
+      target.x += Math.round(verticalDistance * Math.cos(Math.toRadians(90)));
+      target.y += Math.round(verticalDistance * Math.sin(Math.toRadians(90)));
     }
-    // distance += Math.abs(originToken.document.elevation - targetToken.document.elevation);
-    return `${Math.round(distance)} ${units}`;
+
+    let distance = canvas.grid.measureDistance(origin, target, options);
+    return `${Math.round(distance)} ${canvas.scene.grid.units}`;
   }
 
   static _getVerticalDistance() {

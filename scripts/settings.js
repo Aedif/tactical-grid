@@ -264,12 +264,22 @@ export function init() {
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
   });
 
-  game.keybindings.register('aedifs-tactical-grid', 'displayDistance', {
-    name: 'Display Distance',
+  game.keybindings.register('aedifs-tactical-grid', 'displayDistanceGridSpacing', {
+    name: 'Display Distances (Grid Spacing)',
     hint: '',
     editable: [],
     onUp: DistanceMeasurer.onTriggerKeyUp,
     onDown: DistanceMeasurer.onTriggerKeyDown,
+    restricted: false,
+    precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
+  });
+
+  game.keybindings.register('aedifs-tactical-grid', 'displayDistance', {
+    name: 'Display Distances',
+    hint: '',
+    editable: [],
+    onUp: DistanceMeasurer.onTriggerKeyUp,
+    onDown: () => DistanceMeasurer.onTriggerKeyDown({ gridSpaces: false }),
     restricted: false,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
   });

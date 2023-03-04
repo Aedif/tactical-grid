@@ -23,7 +23,10 @@ export class GridMaskContainer extends CachedContainer {
    * assigns them one
    */
   drawMask(layer = canvas.activeLayer) {
-    if (!this._grid) this.deactivateMask();
+    if (!this._grid) {
+      this.deactivateMask();
+      return;
+    }
 
     const layerSetting = `${cleanLayerName(layer)}Enabled`;
     let sceneEnabled = canvas.scene.getFlag('aedifs-tactical-grid', layerSetting);
@@ -168,7 +171,6 @@ export class GridMaskContainer extends CachedContainer {
 
     if (shapeMask) {
       const { x, y } = target.center;
-      // console.log(x, y, hasPreview(target));
       shapeMask.position.set(x - shapeMask.width / 2, y - shapeMask.height / 2);
     }
   }
@@ -181,7 +183,7 @@ export class GridMaskContainer extends CachedContainer {
 
   deactivateMask() {
     this.destroyMask();
-    this._grid.visible = true;
+    if (this._grid) this._grid.visible = true;
   }
 
   destroyMask() {
