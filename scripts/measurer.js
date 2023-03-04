@@ -93,18 +93,27 @@ export class DistanceMeasurer {
   }
 
   static _getDistanceLabel(origin, target, targetToken, options) {
+    let distance;
     // If the tokens have elevation we want to create a faux target coordinate in 2d space
     // so that we can then let foundry utils calculate the appropriate distance based on diagonal rules
     let originElevation = options.originToken ? options.originToken.document.elevation : 0;
-    if (targetToken.document.elevation != 0) {
-      let verticalDistance =
-        (canvas.grid.size / canvas.dimensions.distance) *
-        Math.abs(targetToken.document.elevation - originElevation);
-      target.x += Math.round(verticalDistance * Math.cos(Math.toRadians(90)));
-      target.y += Math.round(verticalDistance * Math.sin(Math.toRadians(90)));
+    let verticalDistance =
+      (canvas.grid.size / canvas.dimensions.distance) *
+      Math.abs(targetToken.document.elevation - originElevation);
+    if (verticalDistance != 0) {
+      let dx = target.x - origin.x;
+      let dy = target.y - origin.y;
+      let mag = Math.sqrt(dx * dx + dy * dy);
+      let angle = Math.atan(verticalDistance / mag);
+      let length = mag / Math.cos(angle);
+
+      let ray = Ray.fromAngle(0, 0, angle, length);
+      const segments = [{ ray }];
+      distance = canvas.grid.grid.measureDistances(segments, options)[0];
+    } else {
+      distance = canvas.grid.measureDistance(origin, target, options);
     }
 
-    let distance = canvas.grid.measureDistance(origin, target, options);
     return `${Math.round(distance)} ${canvas.scene.grid.units}`;
   }
 

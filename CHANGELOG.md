@@ -1,3 +1,7 @@
+# 1.7.1
+
+- Improved distance accuracy when measuring elevated tokens
+
 # 1.7.0
 
 New Controls
@@ -7,6 +11,9 @@ New Controls
   - When when held the module will display relative distances for all tokens currently visible on the screen
   - If a single token is under control when the key is pressed the origin of these distances will be that token
   - While the key is held you can click anywhere on the map to change the origin of these measurements (indicated by a red square)
+  - At the moment only Square grids are properly supported
+
+* General bug fixes
 
 # 1.6.0
 
