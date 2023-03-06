@@ -1,6 +1,6 @@
+import { MODULE_CONFIG } from '../applications/settings.js';
 import { CustomSpriteMaskFilter } from '../filters/CustomSpriteMaskFilter.js';
-import { getDispositionColor, getGridColorString } from './utils.js';
-import { cleanLayerName, MODULE_CONFIG } from './settings.js';
+import { cleanLayerName, getDispositionColor, getGridColorString } from './utils.js';
 
 export class GridMaskContainer extends CachedContainer {
   /** @override */
@@ -28,25 +28,28 @@ export class GridMaskContainer extends CachedContainer {
       return;
     }
 
-    const layerSetting = `${cleanLayerName(layer)}Enabled`;
-    let sceneEnabled = canvas.scene.getFlag('aedifs-tactical-grid', layerSetting);
+    let sceneEnabled = canvas.scene.getFlag(
+      'aedifs-tactical-grid',
+      `${cleanLayerName(layer)}Enabled`
+    );
     if (sceneEnabled != null && !sceneEnabled) return this.deactivateMask();
-    if (sceneEnabled == null && !MODULE_CONFIG[layerSetting]) return this.deactivateMask();
+    if (sceneEnabled == null && !MODULE_CONFIG.layerEnabled[cleanLayerName(layer)])
+      return this.deactivateMask();
 
     this._grid.visible = false;
 
-    if (MODULE_CONFIG.enableInCombatOnly && !game.combat?.started) {
+    if (MODULE_CONFIG.enableOnCombatOnly && !game.combat?.started) {
       this.destroyMask();
       return;
     }
 
     const applicableTokens = layer.placeables.filter(
       (p) =>
-        (MODULE_CONFIG.controlled && p.controlled) ||
-        (MODULE_CONFIG.hover && (p.hover || hasPreview(p)))
+        (MODULE_CONFIG.enableOnControl && p.controlled) ||
+        (MODULE_CONFIG.enableOnHover && (p.hover || hasPreview(p)))
     );
 
-    if (MODULE_CONFIG.ruler && typeof libWrapper === 'function') {
+    if (MODULE_CONFIG.enableOnRuler && typeof libWrapper === 'function') {
       let ruler = canvas.controls.ruler;
       if (ruler && ruler._state !== Ruler.STATES.INACTIVE) {
         ruler.id = 'RULER';
@@ -84,7 +87,7 @@ export class GridMaskContainer extends CachedContainer {
         // Do nothing
       } else {
         let viewDistance = p.document?.getFlag('aedifs-tactical-grid', 'viewDistance');
-        if (viewDistance == null) viewDistance = MODULE_CONFIG.defaultViewLength;
+        if (viewDistance == null) viewDistance = MODULE_CONFIG.defaultViewDistance;
         if (!viewDistance) continue;
 
         let viewShape =
@@ -98,7 +101,7 @@ export class GridMaskContainer extends CachedContainer {
         if (shapeColor) {
           shapeColor = Number(Color.fromString(shapeColor));
         } else if (
-          MODULE_CONFIG.useDispositionColors &&
+          MODULE_CONFIG.assignDispositionBasedColor &&
           p.document?.hasOwnProperty('disposition')
         ) {
           shapeColor = getDispositionColor(p);

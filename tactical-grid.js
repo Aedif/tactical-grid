@@ -1,6 +1,12 @@
 import { GridMaskContainer } from './scripts/container.js';
-import { registerGridWrappers, unregisterGridWrappers } from './scripts/utils.js';
-import { cleanLayerName, EMBEDS_AND_LAYERS, init, MODULE_CONFIG } from './scripts/settings.js';
+import {
+  cleanLayerName,
+  EMBEDS_AND_LAYERS,
+  registerGridWrappers,
+  unregisterGridWrappers,
+} from './scripts/utils.js';
+import { MODULE_CONFIG, registerSettings } from './applications/settings.js';
+import { registerKeybindings } from './scripts/keybindings.js';
 
 let layerHooks = [];
 
@@ -14,7 +20,8 @@ export const GRID_MASK = {
  *  =================================
  */
 Hooks.on('init', () => {
-  init();
+  registerSettings();
+  registerKeybindings();
 });
 
 /** =========================
@@ -57,14 +64,14 @@ function registerLayerHooks(layer, drawMaskFunctionNames = [], setPositionFuncti
   unregisterLayerHooks();
   for (const fnName of drawMaskFunctionNames) {
     let id = Hooks.on(fnName, () => {
-      if (!MODULE_CONFIG[`${cleanLayerName(layer)}Enabled`]) return;
+      if (!MODULE_CONFIG.layerEnabled[cleanLayerName(layer)]) return;
       GRID_MASK.container?.drawMask(layer);
     });
     layerHooks.push([fnName, id]);
   }
   for (const fnName of setPositionFunctionNames) {
     let id = Hooks.on(fnName, (placeable) => {
-      if (MODULE_CONFIG[`${cleanLayerName(placeable.layer)}Enabled`]) {
+      if (MODULE_CONFIG.layerEnabled[cleanLayerName(placeable.layer)]) {
         GRID_MASK.container?.setMaskPosition(placeable);
       }
     });

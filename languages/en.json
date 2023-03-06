@@ -9,31 +9,31 @@
         "name": "Default Grid View Shape",
         "hint": "The shape of the grid mask."
       },
-      "tacticalGridCombatOnly": {
-        "name": "Grid Enable: Combat Only",
+      "enableOnCombatOnly": {
+        "name": "On Combat Only",
         "hint": "Grid will only be shown when in combat."
       },
-      "enableForControlled": {
-        "name": "Grid Enable: Controlled",
+      "enableOnControl": {
+        "name": "On Control",
         "hint": "Grid will be shown for controlled placeables."
       },
-      "enableForHover": {
-        "name": "Grid Enable: Hover",
+      "enableOnHover": {
+        "name": "On Hover",
         "hint": "Grid will be shown for hovered over placeables."
       },
       "mixColors": {
         "name": "Mix Colors",
-        "hint": "When enabled custom shape colors will be mixed/blended together."
+        "hint": "When enabled view shape colors will be mixed/blended together."
       },
-      "useDispositionColors": {
-        "name": "Default Color: Disposition",
-        "hint": "When enabled Token shape colors will default to their disposition."
+      "assignDispositionBasedColor": {
+        "name": "Assign Color Based on Disposition",
+        "hint": "When enabled Token view shape colors will default to their disposition:"
       },
       "layerEnable": {
         "hint": "Enable tactical grid for \"{layerName}\""
       },
-      "ruler": {
-        "name": "Ruler",
+      "enableOnRuler": {
+        "name": "On Ruler Drag",
         "hint": "Enabled grid for Ruler Measurements (requires libWrapper to be active)."
       }
     },
@@ -46,6 +46,10 @@
         "name": "Toggle Grid on Current Layer (Scene)",
         "hint": ""
       }
+    },
+    "common": {
+      "layers": "Layers",
+      "gridSpaces": "Grid Spaces"
     }
   }
 }

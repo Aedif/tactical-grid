@@ -1,0 +1,136 @@
+<form>
+
+    <nav class="sheet-tabs tabs" data-group="main" aria-role="Form Tab Navigation">
+        <a class="item active" data-tab="enable"><i class="fas fa-wrench"></i> Enable Grid</a>
+        <a class="item" data-tab="appearance"><i class="fas fa-expand"></i> Appearance</a>
+    </nav>
+
+    <section class = "content">
+        <div class="tab active" data-group="main" data-tab="enable">
+
+            <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.enableOnControl.name"}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="enableOnControl" data-dtype="Boolean" value="{{enableOnControl}}" {{#if enableOnControl}}checked{{/if}}>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.enableOnControl.hint"}}</p>
+            </div>
+
+            <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.enableOnHover.name"}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="enableOnHover" data-dtype="Boolean" value="{{enableOnHover}}" {{#if enableOnHover}}checked{{/if}}>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.enableOnHover.hint"}}</p>
+            </div>
+
+            <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.enableOnCombatOnly.name"}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="enableOnCombatOnly" data-dtype="Boolean" value="{{enableOnCombatOnly}}" {{#if enableOnCombatOnly}}checked{{/if}}>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.enableOnCombatOnly.hint"}}</p>
+            </div>
+
+            <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.enableOnRuler.name"}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="enableOnRuler" data-dtype="Boolean" value="{{enableOnRuler}}" {{#if enableOnRuler}}checked{{/if}}>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.enableOnRuler.hint"}}</p>
+            </div>
+
+            <fieldset>
+                <legend>{{localize "aedifs-tactical-grid.common.layers"}}</legend>
+                {{#each layerEnabled}}
+                <div class="form-group">
+                    <label>{{@key}}</label>
+                    <div class="form-fields">
+                        <input type="checkbox" name="layerEnabled.{{@key}}" data-dtype="Boolean" value="{{this}}" {{#if this}}checked{{/if}}>
+                    </div>
+                </div>
+                {{/each}}
+            </fieldset>
+        </div>
+
+        <div class="tab active" data-group="main" data-tab="appearance">
+            <div class="form-group slim">
+                <label>{{localize "aedifs-tactical-grid.settings.defaultViewDistance.name"}} <span class="units">({{localize "aedifs-tactical-grid.common.gridSpaces"}})</span></label>
+                <div class="form-fields">
+                  <input type="number" value="{{defaultViewDistance}}" step="any" name="defaultViewDistance">
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.defaultViewDistance.hint"}}</p>
+              </div>
+
+              <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.defaultViewShape.name"}}</label>
+                <div class="form-fields">
+                  <select name="defaultViewShape">
+                    {{#each viewShapes as |shape|}}
+                    <option value="{{shape.value}}" {{#if (eq ../defaultViewShape shape.value)}}selected="selected"{{/if}}>{{shape.label}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.defaultViewShape.hint"}}</p>
+              </div>
+
+              <hr>
+
+              <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.assignDispositionBasedColor.name"}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="assignDispositionBasedColor" data-dtype="Boolean" value="{{assignDispositionBasedColor}}" {{#if assignDispositionBasedColor}}checked{{/if}}>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.assignDispositionBasedColor.hint"}}</p>
+              </div>
+
+              <fieldset>
+                <div class="form-group">
+                    <label>{{localize "ACTOR.TypeCharacter"}}</label>
+                    <div class="form-fields">
+                        <input class="color" type="text" name="dispositionColors.playerOwner" value="{{dispositionColors.playerOwner}}">
+                        <input type="color" value="{{dispositionColors.playerOwner}}" data-edit="tint">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>{{localize "TOKEN.FRIENDLY"}}</label>
+                    <div class="form-fields">
+                        <input class="color" type="text" name="dispositionColors.friendly" value="{{dispositionColors.friendly}}">
+                        <input type="color" value="{{dispositionColors.friendly}}" data-edit="tint">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>{{localize "TOKEN.NEUTRAL"}}</label>
+                    <div class="form-fields">
+                        <input class="color" type="text" name="dispositionColors.neutral" value="{{dispositionColors.neutral}}">
+                        <input type="color" value="{{dispositionColors.neutral}}" data-edit="tint">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>{{localize "TOKEN.HOSTILE"}}</label>
+                    <div class="form-fields">
+                        <input class="color" type="text" name="dispositionColors.hostile" value="{{dispositionColors.hostile}}">
+                        <input type="color" value="{{dispositionColors.hostile}}" data-edit="tint">
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.mixColors.name"}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="mixColors" data-dtype="Boolean" value="{{mixColors}}" {{#if mixColors}}checked{{/if}}>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.mixColors.hint"}}</p>
+            </div>
+        </div>
+    </section>
+
+    <input type="hidden" name="effect" value="{{effect}}">
+
+    <footer class="sheet-footer flexrow">
+        <button type="submit"><i class="far fa-save"></i>{{localize "token-variants.common.apply"}}</button>
+    </footer>
+</form>
