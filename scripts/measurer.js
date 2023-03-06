@@ -28,7 +28,7 @@ export class DistanceMeasurer {
       y,
       color: 0xff0000,
       border: 0xff0000,
-      alpha: 1.0,
+      alpha: 0.2,
     });
   }
 

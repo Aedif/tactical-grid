@@ -33,8 +33,8 @@
         "hint": "Enable tactical grid for \"{layerName}\""
       },
       "enableOnRuler": {
-        "name": "On Ruler Drag",
-        "hint": "Enabled grid for Ruler Measurements (requires libWrapper to be active)."
+        "name": "Enable Tactical Grid For Ruler",
+        "hint": "Enables grid for Ruler Measurements (requires libWrapper to be active)."
       }
     },
     "keybindings": {
@@ -49,7 +49,8 @@
     },
     "common": {
       "layers": "Layers",
-      "gridSpaces": "Grid Spaces"
+      "gridSpaces": "Grid Spaces",
+      "color": "Color"
     }
   }
 }

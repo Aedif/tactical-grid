@@ -57,6 +57,15 @@ export class GridMaskContainer extends CachedContainer {
           Object.defineProperty(ruler, 'center', {
             get: () => ruler.destination,
           });
+          Object.defineProperty(ruler, 'document', {
+            value: {
+              getFlag: (_, flag) => {
+                if (flag === 'viewDistance') return MODULE_CONFIG.rulerViewDistance;
+                else if (flag === 'viewShape') return MODULE_CONFIG.rulerViewShape;
+                else if (flag === 'color') return MODULE_CONFIG.rulerColor;
+              },
+            },
+          });
         }
         applicableTokens.push(ruler);
       }

@@ -3,6 +3,7 @@
     <nav class="sheet-tabs tabs" data-group="main" aria-role="Form Tab Navigation">
         <a class="item active" data-tab="enable"><i class="fas fa-wrench"></i> Enable Grid</a>
         <a class="item" data-tab="appearance"><i class="fas fa-expand"></i> Appearance</a>
+        <a class="item" data-tab="ruler"><i class="fas fa-expand"></i> Ruler</a>
     </nav>
 
     <section class = "content">
@@ -32,14 +33,6 @@
                 <p class="notes">{{localize "aedifs-tactical-grid.settings.enableOnCombatOnly.hint"}}</p>
             </div>
 
-            <div class="form-group">
-                <label>{{localize "aedifs-tactical-grid.settings.enableOnRuler.name"}}</label>
-                <div class="form-fields">
-                    <input type="checkbox" name="enableOnRuler" data-dtype="Boolean" value="{{enableOnRuler}}" {{#if enableOnRuler}}checked{{/if}}>
-                </div>
-                <p class="notes">{{localize "aedifs-tactical-grid.settings.enableOnRuler.hint"}}</p>
-            </div>
-
             <fieldset>
                 <legend>{{localize "aedifs-tactical-grid.common.layers"}}</legend>
                 {{#each layerEnabled}}
@@ -53,7 +46,7 @@
             </fieldset>
         </div>
 
-        <div class="tab active" data-group="main" data-tab="appearance">
+        <div class="tab" data-group="main" data-tab="appearance">
             <div class="form-group slim">
                 <label>{{localize "aedifs-tactical-grid.settings.defaultViewDistance.name"}} <span class="units">({{localize "aedifs-tactical-grid.common.gridSpaces"}})</span></label>
                 <div class="form-fields">
@@ -89,7 +82,7 @@
                     <label>{{localize "ACTOR.TypeCharacter"}}</label>
                     <div class="form-fields">
                         <input class="color" type="text" name="dispositionColors.playerOwner" value="{{dispositionColors.playerOwner}}">
-                        <input type="color" value="{{dispositionColors.playerOwner}}" data-edit="tint">
+                        <input type="color" value="{{dispositionColors.playerOwner}}" data-edit="dispositionColors.playerOwner">
                     </div>
                 </div>
 
@@ -97,7 +90,7 @@
                     <label>{{localize "TOKEN.FRIENDLY"}}</label>
                     <div class="form-fields">
                         <input class="color" type="text" name="dispositionColors.friendly" value="{{dispositionColors.friendly}}">
-                        <input type="color" value="{{dispositionColors.friendly}}" data-edit="tint">
+                        <input type="color" value="{{dispositionColors.friendly}}" data-edit="dispositionColors.friendly">
                     </div>
                 </div>
 
@@ -105,7 +98,7 @@
                     <label>{{localize "TOKEN.NEUTRAL"}}</label>
                     <div class="form-fields">
                         <input class="color" type="text" name="dispositionColors.neutral" value="{{dispositionColors.neutral}}">
-                        <input type="color" value="{{dispositionColors.neutral}}" data-edit="tint">
+                        <input type="color" value="{{dispositionColors.neutral}}" data-edit="dispositionColors.neutral">
                     </div>
                 </div>
 
@@ -113,7 +106,7 @@
                     <label>{{localize "TOKEN.HOSTILE"}}</label>
                     <div class="form-fields">
                         <input class="color" type="text" name="dispositionColors.hostile" value="{{dispositionColors.hostile}}">
-                        <input type="color" value="{{dispositionColors.hostile}}" data-edit="tint">
+                        <input type="color" value="{{dispositionColors.hostile}}" data-edit="dispositionColors.hostile">
                     </div>
                 </div>
             </fieldset>
@@ -124,6 +117,41 @@
                     <input type="checkbox" name="mixColors" data-dtype="Boolean" value="{{mixColors}}" {{#if mixColors}}checked{{/if}}>
                 </div>
                 <p class="notes">{{localize "aedifs-tactical-grid.settings.mixColors.hint"}}</p>
+            </div>
+        </div>
+
+        <div class="tab" data-group="main" data-tab="ruler">
+            <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.enableOnRuler.name"}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="enableOnRuler" data-dtype="Boolean" value="{{enableOnRuler}}" {{#if enableOnRuler}}checked{{/if}}>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.enableOnRuler.hint"}}</p>
+            </div>
+            <div class="form-group slim">
+                <label>View Distance <span class="units">({{localize "aedifs-tactical-grid.common.gridSpaces"}})</span></label>
+                <div class="form-fields">
+                <input type="number" value="{{rulerViewDistance}}" step="any" name="rulerViewDistance">
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.defaultViewDistance.hint"}}</p>
+            </div>
+            <div class="form-group">
+                <label>View Shape</label>
+                <div class="form-fields">
+                    <select name="rulerViewShape">
+                    {{#each viewShapes as |shape|}}
+                    <option value="{{shape.value}}" {{#if (eq ../rulerViewShape shape.value)}}selected="selected"{{/if}}>{{shape.label}}</option>
+                    {{/each}}
+                    </select>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.defaultViewShape.hint"}}</p>
+            </div>
+            <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.common.color"}}</label>
+                <div class="form-fields">
+                    <input class="color" type="text" name="rulerColor" value="{{rulerColor}}">
+                    <input type="color" value="{{rulerColor}}" data-edit="rulerColor">
+                </div>
             </div>
         </div>
     </section>

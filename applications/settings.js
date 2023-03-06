@@ -28,6 +28,9 @@ export const MODULE_CONFIG = {
     SoundsLayer: false,
     NotesLayer: false,
   },
+  rulerViewDistance: 4,
+  rulerViewShape: 'circle-soft',
+  rulerColor: '',
 };
 
 export default class SettingsConfig extends FormApplication {
