@@ -1,3 +1,18 @@
+# 1.8.0
+
+- Reworked setting into a neater `Tactical Grid Settings` form
+- Disposition based grid colors can now be configured via a UI
+- New world settings:
+  - Ruler > `View Distance`
+  - Ruler > `View Shape`
+  - Ruler > `Color`
+    - Token equivalents specific to the Ruler
+- New client settings
+  - `Display Distance on Ruler Drag`
+    - When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them
+  - `Ruler: Grid Spaces`
+    - Ruler triggered distance measurements will be calculated grid space increments
+
 # 1.7.1
 
 - Improved distance accuracy when measuring elevated tokens
