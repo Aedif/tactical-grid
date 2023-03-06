@@ -31,7 +31,18 @@ export const MODULE_CONFIG = {
   rulerViewDistance: 4,
   rulerViewShape: 'circle-soft',
   rulerColor: '',
+  rulerActivatedDistanceMeasure: false,
+  rulerDistanceMeasureGirdSpaces: true,
 };
+
+const VIEW_SHAPE_OPTIONS = [
+  { label: 'Circle', value: 'circle' },
+  { label: 'Square', value: 'square' },
+  { label: 'Circle (Soft)', value: 'circle-soft' },
+  { label: 'Square (Soft)', value: 'square-soft' },
+  { label: 'Hexagon (Column)', value: 'hexagonCol' },
+  { label: 'Hexagon (Row)', value: 'hexagonRow' },
+];
 
 export default class SettingsConfig extends FormApplication {
   constructor() {
@@ -56,14 +67,7 @@ export default class SettingsConfig extends FormApplication {
     const data = super.getData(options);
     mergeObject(data, deepClone(MODULE_CONFIG));
 
-    data.viewShapes = [
-      { label: 'Circle', value: 'circle' },
-      { label: 'Square', value: 'square' },
-      { label: 'Circle (Soft)', value: 'circle-soft' },
-      { label: 'Square (Soft)', value: 'square-soft' },
-      { label: 'Hexagon (Column)', value: 'hexagonCol' },
-      { label: 'Hexagon (Row)', value: 'hexagonRow' },
-    ];
+    data.viewShapes = VIEW_SHAPE_OPTIONS;
 
     for (const [k, v] of Object.entries(data.dispositionColors)) {
       data.dispositionColors[k] = new Color(v).toString();
@@ -103,10 +107,6 @@ export function registerSettings() {
   const settings = game.settings.get('aedifs-tactical-grid', 'settings');
   mergeObject(MODULE_CONFIG, settings);
 
-  if (MODULE_CONFIG.enableOnRuler) {
-    registerRulerLibWrapperMethods();
-  }
-
   game.settings.registerMenu('aedifs-tactical-grid', 'settings', {
     name: 'Configure Settings',
     hint: '',
@@ -116,6 +116,43 @@ export function registerSettings() {
     type: SettingsConfig,
     restricted: true,
   });
+
+  game.settings.register('aedifs-tactical-grid', 'rulerActivatedDistanceMeasure', {
+    name: 'Display Distances on Ruler Drag',
+    hint: 'When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them.',
+    scope: 'client',
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: async (val) => {
+      MODULE_CONFIG.rulerActivatedDistanceMeasure = val;
+      unregisterRulerLibWrapperMethods();
+      if (val) registerRulerLibWrapperMethods();
+    },
+  });
+  MODULE_CONFIG.rulerActivatedDistanceMeasure = game.settings.get(
+    'aedifs-tactical-grid',
+    'rulerActivatedDistanceMeasure'
+  );
+  game.settings.register('aedifs-tactical-grid', 'rulerDistanceMeasureGirdSpaces', {
+    name: 'Ruler: Grid Spaces',
+    hint: 'Calculate Ruler triggered distance measurements in grid space increments.',
+    scope: 'client',
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: async (val) => {
+      MODULE_CONFIG.rulerDistanceMeasureGirdSpaces = val;
+    },
+  });
+  MODULE_CONFIG.rulerDistanceMeasureGirdSpaces = game.settings.get(
+    'aedifs-tactical-grid',
+    'rulerDistanceMeasureGirdSpaces'
+  );
+
+  if (MODULE_CONFIG.enableOnRuler || MODULE_CONFIG.rulerActivatedDistanceMeasure) {
+    registerRulerLibWrapperMethods();
+  }
 
   /** =======================================================
    *  Insert token specific viewDistance and viewShape flags
@@ -128,8 +165,10 @@ export function registerSettings() {
     const gridColor = getGridColorString();
 
     let options = '<option value=""></option>';
-    for (const [k, v] of Object.entries(shapeOptions)) {
-      options += `<option value="${k}" ${viewShape === k ? 'selected' : ''}>${v}</option>`;
+    for (const opt of VIEW_SHAPE_OPTIONS) {
+      options += `<option value="${opt.value}" ${viewShape === opt.value ? 'selected' : ''}>${
+        opt.label
+      }</option>`;
     }
 
     const control = $(`
@@ -227,7 +266,8 @@ function _onSettingChange(newSettings) {
 
   if ('enableOnRuler' in diff) {
     unregisterRulerLibWrapperMethods();
-    if (MODULE_CONFIG.enableOnRuler) registerRulerLibWrapperMethods();
+    if (MODULE_CONFIG.enableOnRuler || MODULE_CONFIG.rulerActivatedDistanceMeasure)
+      registerRulerLibWrapperMethods();
   }
 
   if (
@@ -248,45 +288,74 @@ export async function updateSettings(newSettings) {
 // Ruler Related Wrappers
 // ======================
 
+let rulerWrappers = [];
+
 function registerRulerLibWrapperMethods() {
   if (typeof libWrapper === 'function') {
-    libWrapper.register(
-      'aedifs-tactical-grid',
-      'Ruler.prototype._onDragStart',
-      function (wrapped, ...args) {
-        let result = wrapped(...args);
-        GRID_MASK.container.drawMask();
-        return result;
-      },
-      'WRAPPER'
-    );
+    let id;
+    if (MODULE_CONFIG.enableOnRuler) {
+      id = libWrapper.register(
+        'aedifs-tactical-grid',
+        'Ruler.prototype._onDragStart',
+        function (wrapped, ...args) {
+          let result = wrapped(...args);
+          GRID_MASK.container.drawMask();
+          return result;
+        },
+        'WRAPPER'
+      );
+      rulerWrappers.push(id);
+      id = libWrapper.register(
+        'aedifs-tactical-grid',
+        'Ruler.prototype._onMouseMove',
+        function (wrapped, ...args) {
+          let result = wrapped(...args);
+          GRID_MASK.container.setMaskPosition(this);
+          return result;
+        },
+        'WRAPPER'
+      );
+      rulerWrappers.push(id);
+    }
 
-    libWrapper.register(
-      'aedifs-tactical-grid',
-      'Ruler.prototype._endMeasurement',
-      function (wrapped, ...args) {
-        let result = wrapped(...args);
-        GRID_MASK.container.drawMask();
-        return result;
-      },
-      'WRAPPER'
-    );
+    if (MODULE_CONFIG.rulerActivatedDistanceMeasure) {
+      id = libWrapper.register(
+        'aedifs-tactical-grid',
+        'Ruler.prototype.measure',
+        function (wrapped, ...args) {
+          let result = wrapped(...args);
+          DistanceMeasurer.showMeasures({
+            gridSpaces: MODULE_CONFIG.rulerDistanceMeasureGirdSpaces,
+          });
+          return result;
+        },
+        'WRAPPER'
+      );
+      rulerWrappers.push(id);
+    }
 
-    libWrapper.register(
-      'aedifs-tactical-grid',
-      'Ruler.prototype._onMouseMove',
-      function (wrapped, ...args) {
-        let result = wrapped(...args);
-        GRID_MASK.container.setMaskPosition(this);
-        return result;
-      },
-      'WRAPPER'
-    );
+    if (MODULE_CONFIG.enableOnRuler || MODULE_CONFIG.rulerActivatedDistanceMeasure) {
+      id = libWrapper.register(
+        'aedifs-tactical-grid',
+        'Ruler.prototype._endMeasurement',
+        function (wrapped, ...args) {
+          let result = wrapped(...args);
+          if (MODULE_CONFIG.enableOnRuler) GRID_MASK.container.drawMask();
+          if (MODULE_CONFIG.rulerActivatedDistanceMeasure) DistanceMeasurer.hideMeasures();
+          return result;
+        },
+        'WRAPPER'
+      );
+      rulerWrappers.push(id);
+    }
   }
 }
 
 function unregisterRulerLibWrapperMethods() {
   if (typeof libWrapper === 'function') {
-    libWrapper.unregister_all('aedifs-tactical-grid');
+    for (const id of rulerWrappers) {
+      libWrapper.unregister('aedifs-tactical-grid', id);
+    }
+    rulerWrappers = [];
   }
 }

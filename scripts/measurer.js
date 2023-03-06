@@ -1,20 +1,34 @@
+import { MODULE_CONFIG } from '../applications/settings.js';
+
 export class DistanceMeasurer {
   static hlName = 'ATG';
   static shape;
   static gridSpaces = true;
 
-  static onTriggerKeyDown({ gridSpaces = true }) {
+  static showMeasures({ gridSpaces = true } = {}) {
     DistanceMeasurer.gridSpaces = gridSpaces;
     if (!canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
       canvas.grid.addHighlightLayer(DistanceMeasurer.hlName);
     }
 
-    if (canvas.tokens.controlled.length === 1) {
+    const ruler = canvas.controls.ruler;
+    if (
+      MODULE_CONFIG.rulerActivatedDistanceMeasure &&
+      ruler &&
+      ruler._state !== Ruler.STATES.INACTIVE
+    ) {
+      DistanceMeasurer.highlightPosition({ x: ruler.destination.x, y: ruler.destination.y });
+    } else if (canvas.tokens.controlled.length === 1) {
       let controlled = canvas.tokens.controlled[0];
       DistanceMeasurer.highlightPosition({ x: controlled.x, y: controlled.y });
     }
 
     DistanceMeasurer.drawLabels();
+  }
+
+  static hideMeasures() {
+    DistanceMeasurer.deleteLabels();
+    canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
   }
 
   static highlightPosition(pos) {
@@ -65,26 +79,33 @@ export class DistanceMeasurer {
             gridSpaces: DistanceMeasurer.gridSpaces,
             originToken: controlledToken,
           });
-          let pText = new PreciseText(distanceLabel, CONFIG.canvasTextStyle);
-          pText.anchor.set(0.5);
-          pText = token.addChild(pText);
-          pText.atgText = true;
-          pText.x = offsetX;
-          pText.y = offsetY;
+
+          DistanceMeasurer.addUpdateLabel(token, offsetX, offsetY, distanceLabel);
         }
       }
     }
+  }
+
+  static addUpdateLabel(token, x, y, text) {
+    for (const ch of token.children) {
+      if (ch.atgText && ch.x === x && ch.y === y) {
+        ch.text = text;
+        return;
+      }
+    }
+    let pText = new PreciseText(text, CONFIG.canvasTextStyle);
+    pText.anchor.set(0.5);
+
+    pText = token.addChild(pText);
+    pText.atgText = true;
+    pText.x = x;
+    pText.y = y;
   }
 
   static deleteLabels() {
     canvas.tokens.placeables.forEach((p) => {
       p.children.filter((ch) => ch.atgText).forEach((ch) => p.removeChild(ch)?.destroy());
     });
-  }
-
-  static onTriggerKeyUp() {
-    DistanceMeasurer.deleteLabels();
-    canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
   }
 
   static clickLeft(pos) {
