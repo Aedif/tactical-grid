@@ -10,34 +10,17 @@ https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b
 
 ## Settings
 
-- Grid Enable: Controlled
-  - Grid will be shown for controlled placeables.
-- Grid Enable: Hover
-  - Grid will be shown for hovered over placeables.
-- Grid Enable: Combat Only
-  - Grid will only be shown when in combat.
-- Default Grid View Distance
-  - Number of grid spaces to be displayed.
-- Default Grid View Shape
-  - The shape of the grid mask.
-    - Circle
-    - Circle (Soft)
-    - Square
-    - Square (Soft)
-    - Hexagon (Row)
-    - Hexagon (Column)
-- Ruler
-  - Enabled grid for Ruler Measurements (requires libWrapper to be active)
-- {layer name} Layer
-  - Enable tactical grid for this layer
-  
-### Color Settings
+### World Settings
+![settings1](https://user-images.githubusercontent.com/7693704/223280699-9058d13a-a288-4a4b-b757-3bc4d2051f2f.png)
+![settings2](https://user-images.githubusercontent.com/7693704/223280755-9051066f-9bf6-4f96-b482-46265ca26bdf.png)
+![settings3](https://user-images.githubusercontent.com/7693704/223280801-57925ae1-e551-4973-ba88-5c6cf79769c2.png)
 
-- Default Color: Disposition
-  - Token view shape colors will default to their disposition
-  - `game.settings.get('aedifs-tactical-grid', 'dispositionColors')`
-- Mix Colors
-  - Instead of view shape colors overriding each other when they overlap, they will get blended into a new color
+### Client Settings
+
+- Display Distances on Ruler Drag
+  - When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them
+- Ruler: Grid Spaces
+  - Calculate Ruler triggered distance measurements in grid space increments
   
 ## Controls
   
