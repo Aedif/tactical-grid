@@ -1,5 +1,3 @@
-import { EMBEDS_AND_LAYERS } from '../scripts/utils.js';
-
 export function readDeprecated(settings) {
   game.settings.register('aedifs-tactical-grid', 'enableForControlled', {
     scope: 'world',
@@ -81,7 +79,17 @@ export function readDeprecated(settings) {
   });
   settings.enableOnRuler = game.settings.get('aedifs-tactical-grid', 'rulerEnabled');
 
-  for (const [embedName, layerName] of EMBEDS_AND_LAYERS) {
+  const embedsAndLayers = [
+    ['Token', 'TokenLayer'],
+    ['MeasuredTemplate', 'TemplateLayer'],
+    ['Tile', 'TilesLayer'],
+    ['Drawing', 'DrawingsLayer'],
+    ['Wall', 'WallsLayer'],
+    ['AmbientLight', 'LightingLayer'],
+    ['AmbientSound', 'SoundsLayer'],
+    ['Note', 'NotesLayer'],
+  ];
+  for (const [embedName, layerName] of embedsAndLayers) {
     const settingName = `${layerName}Enabled`;
     game.settings.register('aedifs-tactical-grid', settingName, {
       scope: 'world',

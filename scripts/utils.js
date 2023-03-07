@@ -1,16 +1,5 @@
 import { MODULE_CONFIG } from '../applications/settings.js';
 
-export const EMBEDS_AND_LAYERS = [
-  ['Token', 'TokenLayer'],
-  ['MeasuredTemplate', 'TemplateLayer'],
-  ['Tile', 'TilesLayer'],
-  ['Drawing', 'DrawingsLayer'],
-  ['Wall', 'WallsLayer'],
-  ['AmbientLight', 'LightingLayer'],
-  ['AmbientSound', 'SoundsLayer'],
-  ['Note', 'NotesLayer'],
-];
-
 // Because PF2e is a special snowflake
 export function cleanLayerName(layer) {
   return layer.name.replace('PF2e', '');

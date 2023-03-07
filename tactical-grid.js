@@ -1,14 +1,7 @@
 import { GridMaskContainer } from './scripts/container.js';
-import {
-  cleanLayerName,
-  EMBEDS_AND_LAYERS,
-  registerGridWrappers,
-  unregisterGridWrappers,
-} from './scripts/utils.js';
+import { cleanLayerName, registerGridWrappers, unregisterGridWrappers } from './scripts/utils.js';
 import { MODULE_CONFIG, registerSettings } from './applications/settings.js';
 import { registerKeybindings } from './scripts/keybindings.js';
-
-let layerHooks = [];
 
 // Container used as Grid Mask
 export const GRID_MASK = {
@@ -32,51 +25,58 @@ Hooks.on('canvasReady', (canvas) => {
   if (!GRID_MASK.container) {
     GRID_MASK.container = new GridMaskContainer();
     GRID_MASK.container.blendMode = PIXI.BLEND_MODES.ADD;
+
+    /** ========================
+     *  Handle Layer Activations
+     *  ========================
+     */
+    canvas.layers
+      .filter((l) => l instanceof PlaceablesLayer)
+      .forEach((layer) => {
+        const layerName = cleanLayerName(layer);
+        Hooks.on(`activate${layerName}`, (layer) => {
+          registerLayerHooks(layer);
+        });
+      });
+    // Need to register hooks outside of `activate` as by this point we will have missed the first activation
+    if (canvas.activeLayer instanceof PlaceablesLayer) registerLayerHooks(canvas.activeLayer);
   }
   GRID_MASK.container.onCanvasReady();
   game.GRID_MASK = GRID_MASK;
 });
 
-/** ========================
- *  Handle Layer Activations
- *  ========================
- */
-for (const [embedName, layerName] of EMBEDS_AND_LAYERS) {
-  Hooks.on(`activate${layerName}`, (layer) => {
-    registerLayerHooks(
-      layer,
-      [`control${embedName}`, `hover${embedName}`, `destroy${embedName}`],
-      [`refresh${embedName}`]
-    );
-
-    GRID_MASK.container?.drawMask();
-  });
-}
+let LAYER_HOOKS = [];
 
 function unregisterLayerHooks() {
-  for (const [name, id] of layerHooks) {
+  for (const [name, id] of LAYER_HOOKS) {
     Hooks.off(name, id);
   }
-  layerHooks = [];
+  LAYER_HOOKS = [];
 }
 
-function registerLayerHooks(layer, drawMaskFunctionNames = [], setPositionFunctionNames = []) {
+function registerLayerHooks(layer) {
   unregisterLayerHooks();
+
+  const embedName = layer.constructor.documentName;
+  const drawMaskFunctionNames = [`control${embedName}`, `hover${embedName}`, `destroy${embedName}`];
   for (const fnName of drawMaskFunctionNames) {
     let id = Hooks.on(fnName, () => {
       if (!MODULE_CONFIG.layerEnabled[cleanLayerName(layer)]) return;
       GRID_MASK.container?.drawMask(layer);
     });
-    layerHooks.push([fnName, id]);
+    LAYER_HOOKS.push([fnName, id]);
   }
+
+  const setPositionFunctionNames = [`refresh${embedName}`];
   for (const fnName of setPositionFunctionNames) {
     let id = Hooks.on(fnName, (placeable) => {
       if (MODULE_CONFIG.layerEnabled[cleanLayerName(placeable.layer)]) {
         GRID_MASK.container?.setMaskPosition(placeable);
       }
     });
-    layerHooks.push([fnName, id]);
+    LAYER_HOOKS.push([fnName, id]);
   }
+  GRID_MASK.container?.drawMask();
 }
 
 /** ===============================
