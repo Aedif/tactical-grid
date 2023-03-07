@@ -1,5 +1,7 @@
 import { MODULE_CONFIG } from '../applications/settings.js';
 
+export let TEXT_STYLE;
+
 export class DistanceMeasurer {
   static hlName = 'ATG';
   static shape;
@@ -18,6 +20,8 @@ export class DistanceMeasurer {
       ruler._state !== Ruler.STATES.INACTIVE
     ) {
       DistanceMeasurer.highlightPosition({ x: ruler.destination.x, y: ruler.destination.y });
+    } else if (canvas.tokens.hover) {
+      DistanceMeasurer.highlightPosition({ x: canvas.tokens.hover.x, y: canvas.tokens.hover.y });
     } else if (canvas.tokens.controlled.length === 1) {
       let controlled = canvas.tokens.controlled[0];
       DistanceMeasurer.highlightPosition({ x: controlled.x, y: controlled.y });
@@ -58,13 +62,15 @@ export class DistanceMeasurer {
       y: Number(originY) + canvas.grid.size / 2,
     };
 
-    let controlledToken;
-    if (canvas.tokens.controlled.length === 1) {
-      controlledToken = canvas.tokens.controlled[0];
+    let originToken;
+    if (canvas.tokens.hover) {
+      originToken = canvas.tokens.hover;
+    } else if (canvas.tokens.controlled.length === 1) {
+      originToken = canvas.tokens.controlled[0];
     }
 
     const visibleTokens = canvas.tokens.placeables.filter(
-      (p) => p.visible //&& p.id !== controlledToken?.id
+      (p) => p.visible //&& p.id !== originToken?.id
     );
     for (const token of visibleTokens) {
       for (let h = 0; h < token.h / canvas.grid.size; h++) {
@@ -77,7 +83,7 @@ export class DistanceMeasurer {
           };
           const distanceLabel = DistanceMeasurer._getDistanceLabel(origin, target, token, {
             gridSpaces: DistanceMeasurer.gridSpaces,
-            originToken: controlledToken,
+            originToken,
           });
 
           DistanceMeasurer.addUpdateLabel(token, offsetX, offsetY, distanceLabel);
@@ -93,7 +99,10 @@ export class DistanceMeasurer {
         return;
       }
     }
-    let pText = new PreciseText(text, CONFIG.canvasTextStyle);
+    if (!TEXT_STYLE) {
+      TEXT_STYLE = PreciseText.getTextStyle(MODULE_CONFIG.measurement);
+    }
+    let pText = new PreciseText(text, TEXT_STYLE);
     pText.anchor.set(0.5);
 
     pText = token.addChild(pText);
@@ -135,7 +144,11 @@ export class DistanceMeasurer {
       distance = canvas.grid.measureDistance(origin, target, options);
     }
 
-    return `${Math.round(distance)} ${canvas.scene.grid.units}`;
+    let precision = 10 ** MODULE_CONFIG.measurement.precision;
+    let number = parseFloat(
+      (Math.round(distance * precision) / precision).toFixed(MODULE_CONFIG.measurement.precision)
+    );
+    return `${number} ${canvas.scene.grid.units}`;
   }
 
   static _getVerticalDistance() {

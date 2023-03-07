@@ -2,8 +2,9 @@
 
     <nav class="sheet-tabs tabs" data-group="main" aria-role="Form Tab Navigation">
         <a class="item active" data-tab="enable"><i class="fas fa-wrench"></i> Enable Grid</a>
-        <a class="item" data-tab="appearance"><i class="fas fa-expand"></i> Appearance</a>
-        <a class="item" data-tab="ruler"><i class="fas fa-expand"></i> Ruler</a>
+        <a class="item" data-tab="grid"><i class="fas fa-expand"></i> Grid</a>
+        <a class="item" data-tab="ruler"><i class="fas fa-ruler"></i> Ruler</a>
+        <a class="item" data-tab="measurement"><i class="fas fa-calculator"></i> Measurement</a>
     </nav>
 
     <section class = "content">
@@ -46,7 +47,7 @@
             </fieldset>
         </div>
 
-        <div class="tab" data-group="main" data-tab="appearance">
+        <div class="tab" data-group="main" data-tab="grid">
             <div class="form-group slim">
                 <label>{{localize "aedifs-tactical-grid.settings.defaultViewDistance.name"}} <span class="units">({{localize "aedifs-tactical-grid.common.gridSpaces"}})</span></label>
                 <div class="form-fields">
@@ -151,6 +152,41 @@
                 <div class="form-fields">
                     <input class="color" type="text" name="rulerColor" value="{{rulerColor}}">
                     <input type="color" value="{{rulerColor}}" data-edit="rulerColor">
+                </div>
+            </div>
+        </div>
+
+        <div class="tab" data-group="main" data-tab="measurement">
+            <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.common.precision"}} <span class="units">({{localize "aedifs-tactical-grid.common.decimalPlaces"}})</span></label>
+                <div class="form-fields">
+                    <input type="range" name="measurement.precision" value="{{measurement.precision}}" min="0" max="3" step="1">
+                    <span class="range-value">{{measurement.precision}}</span>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.measurementPrecision.hint"}}</p>
+            </div>
+            <div class="form-group">
+                <label>{{localize "DRAWING.FontFamily"}}</label>
+                <div class="form-fields">
+                    <select name="measurement.fontFamily">
+                    {{#each fonts as |font|}}
+                    <option value="{{font}}" {{#if (eq ../measurement.fontFamily font)}}selected="selected"{{/if}}>{{font}}</option>
+                    {{/each}}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>{{localize "DRAWING.FontSize"}}</label>
+                <div class="form-fields">
+                    <input type="range" name="measurement.fontSize" value="{{measurement.fontSize}}" min="4" max="100" step="1">
+                    <span class="range-value">{{measurement.fontSize}}</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.common.color"}}</label>
+                <div class="form-fields">
+                    <input class="color" type="text" name="measurement.fill" value="{{measurement.fill}}">
+                    <input type="color" value="{{measurement.fill}}" data-edit="measurement.fill">
                 </div>
             </div>
         </div>

@@ -1,6 +1,16 @@
+# 1.9.0
+
+- New world settings to customizes the look of measured distances
+  - Measurement > `Precision`
+  - Measurement > `Font Family`
+  - Measurement > `Font Size`
+  - Measurement > `Color`
+- During `Ruler` drag and `Display Distances` key press, the hovered over Token's elevation will now be picked up and used in the distance calculation
+- Fixed interactions with Layers added by other modules
+
 # 1.8.0
 
-- Reworked setting into a neater `Tactical Grid Settings` form
+- Reworked settings into a neater `Tactical Grid Settings` form
 - Disposition based grid colors can now be configured via a UI
 - New world settings:
   - Ruler > `View Distance`

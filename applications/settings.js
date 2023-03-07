@@ -1,4 +1,4 @@
-import { DistanceMeasurer } from '../scripts/measurer.js';
+import { DistanceMeasurer, TEXT_STYLE } from '../scripts/measurer.js';
 import { getGridColorString } from '../scripts/utils.js';
 import { GRID_MASK } from '../tactical-grid.js';
 import { readDeprecated } from './deprecatedSettings.js';
@@ -33,6 +33,12 @@ export const MODULE_CONFIG = {
   rulerColor: '',
   rulerActivatedDistanceMeasure: false,
   rulerDistanceMeasureGirdSpaces: true,
+  measurement: {
+    precision: 0,
+    fontSize: CONFIG.canvasTextStyle.fontSize,
+    fontFamily: CONFIG.canvasTextStyle.fontFamily,
+    fill: CONFIG.canvasTextStyle.fill,
+  },
 };
 
 const VIEW_SHAPE_OPTIONS = [
@@ -72,6 +78,8 @@ export default class SettingsConfig extends FormApplication {
     for (const [k, v] of Object.entries(data.dispositionColors)) {
       data.dispositionColors[k] = new Color(v).toString();
     }
+
+    data.fonts = Object.keys(CONFIG.fontDefinitions);
 
     return data;
   }
@@ -276,6 +284,10 @@ function _onSettingChange(newSettings) {
     )
   ) {
     GRID_MASK.container?.drawMask();
+  }
+
+  if ('measurement' in diff && TEXT_STYLE) {
+    mergeObject(TEXT_STYLE, diff.measurement);
   }
 }
 

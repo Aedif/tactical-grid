@@ -35,6 +35,9 @@
       "enableOnRuler": {
         "name": "Enable Tactical Grid For Ruler",
         "hint": "Enables grid for Ruler Measurements (requires libWrapper to be active)."
+      },
+      "measurementPrecision": {
+        "hint": "Decimal precision that measured distances are to be displayed in."
       }
     },
     "keybindings": {
@@ -50,7 +53,9 @@
     "common": {
       "layers": "Layers",
       "gridSpaces": "Grid Spaces",
-      "color": "Color"
+      "color": "Color",
+      "precision": "Precision",
+      "decimalPlaces": "Decimal Places"
     }
   }
 }
