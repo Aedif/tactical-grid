@@ -4,13 +4,14 @@
 
 # FoundryVTT - Tactical Grid
 
-Provides settings to limit the display of the grid to a specific distance within the currently selected/hovered-over placeable or Measuring Tool.
+Provides settings to limit the display of the grid to a specific distance within the currently selected/hovered-over placeable or Measuring Tool, as well as provide distance measurements to all Tokens relative to a specific grid space.
 
 https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b8e9-1f95e07c66e1.mp4
 
 ## Settings
 
 ### World Settings
+
 ![settings1](https://user-images.githubusercontent.com/7693704/223280699-9058d13a-a288-4a4b-b757-3bc4d2051f2f.png)
 ![settings2](https://user-images.githubusercontent.com/7693704/223280755-9051066f-9bf6-4f96-b482-46265ca26bdf.png)
 ![settings3](https://user-images.githubusercontent.com/7693704/223280801-57925ae1-e551-4973-ba88-5c6cf79769c2.png)
@@ -21,9 +22,9 @@ https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b
   - When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them
 - Ruler: Grid Spaces
   - Calculate Ruler triggered distance measurements in grid space increments
-  
+
 ## Controls
-  
+
 - Toggle Grid on Current Layer (Global)
   - When pressed the "{layer name} Layer" setting will be toggled for the currently active layer
   - Long press will toggle the layer setting just for the current scene
@@ -41,4 +42,3 @@ Global `Default Grid View Distance`, `Default Grid View Shape`, and `Color` can 
 Module allows for the core Foundry's default grid width to be adjusted:
 
 ![image](https://user-images.githubusercontent.com/7693704/222383155-24f6a9ac-bb2c-4658-bbe9-9d3bea6ed32f.png)
-

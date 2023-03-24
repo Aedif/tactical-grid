@@ -20,11 +20,14 @@ export class DistanceMeasurer {
       ruler._state !== Ruler.STATES.INACTIVE
     ) {
       DistanceMeasurer.highlightPosition({ x: ruler.destination.x, y: ruler.destination.y });
-    } else if (canvas.tokens.hover) {
-      DistanceMeasurer.highlightPosition({ x: canvas.tokens.hover.x, y: canvas.tokens.hover.y });
+    } else if (canvas.tokens.hover?.x) {
+      DistanceMeasurer.highlightPosition({
+        x: canvas.tokens.hover.center.x,
+        y: canvas.tokens.hover.center.y,
+      });
     } else if (canvas.tokens.controlled.length === 1) {
       let controlled = canvas.tokens.controlled[0];
-      DistanceMeasurer.highlightPosition({ x: controlled.x, y: controlled.y });
+      DistanceMeasurer.highlightPosition({ x: controlled.center.x, y: controlled.center.y });
     }
 
     DistanceMeasurer.drawLabels();
@@ -72,11 +75,17 @@ export class DistanceMeasurer {
     const visibleTokens = canvas.tokens.placeables.filter(
       (p) => p.visible //&& p.id !== originToken?.id
     );
+
     for (const token of visibleTokens) {
-      for (let h = 0; h < token.h / canvas.grid.size; h++) {
-        for (let w = 0; w < token.w / canvas.grid.size; w++) {
-          const offsetY = canvas.grid.size * h + canvas.grid.size / 2;
-          const offsetX = canvas.grid.size * w + canvas.grid.size / 2;
+      if (
+        canvas.grid.grid instanceof HexagonalGrid &&
+        token.document.width == token.document.height &&
+        token.document.width in POINTY_HEX_OFFSETS
+      ) {
+        const offsets = canvas.grid.grid.columnar ? FLAT_HEX_OFFSETS : POINTY_HEX_OFFSETS;
+        for (const offset of offsets[token.document.width]) {
+          const offsetX = token.w * offset[0];
+          const offsetY = token.h * offset[1];
           const target = {
             x: token.x + offsetX,
             y: token.y + offsetY,
@@ -87,6 +96,23 @@ export class DistanceMeasurer {
           });
 
           DistanceMeasurer.addUpdateLabel(token, offsetX, offsetY, distanceLabel);
+        }
+      } else {
+        for (let h = 0; h < token.h / canvas.grid.size; h++) {
+          for (let w = 0; w < token.w / canvas.grid.size; w++) {
+            const offsetY = canvas.grid.size * h + canvas.grid.size / 2;
+            const offsetX = canvas.grid.size * w + canvas.grid.size / 2;
+            const target = {
+              x: token.x + offsetX,
+              y: token.y + offsetY,
+            };
+            const distanceLabel = DistanceMeasurer._getDistanceLabel(origin, target, token, {
+              gridSpaces: DistanceMeasurer.gridSpaces,
+              originToken,
+            });
+
+            DistanceMeasurer.addUpdateLabel(token, offsetX, offsetY, distanceLabel);
+          }
         }
       }
     }
@@ -168,3 +194,72 @@ export class DistanceMeasurer {
     else return (ns + nd) * canvas.scene.grid.distance;
   }
 }
+
+const POINTY_HEX_OFFSETS = {
+  0.5: [[0.5, 0.5]],
+  1: [[0.5, 0.5]],
+  2: [
+    [0.5, 0.25],
+    [0.25, 0.75],
+    [0.75, 0.75],
+  ],
+  3: [
+    [2 / 6, 1 / 6],
+    [4 / 6, 1 / 6],
+    [1 / 6, 0.5],
+    [0.5, 0.5],
+    [5 / 6, 0.5],
+    [2 / 6, 5 / 6],
+    [4 / 6, 5 / 6],
+  ],
+  4: [
+    [0.25, 0.125],
+    [0.5, 0.125],
+    [0.75, 0.125],
+    [0.125, 0.375],
+    [0.375, 0.375],
+    [0.625, 0.375],
+    [0.875, 0.375],
+    [0.25, 0.625],
+    [0.5, 0.625],
+    [0.75, 0.625],
+    [0.375, 0.875],
+    [0.625, 0.875],
+  ],
+};
+
+const FLAT_HEX_OFFSETS = {
+  0.5: [[0.5, 0.5]],
+  1: [[0.5, 0.5]],
+  2: [
+    [0.25, 0.5],
+    [0.75, 0.25],
+    [0.75, 0.75],
+  ],
+  3: [
+    [0.5, 1 / 6],
+    [1 / 6, 2 / 6],
+    [5 / 6, 2 / 6],
+    [0.5, 0.5],
+    [1 / 6, 4 / 6],
+    [5 / 6, 4 / 6],
+    [0.5, 5 / 6],
+  ],
+  4: [
+    [0.125, 0.25],
+    [0.125, 0.5],
+    [0.125, 0.75],
+
+    [0.375, 0.125],
+    [0.375, 0.375],
+    [0.375, 0.625],
+    [0.375, 0.875],
+
+    [0.625, 0.25],
+    [0.625, 0.5],
+    [0.625, 0.75],
+
+    [0.875, 0.375],
+    [0.875, 0.625],
+  ],
+};

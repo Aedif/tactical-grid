@@ -1,3 +1,7 @@
+# 1.10.0
+
+- Added measurement support for Hexadecimal grids
+
 # 1.9.0
 
 - New world settings to customizes the look of measured distances
