@@ -11,10 +11,11 @@ https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b
 ## Settings
 
 ### World Settings
+![settings1](https://user-images.githubusercontent.com/7693704/227632252-25ff2634-e65c-49eb-ac87-7e4515024c4e.png)
+![settings2](https://user-images.githubusercontent.com/7693704/227632292-05986ed7-254a-48e0-a986-dc335521b8be.png)
+![settings3](https://user-images.githubusercontent.com/7693704/227632324-0764188a-3d07-47ca-801a-111ecd70b715.png)
+![settings4](https://user-images.githubusercontent.com/7693704/227632358-ffe77b68-dec9-4dd4-ba77-1a19638a2f5c.png)
 
-![settings1](https://user-images.githubusercontent.com/7693704/223280699-9058d13a-a288-4a4b-b757-3bc4d2051f2f.png)
-![settings2](https://user-images.githubusercontent.com/7693704/223280755-9051066f-9bf6-4f96-b482-46265ca26bdf.png)
-![settings3](https://user-images.githubusercontent.com/7693704/223280801-57925ae1-e551-4973-ba88-5c6cf79769c2.png)
 
 ### Client Settings
 
@@ -30,6 +31,10 @@ https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b
   - Long press will toggle the layer setting just for the current scene
 - Toggle Grid on Current Layer (Scene)
   - When pressed the layer will be toggled just for the current scene
+- Display Distances
+  - Calcualtes and displays distances for all visible Tokens relative to the currently controlled/hovered Token or any other grid space if mouse-clicked while the control is held.
+- Display Distances (Grid Spacing)
+  - Same as `Display Distances` but displays distances in grid space increments
 
 ## Token Settings
 
