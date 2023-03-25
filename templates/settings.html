@@ -150,8 +150,7 @@
             <div class="form-group">
                 <label>{{localize "aedifs-tactical-grid.common.color"}}</label>
                 <div class="form-fields">
-                    <input class="color" type="text" name="rulerColor" value="{{rulerColor}}">
-                    <input type="color" value="{{rulerColor}}" data-edit="rulerColor">
+                    {{ colorPicker name="rulerColor" value=rulerColor }}
                 </div>
             </div>
         </div>
