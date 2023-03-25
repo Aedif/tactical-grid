@@ -30,7 +30,7 @@ export const MODULE_CONFIG = {
   },
   rulerViewDistance: 4,
   rulerViewShape: 'circle-soft',
-  rulerColor: '',
+  rulerColor: '#000000',
   rulerActivatedDistanceMeasure: false,
   rulerDistanceMeasureGirdSpaces: true,
   measurement: {
