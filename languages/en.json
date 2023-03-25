@@ -55,7 +55,8 @@
       "gridSpaces": "Grid Spaces",
       "color": "Color",
       "precision": "Precision",
-      "decimalPlaces": "Decimal Places"
+      "decimalPlaces": "Decimal Places",
+      "apply": "Apply"
     }
   }
 }
