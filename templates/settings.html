@@ -150,9 +150,9 @@
             <div class="form-group">
                 <label>{{localize "aedifs-tactical-grid.common.color"}}</label>
                 <div class="form-fields">
-                    <input class="color" type="text" name="rulerColor" value="{{rulerColor}}">
-                    <input type="color" value="{{rulerColor}}" data-edit="rulerColor">
+                    {{ colorPicker name="rulerColor" value=rulerColor }}
                 </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.rulerColor.hint"}}</p>
             </div>
         </div>
 
@@ -195,6 +195,6 @@
     <input type="hidden" name="effect" value="{{effect}}">
 
     <footer class="sheet-footer flexrow">
-        <button type="submit"><i class="far fa-save"></i>{{localize "token-variants.common.apply"}}</button>
+        <button type="submit"><i class="far fa-save"></i>{{localize "aedifs-tactical-grid.common.apply"}}</button>
     </footer>
 </form>
