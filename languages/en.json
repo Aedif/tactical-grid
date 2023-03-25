@@ -38,6 +38,9 @@
       },
       "measurementPrecision": {
         "hint": "Decimal precision that measured distances are to be displayed in."
+      },
+      "rulerColor": {
+        "hint": "Set a color for the ruler grid. If no color is set then it will use the grid color of the scene."
       }
     },
     "keybindings": {
