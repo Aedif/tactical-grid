@@ -6,7 +6,8 @@
 
 Provides settings to limit the display of the grid to a specific distance within the currently selected/hovered-over placeable or Measuring Tool, as well as provide distance measurements to all Tokens relative to a specific grid space.
 
-https://user-images.githubusercontent.com/7693704/220378850-b492165a-e10f-4110-b8e9-1f95e07c66e1.mp4
+https://user-images.githubusercontent.com/7693704/229789408-4da2e230-2791-437f-8f89-176b0bdaa9fd.mp4
+
 
 ## Settings
 
