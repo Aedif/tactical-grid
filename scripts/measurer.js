@@ -58,9 +58,7 @@ export class DistanceMeasurer {
     let options = {
       x,
       y,
-      color: 0xff0000,
-      border: 0xff0000,
-      alpha: 0.2,
+      ...MODULE_CONFIG.marker,
     };
 
     if (!(canvas.grid.grid instanceof SquareGrid || canvas.grid.grid instanceof HexagonalGrid)) {
@@ -93,6 +91,15 @@ export class DistanceMeasurer {
     );
 
     for (const token of visibleTokens) {
+      if (MODULE_CONFIG.measurement.centerOnly) {
+        const distanceLabel = DistanceMeasurer._getDistanceLabel(origin, token.center, token, {
+          gridSpaces: DistanceMeasurer.gridSpaces,
+          originToken,
+        });
+        DistanceMeasurer.addUpdateLabel(token, token.w / 2, token.h / 2, distanceLabel);
+        continue;
+      }
+
       if (
         canvas.grid.grid instanceof HexagonalGrid &&
         token.document.width == token.document.height
@@ -163,8 +170,10 @@ export class DistanceMeasurer {
   }
 
   static clickLeft(pos) {
-    DistanceMeasurer.setPosition(pos);
-    DistanceMeasurer.drawLabels();
+    if (canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
+      DistanceMeasurer.setPosition(pos);
+      DistanceMeasurer.drawLabels();
+    }
   }
 
   static _getDistanceLabel(origin, target, targetToken, options) {

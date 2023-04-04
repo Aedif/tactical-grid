@@ -45,6 +45,10 @@
       "includeElevation": {
         "name": "Include Elevation",
         "hint": "Should elevation be included in distance measurements?"
+      },
+      "centerOnly": {
+        "name": "Measure to Token center only",
+        "hint": "Measurement will only be done between the source and the center of the Token."
       }
     },
     "keybindings": {

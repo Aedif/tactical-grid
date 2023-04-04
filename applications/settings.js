@@ -35,10 +35,16 @@ export const MODULE_CONFIG = {
   rulerDistanceMeasureGirdSpaces: true,
   measurement: {
     includeElevation: true,
+    centerOnly: false,
     precision: 0,
     fontSize: CONFIG.canvasTextStyle.fontSize,
     fontFamily: CONFIG.canvasTextStyle.fontFamily,
     fill: CONFIG.canvasTextStyle.fill,
+  },
+  marker: {
+    color: 0xff0000,
+    border: 0xff0000,
+    alpha: 0.2,
   },
 };
 
@@ -80,6 +86,9 @@ export default class SettingsConfig extends FormApplication {
       data.dispositionColors[k] = new Color(v).toString();
     }
 
+    data.marker.color = new Color(data.marker.color).toString();
+    data.marker.border = new Color(data.marker.border).toString();
+
     data.fonts = Object.keys(CONFIG.fontDefinitions);
 
     return data;
@@ -95,6 +104,8 @@ export default class SettingsConfig extends FormApplication {
     for (const [k, v] of Object.entries(settings.dispositionColors)) {
       settings.dispositionColors[k] = Number(Color.fromString(v));
     }
+    settings.marker.color = Number(Color.fromString(settings.marker.color));
+    settings.marker.border = Number(Color.fromString(settings.marker.border));
 
     updateSettings(settings);
   }

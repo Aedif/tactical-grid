@@ -1,3 +1,14 @@
+# 1.11.0
+
+Measurement Tool
+
+- Support for 'Hex token size support' module
+- Support for gridless scenes
+- New option to exclude elevation in calculations
+- New option to measure distances to token centre only
+- New options to customize the 'origin' marker
+  - Color, Border, Alpha
+
 # 1.10.0
 
 - Added measurement support for Hexadecimal grids
