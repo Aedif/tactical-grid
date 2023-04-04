@@ -10,7 +10,7 @@ export const MODULE_CONFIG = {
   enableOnHover: true,
   enableOnCombatOnly: false,
   enableOnRuler: true,
-  mixColors: true,
+  mixColors: false,
   assignDispositionBasedColor: true,
   dispositionColors: {
     playerOwner: 0x00ff00,
@@ -34,6 +34,7 @@ export const MODULE_CONFIG = {
   rulerActivatedDistanceMeasure: false,
   rulerDistanceMeasureGirdSpaces: true,
   measurement: {
+    includeElevation: true,
     precision: 0,
     fontSize: CONFIG.canvasTextStyle.fontSize,
     fontFamily: CONFIG.canvasTextStyle.fontFamily,

@@ -6,6 +6,7 @@ export class DistanceMeasurer {
   static hlName = 'ATG';
   static shape;
   static gridSpaces = true;
+  static positions = [];
 
   static showMeasures({ gridSpaces = true } = {}) {
     DistanceMeasurer.gridSpaces = gridSpaces;
@@ -19,15 +20,15 @@ export class DistanceMeasurer {
       ruler &&
       ruler._state !== Ruler.STATES.INACTIVE
     ) {
-      DistanceMeasurer.highlightPosition({ x: ruler.destination.x, y: ruler.destination.y });
+      DistanceMeasurer.setPosition({ x: ruler.destination.x, y: ruler.destination.y });
     } else if (canvas.tokens.hover?.x) {
-      DistanceMeasurer.highlightPosition({
+      DistanceMeasurer.setPosition({
         x: canvas.tokens.hover.center.x,
         y: canvas.tokens.hover.center.y,
       });
     } else if (canvas.tokens.controlled.length === 1) {
       let controlled = canvas.tokens.controlled[0];
-      DistanceMeasurer.highlightPosition({ x: controlled.center.x, y: controlled.center.y });
+      DistanceMeasurer.setPosition({ x: controlled.center.x, y: controlled.center.y });
     }
 
     DistanceMeasurer.drawLabels();
@@ -35,34 +36,49 @@ export class DistanceMeasurer {
 
   static hideMeasures() {
     DistanceMeasurer.deleteLabels();
+    DistanceMeasurer.positions = [];
     canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
   }
 
-  static highlightPosition(pos) {
+  static setPosition(pos) {
+    const [x, y] = canvas.grid.grid.getTopLeft(pos.x, pos.y);
+    DistanceMeasurer.positions = [{ x, y }];
+    DistanceMeasurer.highlightPosition(x, y);
+  }
+
+  static clearHighlight() {
+    canvas.grid.clearHighlightLayer(DistanceMeasurer.hlName);
+  }
+
+  static highlightPosition(x, y) {
+    DistanceMeasurer.clearHighlight();
     const layer = canvas.grid.highlightLayers[DistanceMeasurer.hlName];
     if (!layer) return;
-    canvas.grid.clearHighlightLayer(DistanceMeasurer.hlName);
 
-    const [x, y] = canvas.grid.grid.getTopLeft(pos.x, pos.y);
-    canvas.grid.grid.highlightGridPosition(layer, {
+    let options = {
       x,
       y,
       color: 0xff0000,
       border: 0xff0000,
       alpha: 0.2,
-    });
+    };
+
+    if (!(canvas.grid.grid instanceof SquareGrid || canvas.grid.grid instanceof HexagonalGrid)) {
+      let rSize = 50;
+      options.shape = new PIXI.Rectangle(x - rSize / 2, y - rSize / 2, rSize, rSize);
+    }
+
+    canvas.grid.grid.highlightGridPosition(layer, options);
   }
 
   static drawLabels() {
     DistanceMeasurer.deleteLabels();
+    if (!DistanceMeasurer.positions.length) return;
 
-    const layer = canvas.grid.highlightLayers[DistanceMeasurer.hlName];
-    if (!layer || !layer.positions.size) return;
-
-    const [originX, originY] = layer.positions.first().split('.');
+    let pos = DistanceMeasurer.positions[0];
     const origin = {
-      x: Number(originX) + canvas.grid.size / 2,
-      y: Number(originY) + canvas.grid.size / 2,
+      x: pos.x + canvas.grid.size / 2,
+      y: pos.y + canvas.grid.size / 2,
     };
 
     let originToken;
@@ -79,29 +95,13 @@ export class DistanceMeasurer {
     for (const token of visibleTokens) {
       if (
         canvas.grid.grid instanceof HexagonalGrid &&
-        token.document.width == token.document.height &&
-        token.document.width in POINTY_HEX_OFFSETS
+        token.document.width == token.document.height
       ) {
-        const offsets = canvas.grid.grid.columnar ? FLAT_HEX_OFFSETS : POINTY_HEX_OFFSETS;
-        for (const offset of offsets[token.document.width]) {
-          const offsetX = token.w * offset[0];
-          const offsetY = token.h * offset[1];
-          const target = {
-            x: token.x + offsetX,
-            y: token.y + offsetY,
-          };
-          const distanceLabel = DistanceMeasurer._getDistanceLabel(origin, target, token, {
-            gridSpaces: DistanceMeasurer.gridSpaces,
-            originToken,
-          });
-
-          DistanceMeasurer.addUpdateLabel(token, offsetX, offsetY, distanceLabel);
-        }
-      } else {
-        for (let h = 0; h < token.h / canvas.grid.size; h++) {
-          for (let w = 0; w < token.w / canvas.grid.size; w++) {
-            const offsetY = canvas.grid.size * h + canvas.grid.size / 2;
-            const offsetX = canvas.grid.size * w + canvas.grid.size / 2;
+        const offsets = _getHexOffsets(token);
+        if (offsets) {
+          for (const offset of offsets) {
+            const offsetX = token.w * offset[0];
+            const offsetY = token.h * offset[1];
             const target = {
               x: token.x + offsetX,
               y: token.y + offsetY,
@@ -113,6 +113,25 @@ export class DistanceMeasurer {
 
             DistanceMeasurer.addUpdateLabel(token, offsetX, offsetY, distanceLabel);
           }
+          continue;
+        }
+      }
+
+      // Fallback on square grid
+      for (let h = 0; h < token.h / canvas.grid.size; h++) {
+        for (let w = 0; w < token.w / canvas.grid.size; w++) {
+          const offsetY = canvas.grid.size * h + canvas.grid.size / 2;
+          const offsetX = canvas.grid.size * w + canvas.grid.size / 2;
+          const target = {
+            x: token.x + offsetX,
+            y: token.y + offsetY,
+          };
+          const distanceLabel = DistanceMeasurer._getDistanceLabel(origin, target, token, {
+            gridSpaces: DistanceMeasurer.gridSpaces,
+            originToken,
+          });
+
+          DistanceMeasurer.addUpdateLabel(token, offsetX, offsetY, distanceLabel);
         }
       }
     }
@@ -144,7 +163,7 @@ export class DistanceMeasurer {
   }
 
   static clickLeft(pos) {
-    DistanceMeasurer.highlightPosition(pos);
+    DistanceMeasurer.setPosition(pos);
     DistanceMeasurer.drawLabels();
   }
 
@@ -156,6 +175,7 @@ export class DistanceMeasurer {
     let verticalDistance =
       (canvas.grid.size / canvas.dimensions.distance) *
       Math.abs(targetToken.document.elevation - originElevation);
+    if (!MODULE_CONFIG.measurement.includeElevation) verticalDistance = 0;
     if (verticalDistance != 0) {
       let dx = target.x - origin.x;
       let dy = target.y - origin.y;
@@ -263,3 +283,90 @@ const FLAT_HEX_OFFSETS = {
     [0.875, 0.625],
   ],
 };
+
+// =======================================
+// "Hex token size support" module support
+// =======================================
+
+// Additional offsets for size 5 tokens
+const OFFSET_EXTENSION = {
+  FLAT: {
+    5: [
+      [0.1, 0.3],
+      [0.1, 0.5],
+      [0.1, 0.7],
+      [0.3, 0.2],
+      [0.3, 0.4],
+      [0.3, 0.6],
+      [0.3, 0.8],
+      [0.5, 0.1],
+      [0.5, 0.3],
+      [0.5, 0.5],
+      [0.5, 0.7],
+      [0.5, 0.9],
+      [0.7, 0.2],
+      [0.7, 0.4],
+      [0.7, 0.6],
+      [0.7, 0.8],
+      [0.9, 0.3],
+      [0.9, 0.5],
+      [0.9, 0.7],
+    ],
+  },
+  POINTY: {
+    5: [
+      [0.3, 0.1],
+      [0.5, 0.1],
+      [0.7, 0.1],
+      [0.2, 0.3],
+      [0.4, 0.3],
+      [0.6, 0.3],
+      [0.8, 0.3],
+      [0.1, 0.5],
+      [0.3, 0.5],
+      [0.5, 0.5],
+      [0.7, 0.5],
+      [0.9, 0.5],
+      [0.2, 0.7],
+      [0.4, 0.7],
+      [0.6, 0.7],
+      [0.8, 0.7],
+      [0.3, 0.9],
+      [0.5, 0.9],
+      [0.7, 0.9],
+    ],
+  },
+};
+
+function _getHexOffsets(token) {
+  let offsets = canvas.grid.grid.columnar ? FLAT_HEX_OFFSETS : POINTY_HEX_OFFSETS;
+
+  if (!game.modules.get('hex-size-support')?.active) return offsets[token.document.width];
+
+  // If "Hex token size support" module is active we need to extend the offsets to include size 5
+  offsets = {
+    ...offsets,
+    ...(canvas.grid.grid.columnar ? OFFSET_EXTENSION.FLAT : OFFSET_EXTENSION.POINTY),
+  };
+
+  // Flip size 2 hexes
+  offsets[2] = offsets[2].map((o) =>
+    canvas.grid.grid.columnar ? [1 - o[0], o[1]] : [o[0], 1 - o[1]]
+  );
+
+  offsets = offsets[token.document.width];
+
+  // We may need to flip the offsets based on whether alt orientation is enabled
+  if (
+    offsets &&
+    !!(
+      game.settings.get('hex-size-support', 'altOrientationDefault') ^
+      (token.document.getFlag('hex-size-support', 'alternateOrientation') ?? false)
+    )
+  ) {
+    if (canvas.grid.grid.columnar) return offsets.map((o) => [1 - o[0], o[1]]);
+    else return offsets.map((o) => [o[0], 1 - o[1]]);
+  }
+
+  return offsets;
+}

@@ -166,6 +166,13 @@
                 <p class="notes">{{localize "aedifs-tactical-grid.settings.measurementPrecision.hint"}}</p>
             </div>
             <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.includeElevation.name"}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="measurement.includeElevation" data-dtype="Boolean" value="{{measurement.includeElevation}}" {{#if measurement.includeElevation}}checked{{/if}}>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.includeElevation.hint"}}</p>
+            </div>
+            <div class="form-group">
                 <label>{{localize "DRAWING.FontFamily"}}</label>
                 <div class="form-fields">
                     <select name="measurement.fontFamily">

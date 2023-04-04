@@ -41,6 +41,10 @@
       },
       "rulerColor": {
         "hint": "Set a color for the ruler grid. If no color is set then it will use the grid color of the scene."
+      },
+      "includeElevation": {
+        "name": "Include Elevation",
+        "hint": "Should elevation be included in distance measurements?"
       }
     },
     "keybindings": {
