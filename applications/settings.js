@@ -314,13 +314,14 @@ export async function updateSettings(newSettings) {
 
 let rulerWrappers = [];
 
-function registerRulerLibWrapperMethods() {
+export function registerRulerLibWrapperMethods() {
   if (typeof libWrapper === 'function') {
+    unregisterRulerLibWrapperMethods();
     let id;
     if (MODULE_CONFIG.enableOnRuler) {
       id = libWrapper.register(
         'aedifs-tactical-grid',
-        'Ruler.prototype._onDragStart',
+        'CONFIG.Canvas.rulerClass.prototype._onDragStart',
         function (wrapped, ...args) {
           let result = wrapped(...args);
           GRID_MASK.container.drawMask();
@@ -331,7 +332,7 @@ function registerRulerLibWrapperMethods() {
       rulerWrappers.push(id);
       id = libWrapper.register(
         'aedifs-tactical-grid',
-        'Ruler.prototype._onMouseMove',
+        'CONFIG.Canvas.rulerClass.prototype._onMouseMove',
         function (wrapped, ...args) {
           let result = wrapped(...args);
           GRID_MASK.container.setMaskPosition(this);
@@ -345,7 +346,7 @@ function registerRulerLibWrapperMethods() {
     if (MODULE_CONFIG.rulerActivatedDistanceMeasure) {
       id = libWrapper.register(
         'aedifs-tactical-grid',
-        'Ruler.prototype.measure',
+        'CONFIG.Canvas.rulerClass.prototype.measure',
         function (wrapped, ...args) {
           let result = wrapped(...args);
           DistanceMeasurer.showMeasures({
@@ -361,7 +362,7 @@ function registerRulerLibWrapperMethods() {
     if (MODULE_CONFIG.enableOnRuler || MODULE_CONFIG.rulerActivatedDistanceMeasure) {
       id = libWrapper.register(
         'aedifs-tactical-grid',
-        'Ruler.prototype._endMeasurement',
+        'CONFIG.Canvas.rulerClass.prototype._endMeasurement',
         function (wrapped, ...args) {
           let result = wrapped(...args);
           if (MODULE_CONFIG.enableOnRuler) GRID_MASK.container.drawMask();

@@ -1,6 +1,10 @@
 import { GridMaskContainer } from './scripts/container.js';
 import { cleanLayerName, registerGridWrappers, unregisterGridWrappers } from './scripts/utils.js';
-import { MODULE_CONFIG, registerSettings } from './applications/settings.js';
+import {
+  MODULE_CONFIG,
+  registerRulerLibWrapperMethods,
+  registerSettings,
+} from './applications/settings.js';
 import { registerKeybindings } from './scripts/keybindings.js';
 
 // Container used as Grid Mask
@@ -102,4 +106,10 @@ Hooks.on('canvasInit', (canvas) => {
   } else {
     unregisterGridWrappers();
   }
+});
+
+// Support for 'Drag Ruler' module
+// Re-register the ruler hooks to use the extended ruler class
+Hooks.once('dragRuler.ready', () => {
+  registerRulerLibWrapperMethods();
 });

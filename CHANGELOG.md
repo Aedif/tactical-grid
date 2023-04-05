@@ -1,3 +1,8 @@
+# 1.11.1
+
+- Measurement Tool
+  - Added `Drag Ruler` module support
+
 # 1.11.0
 
 Measurement Tool
