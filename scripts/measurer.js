@@ -1,4 +1,5 @@
 import { MODULE_CONFIG } from '../applications/settings.js';
+import { nearestPointToCircle, nearestPointToRectangle } from './utils.js';
 
 export let TEXT_STYLE;
 
@@ -21,7 +22,7 @@ export class DistanceMeasurer {
       ruler._state !== Ruler.STATES.INACTIVE
     ) {
       DistanceMeasurer.setPosition({ x: ruler.destination.x, y: ruler.destination.y });
-    } else if (canvas.tokens.hover?.x) {
+    } else if (canvas.tokens.hover?.transform) {
       DistanceMeasurer.setPosition({
         x: canvas.tokens.hover.center.x,
         y: canvas.tokens.hover.center.y,
@@ -62,8 +63,10 @@ export class DistanceMeasurer {
     };
 
     if (!(canvas.grid.grid instanceof SquareGrid || canvas.grid.grid instanceof HexagonalGrid)) {
-      let rSize = 50;
-      options.shape = new PIXI.Rectangle(x - rSize / 2, y - rSize / 2, rSize, rSize);
+      let r = 20;
+      let points = [];
+      CROSS_HAIR.forEach((p) => points.push(x + p[0] * r, y + p[1] * r));
+      options.shape = new PIXI.Polygon(points);
     }
 
     canvas.grid.grid.highlightGridPosition(layer, options);
@@ -91,19 +94,43 @@ export class DistanceMeasurer {
     );
 
     for (const token of visibleTokens) {
-      if (MODULE_CONFIG.measurement.centerOnly) {
-        const distanceLabel = DistanceMeasurer._getDistanceLabel(origin, token.center, token, {
-          gridSpaces: DistanceMeasurer.gridSpaces,
-          originToken,
-        });
-        DistanceMeasurer.addUpdateLabel(token, token.w / 2, token.h / 2, distanceLabel);
-        continue;
-      }
+      const distances = [];
 
-      if (
+      if (!(canvas.grid.grid instanceof HexagonalGrid || canvas.grid.grid instanceof SquareGrid)) {
+        // Gridless
+        let target = {
+          ...token.center,
+        };
+        if (MODULE_CONFIG.measurement.shortestDistance) {
+          const b = token.bounds;
+          if (MODULE_CONFIG.measurement.gridlessCircle) {
+            target = nearestPointToCircle(
+              { ...token.center, r: Math.min(b.width, b.height) / 2 },
+              pos
+            );
+          } else {
+            target = nearestPointToRectangle(
+              {
+                minX: b.x,
+                minY: b.y,
+                maxX: b.x + b.width,
+                maxY: b.y + b.height,
+              },
+              pos
+            );
+          }
+        }
+
+        const distance = DistanceMeasurer.getDistance(pos, target, token, {
+          originToken,
+          gridSpaces: false,
+        });
+        distances.push({ offsetX: token.w / 2, offsetY: token.h / 2, distance });
+      } else if (
         canvas.grid.grid instanceof HexagonalGrid &&
         token.document.width == token.document.height
       ) {
+        // Hexagonal Grid
         const offsets = _getHexOffsets(token);
         if (offsets) {
           for (const offset of offsets) {
@@ -113,32 +140,52 @@ export class DistanceMeasurer {
               x: token.x + offsetX,
               y: token.y + offsetY,
             };
-            const distanceLabel = DistanceMeasurer._getDistanceLabel(origin, target, token, {
+            const distance = DistanceMeasurer.getDistance(origin, target, token, {
               gridSpaces: DistanceMeasurer.gridSpaces,
               originToken,
             });
-
-            DistanceMeasurer.addUpdateLabel(token, offsetX, offsetY, distanceLabel);
+            distances.push({ offsetX, offsetY, distance });
           }
-          continue;
         }
       }
 
-      // Fallback on square grid
-      for (let h = 0; h < token.h / canvas.grid.size; h++) {
-        for (let w = 0; w < token.w / canvas.grid.size; w++) {
-          const offsetY = canvas.grid.size * h + canvas.grid.size / 2;
-          const offsetX = canvas.grid.size * w + canvas.grid.size / 2;
-          const target = {
-            x: token.x + offsetX,
-            y: token.y + offsetY,
-          };
-          const distanceLabel = DistanceMeasurer._getDistanceLabel(origin, target, token, {
-            gridSpaces: DistanceMeasurer.gridSpaces,
-            originToken,
-          });
+      // Square Grid or fallback
+      if (!distances.length) {
+        for (let h = 0; h < token.h / canvas.grid.size; h++) {
+          for (let w = 0; w < token.w / canvas.grid.size; w++) {
+            const offsetY = canvas.grid.size * h + canvas.grid.size / 2;
+            const offsetX = canvas.grid.size * w + canvas.grid.size / 2;
+            const target = {
+              x: token.x + offsetX,
+              y: token.y + offsetY,
+            };
+            const distance = DistanceMeasurer.getDistance(origin, target, token, {
+              gridSpaces: DistanceMeasurer.gridSpaces,
+              originToken,
+            });
+            distances.push({ offsetX, offsetY, distance });
+          }
+        }
+      }
 
-          DistanceMeasurer.addUpdateLabel(token, offsetX, offsetY, distanceLabel);
+      if (distances.length) {
+        if (MODULE_CONFIG.measurement.shortestDistance) {
+          const smallest = distances.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
+          DistanceMeasurer.addUpdateLabel(
+            token,
+            token.w / 2,
+            token.h / 2,
+            DistanceMeasurer.genLabel(smallest.distance)
+          );
+        } else {
+          distances.forEach((d) => {
+            DistanceMeasurer.addUpdateLabel(
+              token,
+              d.offsetX,
+              d.offsetY,
+              DistanceMeasurer.genLabel(d.distance)
+            );
+          });
         }
       }
     }
@@ -176,7 +223,7 @@ export class DistanceMeasurer {
     }
   }
 
-  static _getDistanceLabel(origin, target, targetToken, options) {
+  static getDistance(origin, target, targetToken, options) {
     let distance;
     // If the tokens have elevation we want to create a faux target coordinate in 2d space
     // so that we can then let foundry utils calculate the appropriate distance based on diagonal rules
@@ -203,7 +250,11 @@ export class DistanceMeasurer {
     let number = parseFloat(
       (Math.round(distance * precision) / precision).toFixed(MODULE_CONFIG.measurement.precision)
     );
-    return `${number} ${canvas.scene.grid.units}`;
+    return number;
+  }
+
+  static genLabel(distance) {
+    return `${distance} ${canvas.scene.grid.units}`;
   }
 
   static _getVerticalDistance() {
@@ -223,6 +274,36 @@ export class DistanceMeasurer {
     else return (ns + nd) * canvas.scene.grid.distance;
   }
 }
+
+// const CROSS_HAIR = [
+//   [-0.1, 0.4],
+//   [0.1, 0.4],
+//   [0.1, 0.1],
+//   [0.4, 0.1],
+//   [0.4, -0.1],
+//   [0.1, -0.1],
+//   [0.1, -0.4],
+//   [-0.1, -0.4],
+//   [-0.1, -0.1],
+//   [-0.4, -0.1],
+//   [-0.4, 0.1],
+//   [-0.1, 0.1],
+// ];
+
+const CROSS_HAIR = [
+  [0.0, 0.2],
+  [0.5, 0.7],
+  [0.7, 0.5],
+  [0.2, 0.0],
+  [0.7, -0.5],
+  [0.5, -0.7],
+  [0.0, -0.2],
+  [-0.5, -0.7],
+  [-0.7, -0.5],
+  [-0.2, 0.0],
+  [-0.7, 0.5],
+  [-0.5, 0.7],
+];
 
 const POINTY_HEX_OFFSETS = {
   0.5: [[0.5, 0.5]],

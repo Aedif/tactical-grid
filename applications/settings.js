@@ -35,7 +35,7 @@ export const MODULE_CONFIG = {
   rulerDistanceMeasureGirdSpaces: true,
   measurement: {
     includeElevation: true,
-    centerOnly: false,
+    shortestDistance: false,
     precision: 0,
     fontSize: CONFIG.canvasTextStyle.fontSize,
     fontFamily: CONFIG.canvasTextStyle.fontFamily,

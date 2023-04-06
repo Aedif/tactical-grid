@@ -76,3 +76,34 @@ export function unregisterGridWrappers() {
     registeredWrappers = [];
   }
 }
+
+/**
+ * Find the nearest point on a rectangle given a point on the scene
+ * @param {*} rect {minX, maxX, minY, maxY}
+ * @param {*} p {x, y}
+ * @returns nearest point {x, y}
+ */
+export function nearestPointToRectangle(rect, p) {
+  const nearest = { x: p.x, y: p.y };
+  if (p.x < rect.minX) nearest.x = rect.minX;
+  else if (p.x > rect.maxX) nearest.x = rect.maxX;
+
+  if (p.y < rect.minY) nearest.y = rect.minY;
+  else if (p.y > rect.maxY) nearest.y = rect.maxY;
+  return nearest;
+}
+
+/**
+ * Find the nearest point on a circle given a point on the scene
+ * @param {*} c {x, y, r}
+ * @param {*} p {x, y}
+ * @returns nearest point {x, y}
+ */
+export function nearestPointToCircle(c, p) {
+  // If c === p, return any edge
+  if (c.x === p.x && c.y === p.y) return p;
+  let vX = p.x - c.x;
+  let vY = p.y - c.y;
+  let magV = Math.sqrt(vX * vX + vY * vY);
+  return { x: c.x + (vX / magV) * c.r, y: c.y + (vY / magV) * c.r };
+}

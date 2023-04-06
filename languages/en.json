@@ -46,9 +46,13 @@
         "name": "Include Elevation",
         "hint": "Should elevation be included in distance measurements?"
       },
-      "centerOnly": {
-        "name": "Measure to Token center only",
-        "hint": "Measurement will only be done between the source and the center of the Token."
+      "shortestDistance": {
+        "name": "Shortest Distance Only",
+        "hint": "Only the shortest distance to the token will be shown."
+      },
+      "gridlessCircle": {
+        "name": "Gridless: Distance to Circle",
+        "hint": "If enabled, on gridless scenes the module will calculate shortest distance assuming the Token border is a circle."
       }
     },
     "keybindings": {

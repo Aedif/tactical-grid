@@ -1,3 +1,15 @@
+# 1.12.0
+
+Measurement Tool
+
+- Replaced `Measure to Token center only` option with `Shortest Distance Only`
+  - Instead of measuring distance to the centre of the token, the module will either:
+    - Find the closest occupied Token grid space (Square/Hex grid)
+    - Find the closest point on the Token border (Gridless)
+  - Sub-option: `Gridless: Distance to Circle`
+    - If your system displays Token borders on a gridless scene as a circle, this options will make the module calculate distances to that circle's edge.
+- Fixed some random errors in the console
+
 # 1.11.1
 
 - Measurement Tool
