@@ -324,7 +324,7 @@ export function registerRulerLibWrapperMethods() {
         'CONFIG.Canvas.rulerClass.prototype._onDragStart',
         function (wrapped, ...args) {
           let result = wrapped(...args);
-          GRID_MASK.container.drawMask();
+          if (this.user.id === game.user.id) GRID_MASK.container.drawMask();
           return result;
         },
         'WRAPPER'
@@ -335,7 +335,7 @@ export function registerRulerLibWrapperMethods() {
         'CONFIG.Canvas.rulerClass.prototype._onMouseMove',
         function (wrapped, ...args) {
           let result = wrapped(...args);
-          GRID_MASK.container.setMaskPosition(this);
+          if (this.user.id === game.user.id) GRID_MASK.container.setMaskPosition(this);
           return result;
         },
         'WRAPPER'
@@ -349,9 +349,11 @@ export function registerRulerLibWrapperMethods() {
         'CONFIG.Canvas.rulerClass.prototype.measure',
         function (wrapped, ...args) {
           let result = wrapped(...args);
-          DistanceMeasurer.showMeasures({
-            gridSpaces: MODULE_CONFIG.rulerDistanceMeasureGirdSpaces,
-          });
+          if (this.user.id === game.user.id)
+            DistanceMeasurer.showMeasures({
+              gridSpaces: MODULE_CONFIG.rulerDistanceMeasureGirdSpaces,
+              draggedEntity: this.draggedEntity instanceof Token ? this.draggedEntity : null, // Drag Ruler
+            });
           return result;
         },
         'WRAPPER'
@@ -365,8 +367,10 @@ export function registerRulerLibWrapperMethods() {
         'CONFIG.Canvas.rulerClass.prototype._endMeasurement',
         function (wrapped, ...args) {
           let result = wrapped(...args);
-          if (MODULE_CONFIG.enableOnRuler) GRID_MASK.container.drawMask();
-          if (MODULE_CONFIG.rulerActivatedDistanceMeasure) DistanceMeasurer.hideMeasures();
+          if (this.user.id === game.user.id) {
+            if (MODULE_CONFIG.enableOnRuler) GRID_MASK.container.drawMask();
+            DistanceMeasurer.hideMeasures();
+          }
           return result;
         },
         'WRAPPER'

@@ -6,9 +6,11 @@ Measurement Tool
   - Instead of measuring distance to the centre of the token, the module will either:
     - Find the closest occupied Token grid space (Square/Hex grid)
     - Find the closest point on the Token border (Gridless)
-  - Sub-option: `Gridless: Distance to Circle`
+  - Sub-option: `Gridless: Circle Border`
     - If your system displays Token borders on a gridless scene as a circle, this options will make the module calculate distances to that circle's edge.
 - Fixed some random errors in the console
+- Fixed a bug causing ruler measurements to show up on other player clients
+- When using `Drag Ruler` module, measurements during a drag operations will now properly take into account token size
 
 # 1.11.1
 

@@ -51,7 +51,7 @@
         "hint": "Only the shortest distance to the token will be shown."
       },
       "gridlessCircle": {
-        "name": "Gridless: Distance to Circle",
+        "name": "Gridless: Circle Border",
         "hint": "If enabled, on gridless scenes the module will calculate shortest distance assuming the Token border is a circle."
       }
     },

@@ -7,9 +7,14 @@ export class DistanceMeasurer {
   static hlName = 'ATG';
   static shape;
   static gridSpaces = true;
-  static positions = [];
+  static origin;
 
-  static showMeasures({ gridSpaces = true } = {}) {
+  /**
+   * Measure and display distances
+   * @param {Boolean} options.gridSpaces should measurements be in grade space increments
+   * @param {Token} options.draggedEntity 'DragRuler' module's dragged token
+   */
+  static showMeasures({ gridSpaces = true, draggedEntity = null } = {}) {
     DistanceMeasurer.gridSpaces = gridSpaces;
     if (!canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
       canvas.grid.addHighlightLayer(DistanceMeasurer.hlName);
@@ -21,15 +26,15 @@ export class DistanceMeasurer {
       ruler &&
       ruler._state !== Ruler.STATES.INACTIVE
     ) {
-      DistanceMeasurer.setPosition({ x: ruler.destination.x, y: ruler.destination.y });
+      DistanceMeasurer.setOrigin({ x: ruler.destination.x, y: ruler.destination.y, draggedEntity });
     } else if (canvas.tokens.hover?.transform) {
-      DistanceMeasurer.setPosition({
+      DistanceMeasurer.setOrigin({
         x: canvas.tokens.hover.center.x,
         y: canvas.tokens.hover.center.y,
       });
     } else if (canvas.tokens.controlled.length === 1) {
       let controlled = canvas.tokens.controlled[0];
-      DistanceMeasurer.setPosition({ x: controlled.center.x, y: controlled.center.y });
+      DistanceMeasurer.setOrigin({ x: controlled.center.x, y: controlled.center.y });
     }
 
     DistanceMeasurer.drawLabels();
@@ -37,14 +42,16 @@ export class DistanceMeasurer {
 
   static hideMeasures() {
     DistanceMeasurer.deleteLabels();
-    DistanceMeasurer.positions = [];
+    DistanceMeasurer.origin = null;
     canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
   }
 
-  static setPosition(pos) {
-    const [x, y] = canvas.grid.grid.getTopLeft(pos.x, pos.y);
-    DistanceMeasurer.positions = [{ x, y }];
-    DistanceMeasurer.highlightPosition(x, y);
+  static setOrigin(pos) {
+    DistanceMeasurer.origin = pos;
+    if (!pos.draggedEntity) {
+      const [x, y] = canvas.grid.grid.getTopLeft(pos.x, pos.y);
+      DistanceMeasurer.highlightPosition(x, y);
+    }
   }
 
   static clearHighlight() {
@@ -74,13 +81,14 @@ export class DistanceMeasurer {
 
   static drawLabels() {
     DistanceMeasurer.deleteLabels();
-    if (!DistanceMeasurer.positions.length) return;
+    if (!DistanceMeasurer.origin) return;
 
-    let pos = DistanceMeasurer.positions[0];
-    const origin = {
-      x: pos.x + canvas.grid.size / 2,
-      y: pos.y + canvas.grid.size / 2,
-    };
+    const origin = { ...DistanceMeasurer.origin };
+    if (canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) {
+      const [x, y] = canvas.grid.grid.getTopLeft(origin.x, origin.y);
+      origin.x = x + canvas.grid.size / 2;
+      origin.y = y + canvas.grid.size / 2;
+    }
 
     let originToken;
     if (canvas.tokens.hover) {
@@ -94,9 +102,17 @@ export class DistanceMeasurer {
     );
 
     for (const token of visibleTokens) {
+      // Drag Ruler, since that module allows for the ruler to essentially be the size of the token
+      // we can't simply use the origin we need to find the closest point/gridspace between the dragged
+      // and measured to token
+      let fromPoint = origin;
+      if (origin.draggedEntity) {
+        fromPoint = nearestOriginPoint(origin.draggedEntity, token, DistanceMeasurer.origin);
+      }
+
       const distances = [];
 
-      if (!(canvas.grid.grid instanceof HexagonalGrid || canvas.grid.grid instanceof SquareGrid)) {
+      if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
         // Gridless
         let target = {
           ...token.center,
@@ -106,7 +122,7 @@ export class DistanceMeasurer {
           if (MODULE_CONFIG.measurement.gridlessCircle) {
             target = nearestPointToCircle(
               { ...token.center, r: Math.min(b.width, b.height) / 2 },
-              pos
+              fromPoint
             );
           } else {
             target = nearestPointToRectangle(
@@ -116,18 +132,18 @@ export class DistanceMeasurer {
                 maxX: b.x + b.width,
                 maxY: b.y + b.height,
               },
-              pos
+              fromPoint
             );
           }
         }
 
-        const distance = DistanceMeasurer.getDistance(pos, target, token, {
+        const distance = DistanceMeasurer.getDistance(fromPoint, target, token, {
           originToken,
           gridSpaces: false,
         });
         distances.push({ offsetX: token.w / 2, offsetY: token.h / 2, distance });
       } else if (
-        canvas.grid.grid instanceof HexagonalGrid &&
+        canvas.grid.type !== CONST.GRID_TYPES.SQUARE &&
         token.document.width == token.document.height
       ) {
         // Hexagonal Grid
@@ -140,7 +156,7 @@ export class DistanceMeasurer {
               x: token.x + offsetX,
               y: token.y + offsetY,
             };
-            const distance = DistanceMeasurer.getDistance(origin, target, token, {
+            const distance = DistanceMeasurer.getDistance(fromPoint, target, token, {
               gridSpaces: DistanceMeasurer.gridSpaces,
               originToken,
             });
@@ -159,7 +175,7 @@ export class DistanceMeasurer {
               x: token.x + offsetX,
               y: token.y + offsetY,
             };
-            const distance = DistanceMeasurer.getDistance(origin, target, token, {
+            const distance = DistanceMeasurer.getDistance(fromPoint, target, token, {
               gridSpaces: DistanceMeasurer.gridSpaces,
               originToken,
             });
@@ -218,7 +234,7 @@ export class DistanceMeasurer {
 
   static clickLeft(pos) {
     if (canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
-      DistanceMeasurer.setPosition(pos);
+      DistanceMeasurer.setOrigin(pos);
       DistanceMeasurer.drawLabels();
     }
   }
@@ -273,6 +289,80 @@ export class DistanceMeasurer {
     // Standard PHB Movement
     else return (ns + nd) * canvas.scene.grid.distance;
   }
+}
+
+/**
+ * Find the closest point on the origin token, to the target token
+ * @param {Token} oToken origin token
+ * @param {Token} tToken target token
+ * @param {object} origin
+ * @returns {x, y} closest grid space or border edge (gridless)
+ */
+function nearestOriginPoint(oToken, tToken, origin) {
+  if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
+    if (MODULE_CONFIG.measurement.gridlessCircle) {
+      return nearestPointToCircle(
+        { ...origin, r: Math.min(oToken.w, oToken.h) / 2 },
+        tToken.center
+      );
+    } else {
+      return nearestPointToRectangle(
+        {
+          minX: origin.x - oToken.w / 2,
+          minY: origin.y - oToken.h / 2,
+          maxX: origin.x + oToken.w / 2,
+          maxY: origin.y + oToken.h / 2,
+        },
+        tToken.center
+      );
+    }
+  }
+
+  let gridPoints = [];
+  if (
+    canvas.grid.type !== CONST.GRID_TYPES.SQUARE &&
+    oToken.document.width == oToken.document.height
+  ) {
+    const offsets = _getHexOffsets(oToken);
+    if (offsets) {
+      for (const offset of offsets) {
+        gridPoints.push({
+          x: origin.x - oToken.w / 2 + oToken.w * offset[0],
+          y: origin.y - oToken.h / 2 + oToken.h * offset[1],
+        });
+      }
+    }
+  }
+
+  if (!gridPoints.length) {
+    for (let h = 0; h < oToken.h / canvas.grid.size; h++) {
+      for (let w = 0; w < oToken.w / canvas.grid.size; w++) {
+        gridPoints.push({
+          x: origin.x - oToken.w / 2 + canvas.grid.size * w + canvas.grid.size / 2,
+          y: origin.y - oToken.h / 2 + canvas.grid.size * h + canvas.grid.size / 2,
+        });
+      }
+    }
+  }
+
+  // Find the grid point with the shortest distance to tToken
+  if (!gridPoints.length) return origin;
+
+  const tCenter = tToken.center;
+  let closest = gridPoints[0];
+  let cDistance = approxDistance(closest, tCenter);
+  for (let i = 1; i < gridPoints.length; i++) {
+    let d = approxDistance(gridPoints[i], tCenter);
+    if (d < cDistance) {
+      closest = gridPoints[i];
+      cDistance = d;
+    }
+  }
+  return closest;
+}
+
+function approxDistance(p1, p2) {
+  return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
 }
 
 // const CROSS_HAIR = [
