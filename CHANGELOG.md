@@ -1,3 +1,8 @@
+# 1.13.0
+
+- New client setting: `Disable Tactical Grid`
+  - Disabled tactical grid per client
+
 # 1.12.0
 
 Measurement Tool

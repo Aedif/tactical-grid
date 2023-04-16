@@ -1,4 +1,4 @@
-import { MODULE_CONFIG } from '../applications/settings.js';
+import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
 import { CustomSpriteMaskFilter } from '../filters/CustomSpriteMaskFilter.js';
 import { cleanLayerName, getDispositionColor, getGridColorString } from './utils.js';
 
@@ -27,6 +27,8 @@ export class GridMaskContainer extends CachedContainer {
       this.deactivateMask();
       return;
     }
+
+    if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return this.deactivateMask();
 
     let sceneEnabled = canvas.scene.getFlag(
       'aedifs-tactical-grid',
