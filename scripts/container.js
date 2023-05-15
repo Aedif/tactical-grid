@@ -97,8 +97,7 @@ export class GridMaskContainer extends CachedContainer {
       if (this.children.find((c) => c.placeableId === p.id)) {
         // Do nothing
       } else {
-        let viewDistance = p.document?.getFlag('aedifs-tactical-grid', 'viewDistance');
-        if (viewDistance == null) viewDistance = MODULE_CONFIG.defaultViewDistance;
+        let viewDistance = this._getViewDistance(p);
         if (!viewDistance) continue;
 
         let viewShape =
@@ -173,6 +172,16 @@ export class GridMaskContainer extends CachedContainer {
       return false;
     }
     return true;
+  }
+
+  _getViewDistance(p) {
+    let viewDistance = p.document?.getFlag('aedifs-tactical-grid', 'viewDistance');
+    if (viewDistance == null && MODULE_CONFIG.usePropertyBasedDistance) {
+      viewDistance = getProperty(p.document ?? p, MODULE_CONFIG.propertyDistance);
+      if (viewDistance) viewDistance /= canvas.scene.grid.distance;
+    }
+    if (viewDistance == null) viewDistance = MODULE_CONFIG.defaultViewDistance;
+    return viewDistance;
   }
 
   /**

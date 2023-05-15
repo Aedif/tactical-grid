@@ -48,12 +48,28 @@
         </div>
 
         <div class="tab" data-group="main" data-tab="grid">
-            <div class="form-group slim">
+              <div class="form-group slim">
                 <label>{{localize "aedifs-tactical-grid.settings.defaultViewDistance.name"}} <span class="units">({{localize "aedifs-tactical-grid.common.gridSpaces"}})</span></label>
                 <div class="form-fields">
                   <input type="number" value="{{defaultViewDistance}}" step="any" name="defaultViewDistance">
                 </div>
                 <p class="notes">{{localize "aedifs-tactical-grid.settings.defaultViewDistance.hint"}}</p>
+              </div>
+
+              <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.usePropertyBasedDistance.name"}}</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="usePropertyBasedDistance" data-dtype="Boolean" value="{{usePropertyBasedDistance}}" {{#if usePropertyBasedDistance}}checked{{/if}}>
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.usePropertyBasedDistance.hint"}}</p>
+              </div>
+
+              <div class="form-group">
+                <label>{{localize "aedifs-tactical-grid.settings.propertyDistance.name"}} <span class="units">({{units}})</span></label>
+                <div class="form-fields">
+                  <input type="text" value="{{propertyDistance}}" name="propertyDistance">
+                </div>
+                <p class="notes">{{localize "aedifs-tactical-grid.settings.propertyDistance.hint"}}</p>
               </div>
 
               <div class="form-group">

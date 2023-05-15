@@ -5,6 +5,14 @@
         "name": "Default Grid View Distance",
         "hint": "Number of grid spaces to be displayed."
       },
+      "usePropertyBasedDistance": {
+        "name": "Use Token Property Based Distance",
+        "hint": "Use a token property instead of `Default Grid View Distance`"
+      },
+      "propertyDistance": {
+        "name": "Token Property",
+        "hint": "Path to the Token property to be used to determine the size of the grid."
+      },
       "defaultViewShape": {
         "name": "Default Grid View Shape",
         "hint": "The shape of the grid mask."

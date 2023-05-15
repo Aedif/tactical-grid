@@ -5,6 +5,8 @@ import { readDeprecated } from './deprecatedSettings.js';
 
 export const MODULE_CONFIG = {
   defaultViewDistance: 4,
+  usePropertyBasedDistance: false,
+  propertyDistance: 'actor.system.attributes.movement.walk',
   defaultViewShape: 'circle-soft',
   enableOnControl: true,
   enableOnHover: true,
@@ -94,6 +96,7 @@ export default class SettingsConfig extends FormApplication {
     data.marker.border = new Color(data.marker.border).toString();
 
     data.fonts = Object.keys(CONFIG.fontDefinitions);
+    data.units = canvas.scene?.grid.units || 'ft';
 
     return data;
   }
@@ -112,6 +115,17 @@ export default class SettingsConfig extends FormApplication {
     settings.marker.border = Number(Color.fromString(settings.marker.border));
 
     updateSettings(settings);
+  }
+
+  activateListeners(html) {
+    super.activateListeners(html);
+    html
+      .find('[name="usePropertyBasedDistance"]')
+      .on('change', (event) => {
+        html.find('[name="propertyDistance"]').prop('disabled', !event.target.checked);
+        html.find('[name="defaultViewDistance"]').prop('disabled', event.target.checked);
+      })
+      .trigger('change');
   }
 }
 

@@ -1,3 +1,10 @@
+# 1.14.0
+
+- New setting: `Grid` >`Token Property`
+  - Define a path to the token property to be used as the view distance
+- New setting: `Grid` > `Use Token Property Based Distance`
+  - Toggle between `Default Grid View Distance` and `Token Property` settings
+
 # 1.13.0
 
 - New client setting: `Disable Tactical Grid`
