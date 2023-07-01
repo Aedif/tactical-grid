@@ -1,3 +1,7 @@
+# 1.14.1
+
+- v11 support
+
 # 1.14.0
 
 - New setting: `Grid` >`Token Property`

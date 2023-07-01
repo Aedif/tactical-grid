@@ -1,4 +1,4 @@
-import { MODULE_CONFIG } from '../applications/settings.js';
+import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
 import { nearestPointToCircle, nearestPointToRectangle } from './utils.js';
 
 export let TEXT_STYLE;
@@ -22,7 +22,7 @@ export class DistanceMeasurer {
 
     const ruler = canvas.controls.ruler;
     if (
-      MODULE_CONFIG.rulerActivatedDistanceMeasure &&
+      MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure &&
       ruler &&
       ruler._state !== Ruler.STATES.INACTIVE
     ) {

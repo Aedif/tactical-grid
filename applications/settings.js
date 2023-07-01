@@ -273,7 +273,8 @@ export function registerSettings() {
         function (wrapped, ...args) {
           let result = wrapped(...args);
           try {
-            DistanceMeasurer.clickLeft(args[0].data?.origin);
+            // v11 args[0].interactionData?.origin
+            DistanceMeasurer.clickLeft(args[0].interactionData?.origin ?? args[0].data?.origin);
           } catch (e) {
             console.log(e);
           }
