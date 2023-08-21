@@ -214,9 +214,24 @@ export class DistanceMeasurer {
         return;
       }
     }
+
     if (!TEXT_STYLE) {
       TEXT_STYLE = PreciseText.getTextStyle(MODULE_CONFIG.measurement);
     }
+
+    // Scale Font Size to Grid Size if needed
+    if (
+      MODULE_CONFIG.measurement.enableFontScaling &&
+      MODULE_CONFIG.measurement.baseGridSize &&
+      MODULE_CONFIG.measurement.baseGridSize !== canvas.dimensions.size
+    ) {
+      TEXT_STYLE.fontSize =
+        MODULE_CONFIG.measurement.fontSize *
+        (canvas.dimensions.size / MODULE_CONFIG.measurement.baseGridSize);
+    } else {
+      TEXT_STYLE.fontSize = MODULE_CONFIG.measurement.fontSize;
+    }
+
     let pText = new PreciseText(text, TEXT_STYLE);
     pText.anchor.set(0.5);
 

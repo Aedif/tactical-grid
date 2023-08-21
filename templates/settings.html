@@ -221,6 +221,16 @@
                     <span class="range-value">{{measurement.fontSize}}</span>
                 </div>
             </div>
+            <fieldset>
+                <legend>{{localize "aedifs-tactical-grid.settings.scaleFontSize"}} <input type="checkbox" name="measurement.enableFontScaling" data-dtype="Boolean" value="{{measurement.enableFontScaling}}" {{#if measurement.enableFontScaling}}checked{{/if}}></legend>
+                <div class="form-group">
+                    <label>{{localize "aedifs-tactical-grid.settings.baseGridSize.name"}}</label>
+                    <div class="form-fields">
+                        <input type="number" name="measurement.baseGridSize" value="{{measurement.baseGridSize}}" min="50" step="1">
+                    </div>
+                    <p class="notes">{{localize "aedifs-tactical-grid.settings.baseGridSize.hint"}}</p>
+                </div>
+            </fieldset>
             <div class="form-group">
                 <label>{{localize "aedifs-tactical-grid.common.color"}}</label>
                 <div class="form-fields">

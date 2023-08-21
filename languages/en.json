@@ -61,6 +61,11 @@
       "gridlessCircle": {
         "name": "Gridless: Circle Border",
         "hint": "If enabled, on gridless scenes the module will calculate shortest distance assuming the Token border is a circle."
+      },
+      "scaleFontSize": "Scale Font Size to Canvas Grid",
+      "baseGridSize": {
+        "name": "Base Grid Size",
+        "hint": "Grid smaller or larger than this will result in Font Size being scaled proportionally."
       }
     },
     "keybindings": {

@@ -40,6 +40,8 @@ export const MODULE_CONFIG = {
     fontSize: CONFIG.canvasTextStyle.fontSize,
     fontFamily: CONFIG.canvasTextStyle.fontFamily,
     fill: CONFIG.canvasTextStyle.fill,
+    enableFontScaling: false,
+    baseGridSize: 100,
   },
   marker: {
     color: 0xff0000,
@@ -63,7 +65,7 @@ const VIEW_SHAPE_OPTIONS = [
   { label: 'Hexagon (Row)', value: 'hexagonRow' },
 ];
 
-export default class SettingsConfig extends FormApplication {
+export default class TGSettingsConfig extends FormApplication {
   constructor() {
     super({}, {});
   }
@@ -168,7 +170,7 @@ export function registerSettings() {
     label: 'Settings',
     scope: 'world',
     icon: 'fas fa-cog',
-    type: SettingsConfig,
+    type: TGSettingsConfig,
     restricted: true,
   });
 

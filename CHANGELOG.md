@@ -1,3 +1,10 @@
+# 1.15.0
+
+- New option: `Measurement` > `Scale Font Size to Canvas Grid`
+  - Enabled scaling of the distance measurement text based of scene's configured `Grid Size`
+- New option `Measurement` > `Base Grid Size`
+  - Grid larger or smaller than this value will result in `Measurement` > `Font Size` being scaled proportionally
+
 # 1.14.1
 
 - v11 support
