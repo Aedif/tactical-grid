@@ -27,19 +27,58 @@ let registeredWrappers = [];
 export function registerGridWrappers(lineWidth) {
   unregisterGridWrappers();
   if (typeof libWrapper === 'function') {
-    let squareWrap = libWrapper.register(
-      'aedifs-tactical-grid',
-      'SquareGrid.prototype._drawLine',
-      function (points, lineColor, lineAlpha) {
-        let line = new PIXI.Graphics();
-        line
-          .lineStyle(lineWidth, lineColor, lineAlpha)
-          .moveTo(points[0], points[1])
-          .lineTo(points[2], points[3]);
-        return line;
-      },
-      'OVERRIDE'
-    );
+    let squareWrap;
+
+    if (isNewerVersion('11', game.version)) {
+      squareWrap = libWrapper.register(
+        'aedifs-tactical-grid',
+        'SquareGrid.prototype._drawLine',
+        function (points, lineColor, lineAlpha) {
+          let line = new PIXI.Graphics();
+          line
+            .lineStyle(lineWidth, lineColor, lineAlpha)
+            .moveTo(points[0], points[1])
+            .lineTo(points[2], points[3]);
+          return line;
+        },
+        'OVERRIDE'
+      );
+    } else {
+      squareWrap = libWrapper.register(
+        'aedifs-tactical-grid',
+        'SquareGrid.prototype.draw',
+        function (options = {}) {
+          Object.getPrototypeOf(SquareGrid).prototype.draw.call(this, options);
+          // SquareGrid.prototype.draw.call(this, options);
+          let { color, alpha, dimensions } = foundry.utils.mergeObject(this.options, options);
+
+          // Set dimensions
+          this.width = dimensions.width;
+          this.height = dimensions.height;
+
+          // Need to draw?
+          if (alpha === 0) return this;
+
+          // Vertical lines
+          let nx = Math.floor(dimensions.width / dimensions.size);
+          const grid = new PIXI.Graphics();
+          for (let i = 1; i < nx; i++) {
+            let x = i * dimensions.size;
+            grid.lineStyle(lineWidth, color, alpha).moveTo(x, 0).lineTo(x, dimensions.height);
+          }
+
+          // Horizontal lines
+          let ny = Math.ceil(dimensions.height / dimensions.size);
+          for (let i = 1; i < ny; i++) {
+            let y = i * dimensions.size;
+            grid.lineStyle(lineWidth, color, alpha).moveTo(0, y).lineTo(dimensions.width, y);
+          }
+          this.addChild(grid);
+          return this;
+        },
+        'OVERRIDE'
+      );
+    }
 
     let hexWrap = libWrapper.register(
       'aedifs-tactical-grid',

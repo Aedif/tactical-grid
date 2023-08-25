@@ -1,3 +1,7 @@
+# 1.15.1
+
+- Implemented a workaround for `SquareGrid._drawLine` now being a private function on v11. `Grid Line Width` option should now work as intended.
+
 # 1.15.0
 
 - New option: `Measurement` > `Scale Font Size to Canvas Grid`

@@ -40,7 +40,7 @@ export const MODULE_CONFIG = {
     fontSize: CONFIG.canvasTextStyle.fontSize,
     fontFamily: CONFIG.canvasTextStyle.fontFamily,
     fill: CONFIG.canvasTextStyle.fill,
-    enableFontScaling: false,
+    enableFontScaling: true,
     baseGridSize: 100,
   },
   marker: {
