@@ -1,3 +1,20 @@
+# 1.16.0
+
+- New option: `Settings` > `Cover`
+
+  - Allows to specify a cover calculator module and labels to be used to indicate different levels of cover when performing measurements
+  - Supported modules: `Simbul's Cover Calculator`, `Levels Auto Cover`, and `Alternative Token Visibility`
+
+- API
+  - `game.modules.get("aedifs-tactical-grid").api`
+  - `highlightReach(token, ranges)`
+    - Highlights grid for the provided token using an array of reach ranges
+    - `token` the token you want the reach to be drawn for
+    - `ranges` an array of reach ranges and colors
+      - e.g. [{reach: 5, color: "#00ff00"}, {reach: 10, color: "#0000ff", alpha: 0.3}]
+  - `clearReach(token)`
+    - clears/removes drawn reaches using `highlightReach(...)`
+
 # 1.15.1
 
 - Implemented a workaround for `SquareGrid._drawLine` now being a private function on v11. `Grid Line Width` option should now work as intended.

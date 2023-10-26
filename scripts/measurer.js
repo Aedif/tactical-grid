@@ -1,5 +1,5 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import { nearestPointToCircle, nearestPointToRectangle } from './utils.js';
+import { computeCoverBonus, nearestPointToCircle, nearestPointToRectangle } from './utils.js';
 
 export let TEXT_STYLE;
 
@@ -103,7 +103,7 @@ export class DistanceMeasurer {
 
     for (const token of visibleTokens) {
       // Drag Ruler, since that module allows for the ruler to essentially be the size of the token
-      // we can't simply use the origin we need to find the closest point/gridspace between the dragged
+      // we can't simply use the origin we need to find the closest point/grid space between the dragged
       // and measured to token
       let fromPoint = origin;
       if (origin.draggedEntity) {
@@ -147,7 +147,7 @@ export class DistanceMeasurer {
         token.document.width == token.document.height
       ) {
         // Hexagonal Grid
-        const offsets = _getHexOffsets(token);
+        const offsets = getHexOffsets(token);
         if (offsets) {
           for (const offset of offsets) {
             const offsetX = token.w * offset[0];
@@ -184,6 +184,13 @@ export class DistanceMeasurer {
         }
       }
 
+      /// Calculate Cover
+      let cover;
+      if (originToken && MODULE_CONFIG.cover.calculator !== 'none') {
+        let oT = originToken._preview ?? originToken;
+        if (oT.id !== token.id) cover = computeCoverBonus(oT, token);
+      }
+
       if (distances.length) {
         if (MODULE_CONFIG.measurement.shortestDistance) {
           const smallest = distances.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
@@ -191,7 +198,8 @@ export class DistanceMeasurer {
             token,
             token.w / 2,
             token.h / 2,
-            DistanceMeasurer.genLabel(smallest.distance)
+            DistanceMeasurer.genLabel(smallest.distance),
+            cover
           );
         } else {
           distances.forEach((d) => {
@@ -199,7 +207,8 @@ export class DistanceMeasurer {
               token,
               d.offsetX,
               d.offsetY,
-              DistanceMeasurer.genLabel(d.distance)
+              DistanceMeasurer.genLabel(d.distance),
+              cover
             );
           });
         }
@@ -207,7 +216,15 @@ export class DistanceMeasurer {
     }
   }
 
-  static addUpdateLabel(token, x, y, text) {
+  static addUpdateLabel(token, x, y, text, cover) {
+    if (cover != null) {
+      const labels = MODULE_CONFIG.cover;
+      if (cover <= 0 && labels.noCover) text += `\n${labels.noCover}`;
+      if (cover === 2 && labels.halfCover) text += `\n${labels.halfCover}`;
+      if (cover === 5 && labels.threeQuartersCover) text += `\n${labels.threeQuartersCover}`;
+      if (cover > 5 && labels.totalCover) text += `\n${labels.totalCover}`;
+    }
+
     for (const ch of token.children) {
       if (ch.atgText && ch.x === x && ch.y === y) {
         ch.text = text;
@@ -216,7 +233,10 @@ export class DistanceMeasurer {
     }
 
     if (!TEXT_STYLE) {
-      TEXT_STYLE = PreciseText.getTextStyle(MODULE_CONFIG.measurement);
+      TEXT_STYLE = PreciseText.getTextStyle({
+        ...MODULE_CONFIG.measurement,
+        fontFamily: [MODULE_CONFIG.measurement.fontFamily, 'fontAwesome'].join(','),
+      });
     }
 
     // Scale Font Size to Grid Size if needed
@@ -338,7 +358,7 @@ function nearestOriginPoint(oToken, tToken, origin) {
     canvas.grid.type !== CONST.GRID_TYPES.SQUARE &&
     oToken.document.width == oToken.document.height
   ) {
-    const offsets = _getHexOffsets(oToken);
+    const offsets = getHexOffsets(oToken);
     if (offsets) {
       for (const offset of offsets) {
         gridPoints.push({
@@ -533,7 +553,7 @@ const OFFSET_EXTENSION = {
   },
 };
 
-function _getHexOffsets(token) {
+export function getHexOffsets(token) {
   let offsets = canvas.grid.grid.columnar ? FLAT_HEX_OFFSETS : POINTY_HEX_OFFSETS;
 
   if (!game.modules.get('hex-size-support')?.active) return offsets[token.document.width];

@@ -35,7 +35,7 @@ export const MODULE_CONFIG = {
   rulerColor: '',
   measurement: {
     includeElevation: true,
-    shortestDistance: false,
+    shortestDistance: true,
     precision: 0,
     fontSize: CONFIG.canvasTextStyle.fontSize,
     fontFamily: CONFIG.canvasTextStyle.fontFamily,
@@ -47,6 +47,13 @@ export const MODULE_CONFIG = {
     color: 0xff0000,
     border: 0xff0000,
     alpha: 0.2,
+  },
+  cover: {
+    calculator: 'none',
+    noCover: '',
+    halfCover: '',
+    threeQuartersCover: '',
+    totalCover: '',
   },
 };
 
@@ -99,6 +106,20 @@ export default class TGSettingsConfig extends FormApplication {
 
     data.fonts = Object.keys(CONFIG.fontDefinitions);
     data.units = canvas.scene?.grid.units || 'ft';
+
+    data.calculators = [
+      { name: 'None', value: 'none' },
+      { name: "Simbul's Cover Calculator", value: 'simbuls-cover-calculator' },
+      { name: 'Levels Auto Cover', value: 'levelsautocover' },
+      { name: 'Alternative Token Visibility', value: 'tokenvisibility' },
+      { name: 'MidiQOL (mirror `Calculate Cover` setting)', value: 'midi-qol' },
+    ];
+
+    for (const calculator of data.calculators) {
+      if (calculator.value !== 'none') {
+        calculator.disabled = !game.modules.get(calculator.value)?.active;
+      }
+    }
 
     return data;
   }

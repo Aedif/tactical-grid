@@ -6,6 +6,7 @@ import {
   registerSettings,
 } from './applications/settings.js';
 import { registerKeybindings } from './scripts/keybindings.js';
+import { ReachHighlighter, registerReachHighlightHooks } from './scripts/reachHighlighter.js';
 
 // Container used as Grid Mask
 export const GRID_MASK = {
@@ -19,6 +20,20 @@ export const GRID_MASK = {
 Hooks.on('init', () => {
   registerSettings();
   registerKeybindings();
+  registerReachHighlightHooks();
+
+  const highlightReach = function (token, distances, borderColor) {
+    new ReachHighlighter(token, distances, borderColor);
+  };
+
+  const clearReach = function (token) {
+    if (token._tgReach) {
+      token._tgReach.clear();
+      token._tgReach = null;
+    }
+  };
+
+  game.modules.get('aedifs-tactical-grid').api = { highlightReach, clearReach };
 });
 
 /** =========================

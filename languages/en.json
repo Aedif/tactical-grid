@@ -66,6 +66,14 @@
       "baseGridSize": {
         "name": "Base Grid Size",
         "hint": "Grid smaller or larger than this will result in Font Size being scaled proportionally."
+      },
+      "cover": {
+        "name": "Cover Calculator",
+        "hint": "If a cover calculator is selected and corresponding module enabled; cover information will be displayed under measurements.",
+        "none": "None",
+        "half": "Half",
+        "threeQuarters": "Three-quarters",
+        "total": "Total"
       }
     },
     "keybindings": {

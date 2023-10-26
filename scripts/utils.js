@@ -146,3 +146,117 @@ export function nearestPointToCircle(c, p) {
   let magV = Math.sqrt(vX * vX + vY * vY);
   return { x: c.x + (vX / magV) * c.r, y: c.y + (vY / magV) * c.r };
 }
+
+// =======================================================
+// Code Taken from MidiQOL and modified to not output logs
+// =======================================================
+
+const FULL_COVER = 999;
+const THREE_QUARTERS_COVER = 5;
+const HALF_COVER = 2;
+let midiCoverCalculation;
+export function computeCoverBonus(attacker, target) {
+  let coverBonus = null;
+  if (!attacker) return null;
+
+  let calculator;
+  if (MODULE_CONFIG.cover.calculator === 'midi-qol') {
+    if (!midiCoverCalculation) {
+      if (game.modules.get('midi-qol')?.active) {
+        midiCoverCalculation =
+          game.settings.get('midi-qol', 'ConfigSettings')?.optionalRules?.coverCalculation ||
+          'none';
+      } else midiCoverCalculation = 'none';
+    }
+    calculator = midiCoverCalculation;
+  } else {
+    calculator = MODULE_CONFIG.cover.calculator;
+  }
+
+  switch (calculator) {
+    case 'levelsautocover':
+      if (
+        !game.modules.get('levelsautocover')?.active ||
+        !game.settings.get('levelsautocover', 'apiMode')
+      )
+        return null;
+
+      const coverData = AutoCover.calculateCover(
+        attacker.document ? attacker : attacker.object,
+        target.document ? target : target.object
+      );
+
+      const coverDetail = AutoCover.getCoverData();
+      if (coverData.rawCover === 0) coverBonus = FULL_COVER;
+      else if (coverData.rawCover > coverDetail[1].percent) coverBonus = 0;
+      else if (coverData.rawCover < coverDetail[0].percent) coverBonus = THREE_QUARTERS_COVER;
+      else if (coverData.rawCover < coverDetail[1].percent) coverBonus = HALF_COVER;
+      if (coverData.obstructingToken) coverBonus = Math.max(2, coverBonus);
+      break;
+    case 'simbuls-cover-calculator':
+      if (!game.modules.get('simbuls-cover-calculator')?.active) return null;
+      if (globalThis.CoverCalculator) {
+        const coverData = globalThis.CoverCalculator.Cover(
+          attacker.document ? attacker : attacker.object,
+          target
+        );
+        if (attacker === target) {
+          coverBonus = 0;
+          break;
+        }
+        if (coverData?.data?.results.cover === 3) coverBonus = FULL_COVER;
+        else coverBonus = -coverData?.data?.results.value ?? 0;
+      }
+      break;
+    case 'tokenvisibility':
+      if (!game.modules.get('tokenvisibility')?.active) return null;
+      const coverValue = calcTokenVisibilityCover(attacker, target);
+      switch (coverValue) {
+        case 1:
+          coverBonus = HALF_COVER;
+          break;
+        case 2:
+          coverBonus = THREE_QUARTERS_COVER;
+          break;
+        case 3:
+          coverBonus = FULL_COVER;
+          break;
+        case 0:
+        default:
+          coverBonus = 0;
+      }
+      break;
+    case 'none':
+    default:
+      coverBonus = null;
+      break;
+  }
+
+  return coverBonus;
+}
+
+function calcTokenVisibilityCover(attacker, target) {
+  const api = game.modules.get('tokenvisibility')?.api;
+  const attackerToken = attacker;
+  const targetToken = target;
+  if (!api || !attackerToken || !targetToken) return null;
+
+  const coverCalc = new api.CoverCalculator(attackerToken, targetToken);
+
+  return coverCalc.targetCover();
+
+  // const version = game.modules.get('tokenvisibility')?.version;
+  // let coverValue;
+  // if (isNewerVersion(version, '0.5.3')) {
+  //   const cover = api.CoverCalculator.coverCalculations(attackerToken, [targetToken]);
+  //   coverValue = cover.get(targetToken) ?? 0;
+  // } else {
+  //   const cover = api.CoverCalculator.coverCalculations([attackerToken], [targetToken]);
+  //   coverValue = cover[attackerToken.id][targetToken.id] ?? 0;
+  // }
+  // return coverValue;
+}
+
+// ===================
+// End of MidiQOL code
+// ===================
