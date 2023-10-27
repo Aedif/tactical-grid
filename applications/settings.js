@@ -113,6 +113,7 @@ export default class TGSettingsConfig extends FormApplication {
       { name: 'Levels Auto Cover', value: 'levelsautocover' },
       { name: 'Alternative Token Visibility', value: 'tokenvisibility' },
       { name: 'MidiQOL (mirror `Calculate Cover` setting)', value: 'midi-qol' },
+      { name: 'PF2e Perception', value: 'pf2e-perception' },
     ];
 
     for (const calculator of data.calculators) {

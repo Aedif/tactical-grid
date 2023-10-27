@@ -226,6 +226,29 @@ export function computeCoverBonus(attacker, target) {
           coverBonus = 0;
       }
       break;
+    case 'pf2e-perception':
+      if (!game.modules.get('pf2e-perception')?.active) return null;
+      const coverValue = game.modules.get('pf2e-perception').api.token.getCover(attacker, target);
+      switch (coverValue) {
+        case undefined:
+          coverBonus = 0
+          break;
+        case 'lesser':
+          coverBonus = HALF_COVER;
+          break;
+        case 'standard':
+          coverBonus = THREE_QUARTERS_COVER;
+          break;
+        case 'greater':
+          coverBonus = FULL_COVER;
+          break;
+        case 'greater-prone':
+          coverBonus = FULL_COVER;
+          break;
+        default:
+          coverBonus = 0
+      }
+      break;
     case 'none':
     default:
       coverBonus = null;
