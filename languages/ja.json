@@ -1,0 +1,98 @@
+{
+  "aedifs-tactical-grid": {
+    "settings": {
+      "defaultViewDistance": {
+        "name": "デフォルトのグリッド表示距離",
+        "hint": "表示されるグリッド数を設定します。"
+      },
+      "usePropertyBasedDistance": {
+        "name": "コマのプロパティに基づいた距離を使用する",
+        "hint": "「デフォルトのグリッド表示距離」のかわりに、コマのプロパディを使用します。"
+      },
+      "propertyDistance": {
+        "name": "コマのプロパティ",
+        "hint": "グリッドの大きさを決定するために使用する、コマのプロパティのパスを入力してください。"
+      },
+      "defaultViewShape": {
+        "name": "デフォルトのグリッド表示形式",
+        "hint": "グリッド・マスクの形を設定します。"
+      },
+      "enableOnCombatOnly": {
+        "name": "戦闘時のみ",
+        "hint": "グリッドは戦闘時のみ表示されるようになります。"
+      },
+      "enableOnControl": {
+        "name": "操作可能時のみ",
+        "hint": "操作できる配置物にのみグリッドが表示されます。"
+      },
+      "enableOnHover": {
+        "name": "ホバー時",
+        "hint": "配置物をホバーした時にグリッドが表示されます。"
+      },
+      "mixColors": {
+        "name": "色を混ぜる",
+        "hint": "有効化された場合、表示形式の色が混ざる／混色します。"
+      },
+      "assignDispositionBasedColor": {
+        "name": "所属勢力により色をアサイン",
+        "hint": "有効化された場合、グリッドの表示形式の色がコマの所属勢力によって決定されます。"
+      },
+      "layerEnable": {
+        "hint": "「{layerName}」にtactical gridを有効化"
+      },
+      "enableOnRuler": {
+        "name": "定規にTactical Gridを有効化",
+        "hint": "定規による測定時にグリッドを有効化します（有効化にはlibWrapperが必要です）。"
+      },
+      "measurementPrecision": {
+        "hint": "距離の測定時に、小数点以下の数値を表示します。"
+      },
+      "rulerColor": {
+        "hint": "定規のグリッドに使用する色を設定します。色が選択されていない場合はシーン上のグリッドの色を使用します。"
+      },
+      "includeElevation": {
+        "name": "高さを含める",
+        "hint": "距離の測定に高さを含めますか？?"
+      },
+      "shortestDistance": {
+        "name": "最短距離のみ",
+        "hint": "コマからの最短距離だけが表示されます。"
+      },
+      "gridlessCircle": {
+        "name": "グリッド無し： 円形の輪郭",
+        "hint": "有効化されたなら、モジュールはグリッドの無いシーン内でコマの縁が円である前提で最短距離を計算します。"
+      },
+      "scaleFontSize": "キャンバスのグリッドにフォントサイズを合わせる",
+      "baseGridSize": {
+        "name": "基本グリッドサイズ",
+        "hint": "この値以外の大きさのグリッドの場合、フォントサイズを合わせます。"
+      },
+      "cover": {
+        "name": "遮蔽計算機",
+        "hint": "遮蔽計算機が選択され対応するモジュールが有効されている場合、遮蔽の情報が距離の下に表示されます。",
+        "none": "なし",
+        "half": "半分",
+        "threeQuarters": "３分の１",
+        "total": "総"
+      }
+    },
+    "keybindings": {
+      "toggleGrid": {
+        "name": "現在レイヤにグリッドをトグル（グローバル）",
+        "hint": "短く押下でグローバル（全シーン）にレイヤーをトグルし、長押しで現在のシーンにだけレイヤーをトグルします。"
+      },
+      "sceneToggleGrid": {
+        "name": "現在レイヤー（シーン）にグリッドをトグル",
+        "hint": ""
+      }
+    },
+    "common": {
+      "layers": "レイヤー",
+      "gridSpaces": "グリッド幅",
+      "color": "色",
+      "precision": "正確",
+      "decimalPlaces": "小数点以下",
+      "apply": "適用"
+    }
+  }
+}
