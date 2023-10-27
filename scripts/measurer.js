@@ -98,7 +98,7 @@ export class DistanceMeasurer {
     }
 
     const visibleTokens = canvas.tokens.placeables.filter(
-      (p) => p.visible //&& p.id !== originToken?.id
+      (p) => p.visible || p.impreciseVisible // Vision5e support
     );
 
     for (const token of visibleTokens) {
@@ -255,15 +255,26 @@ export class DistanceMeasurer {
     let pText = new PreciseText(text, TEXT_STYLE);
     pText.anchor.set(0.5);
 
-    pText = token.addChild(pText);
-    pText.atgText = true;
-    pText.x = x;
-    pText.y = y;
+    // Apply to _impreciseMesh (Vision5e support) if it's visible
+    if (token.impreciseVisible) {
+      pText = canvas.tokens.addChild(pText);
+      pText.x = token.x + x;
+      pText.y = token.y + y;
+    } else {
+      pText = token.addChild(pText);
+      pText.x = x;
+      pText.y = y;
+    }
+
+    token._atgText = pText;
   }
 
   static deleteLabels() {
     canvas.tokens.placeables.forEach((p) => {
-      p.children.filter((ch) => ch.atgText).forEach((ch) => p.removeChild(ch)?.destroy());
+      if (p._atgText) {
+        p._atgText.parent.removeChild(p._atgText)?.destroy();
+        delete p._atgText;
+      }
     });
   }
 
