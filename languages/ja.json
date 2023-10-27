@@ -92,7 +92,10 @@
       "color": "色",
       "precision": "正確",
       "decimalPlaces": "小数点以下",
-      "apply": "適用"
+      "apply": "適用",
+      "labels": "Labels",
+      "alpha": "Alpha",
+      "marker": "Marker"
     }
   }
 }

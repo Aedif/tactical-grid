@@ -92,7 +92,10 @@
       "color": "Color",
       "precision": "Precision",
       "decimalPlaces": "Decimal Places",
-      "apply": "Apply"
+      "apply": "Apply",
+      "labels": "Labels",
+      "alpha": "Alpha",
+      "marker": "Marker"
     }
   }
 }
