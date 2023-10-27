@@ -31,18 +31,18 @@
       },
       "mixColors": {
         "name": "色を混ぜる",
-        "hint": "When enabled view shape colors will be mixed/blended together."
+        "hint": "有効化された場合、表示形式の色が混ざる／混色します。"
       },
       "assignDispositionBasedColor": {
-        "name": "Assign Color Based on Disposition",
-        "hint": "When enabled Token view shape colors will default to their disposition:"
+        "name": "所属勢力により色をアサイン",
+        "hint": "有効化された場合、グリッドの表示形式の色がコマの所属勢力によって決定されます。"
       },
       "layerEnable": {
         "hint": "Enable tactical grid for \"{layerName}\""
       },
       "enableOnRuler": {
         "name": "Enable Tactical Grid For Ruler",
-        "hint": "Enables grid for Ruler Measurements (requires libWrapper to be active)."
+        "hint": "Enables grid for Ruler Measurements（有効化にはlibWrapperが必要です）。"
       },
       "measurementPrecision": {
         "hint": "Decimal precision that measured distances are to be displayed in."
@@ -82,7 +82,7 @@
         "hint": "短く押下でグローバル（全シーン）にレイヤーをトグルし、長押しで現在のシーンにだけレイヤーをトグルします。"
       },
       "sceneToggleGrid": {
-        "name": "Toggle Grid on Current Layer (Scene)",
+        "name": "現在レイヤー（シーン）にグリッドをトグル",
         "hint": ""
       }
     },
