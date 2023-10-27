@@ -7,11 +7,11 @@
       },
       "usePropertyBasedDistance": {
         "name": "コマのプロパティに基づいた距離を使用する",
-        "hint": "Use a token property instead of `Default Grid View Distance`"
+        "hint": "「デフォルトのグリッド表示距離」のかわりに、コマのプロパディを使用します。"
       },
       "propertyDistance": {
         "name": "コマのプロパティ",
-        "hint": "Path to the Token property to be used to determine the size of the grid."
+        "hint": "グリッドの大きさを決定するために使用する、コマのプロパティのパスを入力してください。"
       },
       "defaultViewShape": {
         "name": "デフォルトのグリッド表示形式",
@@ -19,18 +19,18 @@
       },
       "enableOnCombatOnly": {
         "name": "戦闘時のみ",
-        "hint": "Grid will only be shown when in combat."
+        "hint": "グリッドは戦闘時のみ表示されるようになります。"
       },
       "enableOnControl": {
-        "name": "On Control",
-        "hint": "Grid will be shown for controlled placeables."
+        "name": "操作可能時のみ",
+        "hint": "操作できる配置物にのみグリッドが表示されます。"
       },
       "enableOnHover": {
         "name": "ホバー時",
-        "hint": "Grid will be shown for hovered over placeables."
+        "hint": "配置物をホバーした時にグリッドが表示されます。"
       },
       "mixColors": {
-        "name": "Mix Colors",
+        "name": "色を混ぜる",
         "hint": "When enabled view shape colors will be mixed/blended together."
       },
       "assignDispositionBasedColor": {
@@ -68,12 +68,12 @@
         "hint": "Grid smaller or larger than this will result in Font Size being scaled proportionally."
       },
       "cover": {
-        "name": "Cover Calculator",
-        "hint": "If a cover calculator is selected and corresponding module enabled; cover information will be displayed under measurements.",
-        "none": "None",
+        "name": "遮蔽計算機",
+        "hint": "遮蔽計算機が選択され対応するモジュールが有効されている場合、遮蔽の情報が距離の下に表示されます。",
+        "none": "なし",
         "half": "半分",
-        "threeQuarters": "Three-quarters",
-        "total": "Total"
+        "threeQuarters": "３分の１",
+        "total": "総"
       }
     },
     "keybindings": {
