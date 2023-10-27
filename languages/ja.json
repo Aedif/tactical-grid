@@ -1,0 +1,98 @@
+{
+  "aedifs-tactical-grid": {
+    "settings": {
+      "defaultViewDistance": {
+        "name": "デフォルトのグリッド表示距離",
+        "hint": "表示されるグリッド数を設定します。"
+      },
+      "usePropertyBasedDistance": {
+        "name": "コマのプロパティに基づいた距離を使用する",
+        "hint": "Use a token property instead of `Default Grid View Distance`"
+      },
+      "propertyDistance": {
+        "name": "コマのプロパティ",
+        "hint": "Path to the Token property to be used to determine the size of the grid."
+      },
+      "defaultViewShape": {
+        "name": "デフォルトのグリッド表示形式",
+        "hint": "グリッド・マスクの形を設定します。"
+      },
+      "enableOnCombatOnly": {
+        "name": "戦闘時のみ",
+        "hint": "Grid will only be shown when in combat."
+      },
+      "enableOnControl": {
+        "name": "On Control",
+        "hint": "Grid will be shown for controlled placeables."
+      },
+      "enableOnHover": {
+        "name": "ホバー時",
+        "hint": "Grid will be shown for hovered over placeables."
+      },
+      "mixColors": {
+        "name": "Mix Colors",
+        "hint": "When enabled view shape colors will be mixed/blended together."
+      },
+      "assignDispositionBasedColor": {
+        "name": "Assign Color Based on Disposition",
+        "hint": "When enabled Token view shape colors will default to their disposition:"
+      },
+      "layerEnable": {
+        "hint": "Enable tactical grid for \"{layerName}\""
+      },
+      "enableOnRuler": {
+        "name": "Enable Tactical Grid For Ruler",
+        "hint": "Enables grid for Ruler Measurements (requires libWrapper to be active)."
+      },
+      "measurementPrecision": {
+        "hint": "Decimal precision that measured distances are to be displayed in."
+      },
+      "rulerColor": {
+        "hint": "Set a color for the ruler grid. If no color is set then it will use the grid color of the scene."
+      },
+      "includeElevation": {
+        "name": "Include Elevation",
+        "hint": "Should elevation be included in distance measurements?"
+      },
+      "shortestDistance": {
+        "name": "最短距離のみ",
+        "hint": "Only the shortest distance to the token will be shown."
+      },
+      "gridlessCircle": {
+        "name": "グリッド無し： 円形の輪郭",
+        "hint": "If enabled, on gridless scenes the module will calculate shortest distance assuming the Token border is a circle."
+      },
+      "scaleFontSize": "Scale Font Size to Canvas Grid",
+      "baseGridSize": {
+        "name": "Base Grid Size",
+        "hint": "Grid smaller or larger than this will result in Font Size being scaled proportionally."
+      },
+      "cover": {
+        "name": "Cover Calculator",
+        "hint": "If a cover calculator is selected and corresponding module enabled; cover information will be displayed under measurements.",
+        "none": "None",
+        "half": "半分",
+        "threeQuarters": "Three-quarters",
+        "total": "Total"
+      }
+    },
+    "keybindings": {
+      "toggleGrid": {
+        "name": "現在レイヤにグリッドをトグル（グローバル）",
+        "hint": "短く押下でグローバル（全シーン）にレイヤーをトグルし、長押しで現在のシーンにだけレイヤーをトグルします。"
+      },
+      "sceneToggleGrid": {
+        "name": "Toggle Grid on Current Layer (Scene)",
+        "hint": ""
+      }
+    },
+    "common": {
+      "layers": "レイヤー",
+      "gridSpaces": "Grid Spaces",
+      "color": "色",
+      "precision": "Precision",
+      "decimalPlaces": "Decimal Places",
+      "apply": "適用"
+    }
+  }
+}
