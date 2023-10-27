@@ -226,7 +226,7 @@ export function computeCoverBonus(attacker, target) {
           coverBonus = 0;
       }
       break;
-    case 'pf2eperception':
+    case 'pf2e-perception':
       if (!game.modules.get('pf2e-perception')?.active) return null;
       const coverValue = game.modules.get('pf2e-perception').api.token.getCover(attacker, target);
       switch (coverValue) {
