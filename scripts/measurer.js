@@ -25,7 +25,6 @@ export class DistanceMeasurer {
   static showMeasures({ gridSpaces = true, snap = true } = {}) {
     DistanceMeasurer.gridSpaces = gridSpaces;
     DistanceMeasurer.snap = snap;
-    console.log({ gridSpaces, snap });
     if (!canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
       canvas.grid.addHighlightLayer(DistanceMeasurer.hlName);
     }
@@ -297,10 +296,12 @@ export class DistanceMeasurer {
       if (cover > 5 && labels.totalCover) text += `\n${labels.totalCover}`;
     }
 
-    for (const ch of token.children) {
-      if (ch.atgText && ch.x === x && ch.y === y) {
-        ch.text = text;
-        return;
+    if (token._atgLabels) {
+      for (const t of token._atgLabels) {
+        if (t.atgX === x && t.atgY === y) {
+          t.text = text;
+          return;
+        }
       }
     }
 
@@ -337,15 +338,18 @@ export class DistanceMeasurer {
       pText.x = x;
       pText.y = y;
     }
+    pText.atgX = x;
+    pText.atgY = y;
 
-    token._atgText = pText;
+    if (token._atgLabels) token._atgLabels.push(pText);
+    else token._atgLabels = [pText];
   }
 
   static deleteLabels() {
     canvas.tokens.placeables.forEach((p) => {
-      if (p._atgText) {
-        p._atgText.parent.removeChild(p._atgText)?.destroy();
-        delete p._atgText;
+      if (p._atgLabels) {
+        p._atgLabels.forEach((t) => t.parent.removeChild(t)?.destroy());
+        delete p._atgLabels;
       }
     });
   }

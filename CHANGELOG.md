@@ -1,3 +1,12 @@
+# 1.17.0
+
+- New option: `Settings` > `Measurement` > `Ignore Tokens with Effect`
+  - Tokens with matching effect name to this option will be ignored during distance/cover calculations
+- Measurement/Cover Support for Vision5e's imprecise sense
+- Added `PF2e Perception` module as one of the cover calculator options courtesy of **@ChasarooniZ**
+- Japanese Translation courtesy of **@doumoku**
+- Fixed grid snapping on token drag resulting in cover calculations changing on mouse release
+
 # 1.16.0
 
 - New option: `Settings` > `Cover`
