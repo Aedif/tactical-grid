@@ -285,3 +285,47 @@ function calcTokenVisibilityCover(attacker, target) {
 // ===================
 // End of MidiQOL code
 // ===================
+
+export function tokenHasEffect(token, efName) {
+  if (token.document.actorLink) {
+    return actorHasEffect(token.actor, efName);
+  } else {
+    if (game.system.id === 'pf2e') {
+      return (token.document.delta?.items || []).some(
+        (item) => item.name === efName && _activePF2EItem(item)
+      );
+    } else {
+      let has = (token.document.effects || []).some(
+        (ef) => !ef.disabled && !ef.isSuppressed && ef.label === efName
+      );
+      if (has) return true;
+      return actorHasEffect(token.actor, efName);
+    }
+  }
+}
+
+function actorHasEffect(actor, efName) {
+  if (!actor) return false;
+
+  if (game.system.id === 'pf2e') {
+    return (actor.items || []).some((item) => item.name === efName && _activePF2EItem(item));
+  } else {
+    return (actor.effects || []).some(
+      (ef) => !ef.disabled && !ef.isSuppressed && ef.label === efName
+    );
+  }
+}
+
+const PF2E_ITEM_TYPES = ['condition', 'effect', 'weapon', 'equipment'];
+function _activePF2EItem(item) {
+  if (PF2E_ITEM_TYPES.includes(item.type)) {
+    if ('active' in item) {
+      return item.active;
+    } else if ('isEquipped' in item) {
+      return item.isEquipped;
+    } else {
+      return true;
+    }
+  }
+  return false;
+}

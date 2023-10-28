@@ -1,5 +1,10 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import { computeCoverBonus, nearestPointToCircle, nearestPointToRectangle } from './utils.js';
+import {
+  computeCoverBonus,
+  nearestPointToCircle,
+  nearestPointToRectangle,
+  tokenHasEffect,
+} from './utils.js';
 
 export let TEXT_STYLE;
 
@@ -120,9 +125,15 @@ export class DistanceMeasurer {
       origin.y = y + canvas.grid.size / 2;
     }
 
-    const visibleTokens = canvas.tokens.placeables.filter(
+    let visibleTokens = canvas.tokens.placeables.filter(
       (p) => p.visible || p.impreciseVisible // Vision5e support
     );
+
+    if (MODULE_CONFIG.measurement.ignoreEffect) {
+      visibleTokens = visibleTokens.filter(
+        (p) => !tokenHasEffect(p, MODULE_CONFIG.measurement.ignoreEffect)
+      );
+    }
 
     for (const token of visibleTokens) {
       let fromPoint = origin;

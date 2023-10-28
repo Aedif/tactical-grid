@@ -42,6 +42,7 @@ export const MODULE_CONFIG = {
     fill: CONFIG.canvasTextStyle.fill,
     enableFontScaling: true,
     baseGridSize: 100,
+    ignoreEffect: '',
   },
   marker: {
     color: 0xff0000,

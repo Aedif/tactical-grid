@@ -74,6 +74,10 @@
         "half": "Half",
         "threeQuarters": "Three-quarters",
         "total": "Total"
+      },
+      "ignoreEffect": {
+        "name": "Ignore Tokens with Effect",
+        "hint": "Tokens with a matching effect name will be ignored from measurement calculations."
       }
     },
     "keybindings": {
