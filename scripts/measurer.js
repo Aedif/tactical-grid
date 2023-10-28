@@ -280,7 +280,7 @@ export class DistanceMeasurer {
     // if (this.clone) this.clone.destroy();
 
     const cloneDoc = token.document.clone({}, { keepId: true });
-    this.clone = new Token(cloneDoc);
+    this.clone = new CONFIG.Token.objectClass(cloneDoc);
     this.clone.eventMode = 'none';
     cloneDoc._object = this.clone;
 

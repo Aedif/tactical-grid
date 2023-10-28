@@ -1,3 +1,7 @@
+# 1.17.1
+
+- Fixed errors thrown when `Alternative Token Vision` is set as cover calculator
+
 # 1.17.0
 
 - New option: `Settings` > `Measurement` > `Ignore Tokens with Effect`
