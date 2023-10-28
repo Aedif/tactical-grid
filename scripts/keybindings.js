@@ -66,7 +66,9 @@ export function registerKeybindings() {
     hint: '',
     editable: [],
     onUp: DistanceMeasurer.hideMeasures,
-    onDown: DistanceMeasurer.showMeasures,
+    onDown: (event) => {
+      DistanceMeasurer.showMeasures();
+    },
     restricted: false,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
   });

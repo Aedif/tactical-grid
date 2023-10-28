@@ -7,51 +7,81 @@ export class DistanceMeasurer {
   static hlName = 'ATG';
   static shape;
   static gridSpaces = true;
+  static snap = true;
   static origin;
+  static originToken;
+  static clone = null;
 
   /**
    * Measure and display distances
    * @param {Boolean} options.gridSpaces should measurements be in grade space increments
-   * @param {Token} options.draggedEntity 'DragRuler' module's dragged token
+   * @param {Boolean} options.snap should origin snap to grid
    */
-  static showMeasures({ gridSpaces = true, draggedEntity = null } = {}) {
+  static showMeasures({ gridSpaces = true, snap = true } = {}) {
     DistanceMeasurer.gridSpaces = gridSpaces;
+    DistanceMeasurer.snap = snap;
+    console.log({ gridSpaces, snap });
     if (!canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
       canvas.grid.addHighlightLayer(DistanceMeasurer.hlName);
     }
-
-    const ruler = canvas.controls.ruler;
-    if (
-      MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure &&
-      ruler &&
-      ruler._state !== Ruler.STATES.INACTIVE
-    ) {
-      DistanceMeasurer.setOrigin({ x: ruler.destination.x, y: ruler.destination.y, draggedEntity });
-    } else if (canvas.tokens.hover?.transform) {
-      DistanceMeasurer.setOrigin({
-        x: canvas.tokens.hover.center.x,
-        y: canvas.tokens.hover.center.y,
-      });
-    } else if (canvas.tokens.controlled.length === 1) {
-      let controlled = canvas.tokens.controlled[0];
-      DistanceMeasurer.setOrigin({ x: controlled.center.x, y: controlled.center.y });
-    }
-
+    DistanceMeasurer.setOrigin();
     DistanceMeasurer.drawLabels();
   }
 
   static hideMeasures() {
     DistanceMeasurer.deleteLabels();
     DistanceMeasurer.origin = null;
+    DistanceMeasurer.originToken = null;
     canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
   }
 
-  static setOrigin(pos) {
-    DistanceMeasurer.origin = pos;
-    if (!pos.draggedEntity) {
-      const [x, y] = canvas.grid.grid.getTopLeft(pos.x, pos.y);
-      DistanceMeasurer.highlightPosition(x, y);
+  static setOrigin(pos = null) {
+    let origin;
+    let originToken = null;
+
+    if (canvas.tokens.hover?.transform) {
+      originToken = canvas.tokens.hover;
+    } else if (canvas.tokens.controlled.length === 1) {
+      originToken = canvas.tokens.controlled[0];
     }
+
+    // If a ruler is active we will not use a token as origin
+    // unless the token has a preview implying it is being dragged
+    // together with the ruler (e.g. `Drag Ruler` module)
+    const ruler = canvas.controls.ruler;
+    if (
+      MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure &&
+      ruler &&
+      ruler._state !== Ruler.STATES.INACTIVE
+    ) {
+      if (!originToken?.hasPreview) originToken = null;
+      origin = { x: ruler.destination.x, y: ruler.destination.y };
+    } else if (originToken) {
+      origin = {
+        x: originToken.center.x,
+        y: originToken.center.y,
+      };
+    }
+
+    if (originToken?.hasPreview) {
+      originToken = originToken._preview;
+    }
+
+    if (pos) origin = pos;
+
+    if (origin) {
+      const [x, y] = canvas.grid.grid.getTopLeft(origin.x, origin.y);
+
+      if (
+        !DistanceMeasurer.origin ||
+        DistanceMeasurer.origin.x !== origin.x ||
+        DistanceMeasurer.origin.y !== origin.y
+      )
+        DistanceMeasurer.highlightPosition(x, y);
+    }
+
+    DistanceMeasurer.origin = origin;
+    DistanceMeasurer.originToken = originToken;
   }
 
   static clearHighlight() {
@@ -90,24 +120,22 @@ export class DistanceMeasurer {
       origin.y = y + canvas.grid.size / 2;
     }
 
-    let originToken;
-    if (canvas.tokens.hover) {
-      originToken = canvas.tokens.hover;
-    } else if (canvas.tokens.controlled.length === 1) {
-      originToken = canvas.tokens.controlled[0];
-    }
-
     const visibleTokens = canvas.tokens.placeables.filter(
       (p) => p.visible || p.impreciseVisible // Vision5e support
     );
 
     for (const token of visibleTokens) {
-      // Drag Ruler, since that module allows for the ruler to essentially be the size of the token
-      // we can't simply use the origin we need to find the closest point/grid space between the dragged
-      // and measured to token
       let fromPoint = origin;
-      if (origin.draggedEntity) {
-        fromPoint = nearestOriginPoint(origin.draggedEntity, token, DistanceMeasurer.origin);
+
+      // If originToken has a preview it means the token is being dragged and we should do measurements
+      // not from a point but a rectangle the size of the token and thus find the closest point/grid space
+      // between the dragged and measured to token
+      if (this.originToken?._original) {
+        fromPoint = nearestOriginPoint(
+          DistanceMeasurer.originToken,
+          token,
+          DistanceMeasurer.origin
+        );
       }
 
       const distances = [];
@@ -138,7 +166,7 @@ export class DistanceMeasurer {
         }
 
         const distance = DistanceMeasurer.getDistance(fromPoint, target, token, {
-          originToken,
+          originToken: DistanceMeasurer.originToken,
           gridSpaces: false,
         });
         distances.push({ offsetX: token.w / 2, offsetY: token.h / 2, distance });
@@ -158,7 +186,7 @@ export class DistanceMeasurer {
             };
             const distance = DistanceMeasurer.getDistance(fromPoint, target, token, {
               gridSpaces: DistanceMeasurer.gridSpaces,
-              originToken,
+              originToken: DistanceMeasurer.originToken,
             });
             distances.push({ offsetX, offsetY, distance });
           }
@@ -177,7 +205,7 @@ export class DistanceMeasurer {
             };
             const distance = DistanceMeasurer.getDistance(fromPoint, target, token, {
               gridSpaces: DistanceMeasurer.gridSpaces,
-              originToken,
+              originToken: DistanceMeasurer.originToken,
             });
             distances.push({ offsetX, offsetY, distance });
           }
@@ -186,9 +214,24 @@ export class DistanceMeasurer {
 
       /// Calculate Cover
       let cover;
-      if (originToken && MODULE_CONFIG.cover.calculator !== 'none') {
-        let oT = originToken._preview ?? originToken;
-        if (oT.id !== token.id) cover = computeCoverBonus(oT, token);
+      if (DistanceMeasurer.originToken && MODULE_CONFIG.cover.calculator !== 'none') {
+        if (DistanceMeasurer.originToken.id !== token.id) {
+          let attacker = DistanceMeasurer.originToken;
+          if (DistanceMeasurer.originToken._original) {
+            if (DistanceMeasurer.snap && canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) {
+              attacker = this.getClone(DistanceMeasurer.originToken);
+
+              let [x, y] = canvas.grid.grid.getTopLeft(origin.x, origin.y);
+              attacker.x = x;
+              attacker.y = y;
+              attacker.document.x = x;
+              attacker.document.y = y;
+            } else {
+              attacker = DistanceMeasurer.originToken;
+            }
+          }
+          cover = computeCoverBonus(attacker, token);
+        }
       }
 
       if (distances.length) {
@@ -214,6 +257,24 @@ export class DistanceMeasurer {
         }
       }
     }
+  }
+
+  static getClone(token) {
+    if (
+      this.clone &&
+      this.clone.id === token.id &&
+      this.clone.w === token.w &&
+      this.clone.h === token.h
+    )
+      return this.clone;
+    // if (this.clone) this.clone.destroy();
+
+    const cloneDoc = token.document.clone({}, { keepId: true });
+    this.clone = new Token(cloneDoc);
+    this.clone.eventMode = 'none';
+    cloneDoc._object = this.clone;
+
+    return this.clone;
   }
 
   static addUpdateLabel(token, x, y, text, cover) {

@@ -409,10 +409,11 @@ export function registerRulerLibWrapperMethods() {
         'CONFIG.Canvas.rulerClass.prototype.measure',
         function (wrapped, ...args) {
           let result = wrapped(...args);
+          const opts = args[1] ?? {};
           if (this.user.id === game.user.id)
             DistanceMeasurer.showMeasures({
               gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
-              draggedEntity: this.draggedEntity instanceof Token ? this.draggedEntity : null, // Drag Ruler
+              snap: opts.snap ?? opts.gridSpaces,
             });
           return result;
         },
