@@ -60,6 +60,7 @@ export const MODULE_CONFIG = {
 
 export const MODULE_CLIENT_CONFIG = {
   rulerActivatedDistanceMeasure: false,
+  tokenActivatedDistanceMeasure: false,
   rulerDistanceMeasureGirdSpaces: true,
   disableTacticalGrid: false,
 };
@@ -198,8 +199,8 @@ export function registerSettings() {
   });
 
   game.settings.register('aedifs-tactical-grid', 'rulerActivatedDistanceMeasure', {
-    name: 'Display Distances on Ruler Drag',
-    hint: 'When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them.',
+    name: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnRulerDrag.name'),
+    hint: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnRulerDrag.hint'),
     scope: 'client',
     config: true,
     type: Boolean,
@@ -207,13 +208,34 @@ export function registerSettings() {
     onChange: async (val) => {
       MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure = val;
       unregisterRulerLibWrapperMethods();
-      if (val) registerRulerLibWrapperMethods();
+      registerRulerLibWrapperMethods();
     },
   });
   MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure = game.settings.get(
     'aedifs-tactical-grid',
     'rulerActivatedDistanceMeasure'
   );
+
+  if (game.modules.get('drag-ruler')) {
+    game.settings.register('aedifs-tactical-grid', 'tokenActivatedDistanceMeasure', {
+      name: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.name'),
+      hint: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.hint'),
+      scope: 'client',
+      config: true,
+      type: Boolean,
+      default: MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure,
+      onChange: async (val) => {
+        MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = val;
+        unregisterRulerLibWrapperMethods();
+        registerRulerLibWrapperMethods();
+      },
+    });
+    MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = game.settings.get(
+      'aedifs-tactical-grid',
+      'tokenActivatedDistanceMeasure'
+    );
+  }
+
   game.settings.register('aedifs-tactical-grid', 'rulerDistanceMeasureGirdSpaces', {
     name: 'Ruler: Grid Spaces',
     hint: 'Calculate Ruler triggered distance measurements in grid space increments.',
@@ -229,6 +251,8 @@ export function registerSettings() {
     'aedifs-tactical-grid',
     'rulerDistanceMeasureGirdSpaces'
   );
+
+  game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.name');
 
   if (MODULE_CONFIG.enableOnRuler || MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) {
     registerRulerLibWrapperMethods();
@@ -404,18 +428,27 @@ export function registerRulerLibWrapperMethods() {
       rulerWrappers.push(id);
     }
 
-    if (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) {
+    if (
+      MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure ||
+      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure
+    ) {
       id = libWrapper.register(
         'aedifs-tactical-grid',
         'CONFIG.Canvas.rulerClass.prototype.measure',
         function (wrapped, ...args) {
           let result = wrapped(...args);
-          const opts = args[1] ?? {};
-          if (this.user.id === game.user.id)
-            DistanceMeasurer.showMeasures({
-              gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
-              snap: opts.snap ?? opts.gridSpaces,
-            });
+          if (this.user.id === game.user.id) {
+            if (
+              (!this.draggedEntity && MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) ||
+              (this.draggedEntity && MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure)
+            ) {
+              const opts = args[1] ?? {};
+              DistanceMeasurer.showMeasures({
+                gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
+                snap: opts.snap ?? opts.gridSpaces,
+              });
+            }
+          }
           return result;
         },
         'WRAPPER'
@@ -423,7 +456,11 @@ export function registerRulerLibWrapperMethods() {
       rulerWrappers.push(id);
     }
 
-    if (MODULE_CONFIG.enableOnRuler || MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) {
+    if (
+      MODULE_CONFIG.enableOnRuler ||
+      MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure ||
+      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure
+    ) {
       id = libWrapper.register(
         'aedifs-tactical-grid',
         'CONFIG.Canvas.rulerClass.prototype._endMeasurement',

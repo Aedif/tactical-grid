@@ -42,6 +42,7 @@ export class DistanceMeasurer {
   static setOrigin(pos = null) {
     let origin;
     let originToken = null;
+    let highlight = true;
 
     if (canvas.tokens.hover?.transform) {
       originToken = canvas.tokens.hover;
@@ -54,12 +55,14 @@ export class DistanceMeasurer {
     // together with the ruler (e.g. `Drag Ruler` module)
     const ruler = canvas.controls.ruler;
     if (
-      MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure &&
+      (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure ||
+        MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) &&
       ruler &&
       ruler._state !== Ruler.STATES.INACTIVE
     ) {
       if (!originToken?.hasPreview) originToken = null;
       origin = { x: ruler.destination.x, y: ruler.destination.y };
+      highlight = false;
     } else if (originToken) {
       origin = {
         x: originToken.center.x,
@@ -77,9 +80,10 @@ export class DistanceMeasurer {
       const [x, y] = canvas.grid.grid.getTopLeft(origin.x, origin.y);
 
       if (
-        !DistanceMeasurer.origin ||
-        DistanceMeasurer.origin.x !== origin.x ||
-        DistanceMeasurer.origin.y !== origin.y
+        highlight &&
+        (!DistanceMeasurer.origin ||
+          DistanceMeasurer.origin.x !== origin.x ||
+          DistanceMeasurer.origin.y !== origin.y)
       )
         DistanceMeasurer.highlightPosition(x, y);
     }
@@ -240,7 +244,11 @@ export class DistanceMeasurer {
               attacker = DistanceMeasurer.originToken;
             }
           }
-          cover = computeCoverBonus(attacker, token);
+          try {
+            cover = computeCoverBonus(attacker, token);
+          } catch (e) {
+            console.error(e);
+          }
         }
       }
 

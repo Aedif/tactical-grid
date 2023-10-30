@@ -1,3 +1,11 @@
+# 1.18.0
+
+- New client setting: `Display Distances on Token Drag`
+  - Only available when `Drag Ruler` module is installed
+  - When enabled perform distance measurement calculations between the dragged token and all other visible tokens
+- Errors thrown by cover calculator modules should no longer break token drag
+- Tactical Grid marker will no longer be shown during ruler/token drag
+
 # 1.17.1
 
 - Fixed errors thrown when `Alternative Token Vision` is set as cover calculator

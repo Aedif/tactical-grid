@@ -78,6 +78,14 @@
       "ignoreEffect": {
         "name": "Ignore Tokens with Effect",
         "hint": "Tokens with a matching effect name will be ignored from measurement calculations."
+      },
+      "displayDistancesOnRulerDrag": {
+        "name": "Display Distances on Ruler Drag",
+        "hint": "When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them."
+      },
+      "displayDistancesOnTokenDrag": {
+        "name": "Display Distances on Token Drag (`Drag Ruler` module)",
+        "hint": "When enabled distances between the dragged token and all visible Tokens will be calculated and displayed on them."
       }
     },
     "keybindings": {
