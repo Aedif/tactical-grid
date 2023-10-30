@@ -254,9 +254,7 @@ export function registerSettings() {
 
   game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.name');
 
-  if (MODULE_CONFIG.enableOnRuler || MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) {
-    registerRulerLibWrapperMethods();
-  }
+  registerRulerLibWrapperMethods();
 
   /** =======================================================
    *  Insert token specific viewDistance and viewShape flags
@@ -371,8 +369,7 @@ function _onSettingChange(newSettings) {
 
   if ('enableOnRuler' in diff) {
     unregisterRulerLibWrapperMethods();
-    if (MODULE_CONFIG.enableOnRuler || MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure)
-      registerRulerLibWrapperMethods();
+    registerRulerLibWrapperMethods();
   }
 
   if (
@@ -428,54 +425,44 @@ export function registerRulerLibWrapperMethods() {
       rulerWrappers.push(id);
     }
 
-    if (
-      MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure ||
-      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure
-    ) {
-      id = libWrapper.register(
-        'aedifs-tactical-grid',
-        'CONFIG.Canvas.rulerClass.prototype.measure',
-        function (wrapped, ...args) {
-          let result = wrapped(...args);
-          if (this.user.id === game.user.id) {
-            if (
-              (!this.draggedEntity && MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) ||
-              (this.draggedEntity && MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure)
-            ) {
-              const opts = args[1] ?? {};
-              DistanceMeasurer.showMeasures({
-                gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
-                snap: opts.snap ?? opts.gridSpaces,
-              });
-            }
+    id = libWrapper.register(
+      'aedifs-tactical-grid',
+      'CONFIG.Canvas.rulerClass.prototype.measure',
+      function (wrapped, ...args) {
+        let result = wrapped(...args);
+        if (this.user.id === game.user.id) {
+          if (
+            (!this.draggedEntity && MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) ||
+            (this.draggedEntity && MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) ||
+            DistanceMeasurer.keyPressed
+          ) {
+            const opts = args[1] ?? {};
+            DistanceMeasurer.showMeasures({
+              gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
+              snap: opts.snap ?? opts.gridSpaces,
+            });
           }
-          return result;
-        },
-        'WRAPPER'
-      );
-      rulerWrappers.push(id);
-    }
+        }
+        return result;
+      },
+      'WRAPPER'
+    );
+    rulerWrappers.push(id);
 
-    if (
-      MODULE_CONFIG.enableOnRuler ||
-      MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure ||
-      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure
-    ) {
-      id = libWrapper.register(
-        'aedifs-tactical-grid',
-        'CONFIG.Canvas.rulerClass.prototype._endMeasurement',
-        function (wrapped, ...args) {
-          let result = wrapped(...args);
-          if (this.user.id === game.user.id) {
-            if (MODULE_CONFIG.enableOnRuler) GRID_MASK.container.drawMask();
-            DistanceMeasurer.hideMeasures();
-          }
-          return result;
-        },
-        'WRAPPER'
-      );
-      rulerWrappers.push(id);
-    }
+    id = libWrapper.register(
+      'aedifs-tactical-grid',
+      'CONFIG.Canvas.rulerClass.prototype._endMeasurement',
+      function (wrapped, ...args) {
+        let result = wrapped(...args);
+        if (this.user.id === game.user.id) {
+          if (MODULE_CONFIG.enableOnRuler) GRID_MASK.container.drawMask();
+          DistanceMeasurer.hideMeasures();
+        }
+        return result;
+      },
+      'WRAPPER'
+    );
+    rulerWrappers.push(id);
   }
 }
 

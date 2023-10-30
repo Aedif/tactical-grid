@@ -16,6 +16,7 @@ export class DistanceMeasurer {
   static origin;
   static originToken;
   static clone = null;
+  static keyPressed = false;
 
   /**
    * Measure and display distances
@@ -56,11 +57,18 @@ export class DistanceMeasurer {
     const ruler = canvas.controls.ruler;
     if (
       (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure ||
-        MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) &&
+        MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure ||
+        DistanceMeasurer.keyPressed) &&
       ruler &&
       ruler._state !== Ruler.STATES.INACTIVE
     ) {
-      if (!originToken?.hasPreview) originToken = null;
+      if (!originToken?.hasPreview) {
+        if (ruler.draggedEntity) {
+          originToken = ruler.draggedEntity.clone();
+        } else {
+          originToken = null;
+        }
+      }
       origin = { x: ruler.destination.x, y: ruler.destination.y };
       highlight = false;
     } else if (originToken) {

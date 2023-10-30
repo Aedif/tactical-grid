@@ -1,3 +1,7 @@
+# 1.18.1
+
+- `Display Distance` keybindings will now override `Display Distance on Ruler Drag` and `Display Distance on Token Drag` settings
+
 # 1.18.0
 
 - New client setting: `Display Distances on Token Drag`

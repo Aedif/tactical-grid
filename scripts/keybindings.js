@@ -65,8 +65,12 @@ export function registerKeybindings() {
     name: 'Display Distances (Grid Spacing)',
     hint: '',
     editable: [],
-    onUp: DistanceMeasurer.hideMeasures,
+    onUp: () => {
+      DistanceMeasurer.keyPressed = false;
+      DistanceMeasurer.hideMeasures();
+    },
     onDown: (event) => {
+      DistanceMeasurer.keyPressed = true;
       DistanceMeasurer.showMeasures();
     },
     restricted: false,
@@ -77,8 +81,14 @@ export function registerKeybindings() {
     name: 'Display Distances',
     hint: '',
     editable: [],
-    onUp: DistanceMeasurer.hideMeasures,
-    onDown: () => DistanceMeasurer.showMeasures({ gridSpaces: false }),
+    onUp: () => {
+      DistanceMeasurer.keyPressed = false;
+      DistanceMeasurer.hideMeasures();
+    },
+    onDown: () => {
+      DistanceMeasurer.keyPressed = true;
+      DistanceMeasurer.showMeasures({ gridSpaces: false });
+    },
     restricted: false,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
   });
