@@ -154,21 +154,13 @@ export function nearestPointToCircle(c, p) {
 const FULL_COVER = 999;
 const THREE_QUARTERS_COVER = 5;
 const HALF_COVER = 2;
-let midiCoverCalculation;
 export function computeCoverBonus(attacker, target) {
   let coverBonus = null;
   if (!attacker) return null;
 
   let calculator;
   if (MODULE_CONFIG.cover.calculator === 'midi-qol') {
-    if (!midiCoverCalculation) {
-      if (game.modules.get('midi-qol')?.active) {
-        midiCoverCalculation =
-          game.settings.get('midi-qol', 'ConfigSettings')?.optionalRules?.coverCalculation ||
-          'none';
-      } else midiCoverCalculation = 'none';
-    }
-    calculator = midiCoverCalculation;
+    calculator = MidiQOL?.configSettings()?.optionalRules?.coverCalculation ?? 'none';
   } else {
     calculator = MODULE_CONFIG.cover.calculator;
   }

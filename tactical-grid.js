@@ -34,6 +34,7 @@ Hooks.on('init', () => {
   };
 
   game.modules.get('aedifs-tactical-grid').api = { highlightReach, clearReach };
+  CONFIG.debug.atg = false;
 });
 
 /** =========================

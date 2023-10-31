@@ -243,7 +243,9 @@ export class DistanceMeasurer {
             if (DistanceMeasurer.snap && canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) {
               attacker = this.getClone(DistanceMeasurer.originToken);
 
-              let [x, y] = canvas.grid.grid.getTopLeft(origin.x, origin.y);
+              let x = DistanceMeasurer.origin.x - attacker.w / 2;
+              let y = DistanceMeasurer.origin.y - attacker.h / 2;
+
               attacker.x = x;
               attacker.y = y;
               attacker.document.x = x;
@@ -252,6 +254,13 @@ export class DistanceMeasurer {
               attacker = DistanceMeasurer.originToken;
             }
           }
+
+          if (CONFIG.debug.atg) {
+            const dg = canvas.controls.debug;
+            dg.clear();
+            dg.lineStyle(4, 0xff0000, 1).drawRect(attacker.x, attacker.y, attacker.w, attacker.h);
+          }
+
           try {
             cover = computeCoverBonus(attacker, token);
           } catch (e) {
@@ -368,6 +377,10 @@ export class DistanceMeasurer {
         delete p._atgLabels;
       }
     });
+
+    if (CONFIG.debug.atg) {
+      canvas.controls.debug.clear();
+    }
   }
 
   static clickLeft(pos) {

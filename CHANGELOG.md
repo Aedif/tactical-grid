@@ -1,3 +1,13 @@
+# 1.18.2
+
+- `Settings` > `Cover` > `Cover Calculator` : `MidiQOL`
+
+  - No longer requires game reload to take effect after the setting is changed.
+
+- Drag Ruler: Fixed cover calculations being offset on tokens larger than 1x1
+- `CONFIG.debug.atg = true`
+  - Shows the location that the cover calculations are actually being done from
+
 # 1.18.1
 
 - `Display Distance` keybindings will now override `Display Distance on Ruler Drag` and `Display Distance on Token Drag` settings
