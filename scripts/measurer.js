@@ -10,7 +10,7 @@ export let TEXT_STYLE;
 
 export class DistanceMeasurer {
   static hlName = 'ATG';
-  static shape;
+  //static shape;
   static gridSpaces = true;
   static snap = true;
   static origin;
@@ -24,6 +24,7 @@ export class DistanceMeasurer {
    * @param {Boolean} options.snap should origin snap to grid
    */
   static showMeasures({ gridSpaces = true, snap = true } = {}) {
+    // if (!game.combat?.started) return;
     DistanceMeasurer.gridSpaces = gridSpaces;
     DistanceMeasurer.snap = snap;
     if (!canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
@@ -163,6 +164,14 @@ export class DistanceMeasurer {
       const distances = [];
 
       if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
+        if (DistanceMeasurer.originToken) {
+          fromPoint = nearestOriginPoint(
+            DistanceMeasurer.originToken,
+            token,
+            DistanceMeasurer.origin
+          );
+        }
+
         // Gridless
         let target = {
           ...token.center,

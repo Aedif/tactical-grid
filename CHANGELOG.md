@@ -1,3 +1,7 @@
+# 1.18.3
+
+- Fixed origin token not being picked up on gridless scenes
+
 # 1.18.2
 
 - `Settings` > `Cover` > `Cover Calculator` : `MidiQOL`
