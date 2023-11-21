@@ -144,6 +144,7 @@ export function nearestPointToCircle(c, p) {
   let vX = p.x - c.x;
   let vY = p.y - c.y;
   let magV = Math.sqrt(vX * vX + vY * vY);
+  if (magV <= c.r) return { x: p.x, y: p.y };
   return { x: c.x + (vX / magV) * c.r, y: c.y + (vY / magV) * c.r };
 }
 

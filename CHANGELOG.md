@@ -1,3 +1,8 @@
+# 1.18.4
+
+- Fixed overlapping tokens not taking into account elevation during distance measurements
+- Fixed `Gridless: Circle Border` causing overlapping tokens with same elevation to measure non-zero distances
+
 # 1.18.3
 
 - Fixed origin token not being picked up on gridless scenes

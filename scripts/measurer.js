@@ -411,7 +411,7 @@ export class DistanceMeasurer {
     if (verticalDistance != 0) {
       let dx = target.x - origin.x;
       let dy = target.y - origin.y;
-      let mag = Math.sqrt(dx * dx + dy * dy);
+      let mag = Math.max(Math.sqrt(dx * dx + dy * dy), 0.0000001);
       let angle = Math.atan(verticalDistance / mag);
       let length = mag / Math.cos(angle);
 
