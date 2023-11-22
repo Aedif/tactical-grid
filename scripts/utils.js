@@ -304,7 +304,7 @@ function actorHasEffect(actor, efName) {
     return (actor.items || []).some((item) => item.name === efName && _activePF2EItem(item));
   } else {
     return (actor.effects || []).some(
-      (ef) => !ef.disabled && !ef.isSuppressed && ef.label === efName
+      (ef) => !ef.disabled && !ef.isSuppressed && ef.name === efName
     );
   }
 }

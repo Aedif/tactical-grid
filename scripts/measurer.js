@@ -176,24 +176,23 @@ export class DistanceMeasurer {
         let target = {
           ...token.center,
         };
-        if (MODULE_CONFIG.measurement.shortestDistance) {
-          const b = token.bounds;
-          if (MODULE_CONFIG.measurement.gridlessCircle) {
-            target = nearestPointToCircle(
-              { ...token.center, r: Math.min(b.width, b.height) / 2 },
-              fromPoint
-            );
-          } else {
-            target = nearestPointToRectangle(
-              {
-                minX: b.x,
-                minY: b.y,
-                maxX: b.x + b.width,
-                maxY: b.y + b.height,
-              },
-              fromPoint
-            );
-          }
+
+        const b = token.bounds;
+        if (MODULE_CONFIG.measurement.gridlessCircle) {
+          target = nearestPointToCircle(
+            { ...token.center, r: Math.min(b.width, b.height) / 2 },
+            fromPoint
+          );
+        } else {
+          target = nearestPointToRectangle(
+            {
+              minX: b.x,
+              minY: b.y,
+              maxX: b.x + b.width,
+              maxY: b.y + b.height,
+            },
+            fromPoint
+          );
         }
 
         const distance = DistanceMeasurer.getDistance(fromPoint, target, token, {

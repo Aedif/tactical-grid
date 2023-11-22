@@ -1,3 +1,8 @@
+# 1.18.5
+
+- Deprecation warning fix
+- Measurements on Gridless Scenes now default to Shortest Distance Only
+
 # 1.18.4
 
 - Fixed overlapping tokens not taking into account elevation during distance measurements
