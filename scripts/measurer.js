@@ -64,7 +64,7 @@ export class DistanceMeasurer {
       ruler._state !== Ruler.STATES.INACTIVE
     ) {
       if (!originToken?.hasPreview) {
-        if (ruler.draggedEntity) {
+        if (ruler.draggedEntity instanceof Token) {
           originToken = ruler.draggedEntity.clone();
         } else {
           originToken = null;

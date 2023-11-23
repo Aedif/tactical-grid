@@ -1,3 +1,7 @@
+# 1.18.6
+
+- Fixed Templates disappearing and measurements returning as NaN when dragging a Template with `Drag Ruler` module active
+
 # 1.18.5
 
 - Deprecation warning fix

@@ -2,12 +2,12 @@
   "id": "aedifs-tactical-grid",
   "title": "Tactical Grid",
   "description": "Only show the grid when needed.",
-  "version": "1.18.5",
-  "download": "https://github.com/Aedif/tactical-grid/releases/download/1.18.5/aedifs-tactical-grid.zip",
+  "version": "1.18.6",
+  "download": "https://github.com/Aedif/tactical-grid/releases/download/1.18.6/aedifs-tactical-grid.zip",
   "manifest": "https://raw.githubusercontent.com/Aedif/tactical-grid/main/module.json",
   "compatibility": {
     "minimum": 11,
-    "verified": "11.313"
+    "verified": "11"
   },
   "authors": [
     {
