@@ -1,10 +1,9 @@
 import { getHexOffsets } from './measurer.js';
 
-let outline_mode = false;
-
 export class ReachHighlighter {
-  constructor(token, distances, borderColor = null) {
+  constructor(token, distances, { borderColor, roundToken = false } = {}) {
     this.token = token;
+    this.roundToken = roundToken;
 
     this.borderColor = borderColor ? new PIXI.Color(borderColor).toNumber() : null;
     this.fillColor = '#0000ff';
@@ -13,6 +12,12 @@ export class ReachHighlighter {
     } else {
       this.distances = [distances];
     }
+
+    this.distances.map((d) => {
+      if (d.color != null) d.color = new PIXI.Color(d.color).toNumber();
+      if (d.lineColor != null) d.lineColor = new PIXI.Color(d.lineColor).toNumber();
+      return d;
+    });
 
     canvas.grid.addHighlightLayer(this.highlightId);
     this.token._tgReach = this;
@@ -30,71 +35,57 @@ export class ReachHighlighter {
   }
 
   highlightGrid() {
-    //test
-    if (outline_mode) {
-      this.polyLines = {};
-      this.uniquePolyLines = {};
-      for (let i = 0; i < this.distances.length; i++) {
-        this.polyLines[i] = new LineCollection();
-        this.uniquePolyLines[i] = new LineCollection();
-      }
-    }
-    //test
-
     // Clear the existing highlight layer
     const grid = canvas.grid;
     const hl = grid.getHighlightLayer(this.highlightId);
-    hl.clear();
 
     if (this.token._animation) return;
 
+    hl.clear();
+
     // If we are in grid-less mode, highlight the shape directly
     if (grid.type === CONST.GRID_TYPES.GRIDLESS) {
+      this.distances = this.distances.sort((r1, r2) => r2.reach - r1.reach);
       for (const r of this.distances) {
-        const shape = new PIXI.Ellipse(
-          this.token.center.x,
-          this.token.center.y,
-          r.reach * canvas.dimensions.distancePixels + this.token.w / 2,
-          r.reach * canvas.dimensions.distancePixels + this.token.h / 2
-        );
-        grid.grid.highlightGridPosition(hl, {
-          border: this.borderColor,
-          color: r.color,
-          shape,
-          alpha: r.alpha ?? 0.1,
-        });
+        let shape;
+
+        if (this.roundToken) {
+          shape = new PIXI.Ellipse(
+            this.token.center.x,
+            this.token.center.y,
+            r.reach * canvas.dimensions.distancePixels + this.token.w / 2,
+            r.reach * canvas.dimensions.distancePixels + this.token.h / 2
+          );
+        } else {
+          const width = this.token.w + r.reach * 2 * canvas.dimensions.distancePixels;
+          const height = this.token.h + r.reach * 2 * canvas.dimensions.distancePixels;
+
+          shape = new PIXI.RoundedRectangle(
+            this.token.center.x - width / 2,
+            this.token.center.y - height / 2,
+            width,
+            height,
+            r.reach * canvas.dimensions.distancePixels
+          );
+        }
+
+        this._drawShape(hl, shape, r);
       }
     }
 
     // Otherwise, highlight specific grid positions
     else {
       this._highlightGridPositions(hl);
-      // const positions = this._getGridHighlightPositions();
-      // for (const { x, y } of positions) {
-      //   grid.grid.highlightGridPosition(hl, { x, y, border: this.borderColor, color });
-      // }
     }
   }
 
-  _foundSquare(x, y, size, dIndex) {
-    if (dIndex < this.distances.length - 1) {
-      this._foundSquare(x, y, size, dIndex + 1);
-    }
+  _drawShape(hl, shape, { color, alpha = 0.1, lineColor, lineAlpha = 0.3, lineWidth = 2 } = {}) {
+    if (!color && !lineColor) color = 0xffffff;
 
-    let line1 = [x, y, x + size, y];
-    let line2 = [x, y, x, y + size];
-    let line3 = [x + size, y, x + size, y + size];
-    let line4 = [x, y + size, x + size, y + size];
+    if (Number.isFinite(color)) hl.beginFill(color, alpha);
+    if (Number.isFinite(lineColor)) hl.lineStyle(lineWidth, lineColor, lineAlpha);
 
-    this._addLine(line1, dIndex);
-    this._addLine(line2, dIndex);
-    this._addLine(line3, dIndex);
-    this._addLine(line4, dIndex);
-
-    this.polyLines[dIndex].add(line1);
-    this.polyLines[dIndex].add(line2);
-    this.polyLines[dIndex].add(line3);
-    this.polyLines[dIndex].add(line4);
+    hl.drawShape(shape).endFill();
   }
 
   _addLine(line, dIndex) {
@@ -147,63 +138,23 @@ export class ReachHighlighter {
               { gridSpaces: true }
             );
 
-            if (outline_mode) {
-              if (cd === this.distances[j].reach) {
-                this._highlightGridPosition(hl, {
-                  x: gx,
-                  y: gy,
-                  border: this.borderColor,
-                  color: this.distances[j].color,
-                  alpha: this.distances[j].alpha,
-                });
-                withinReach = this.distances[j];
-                break;
-              }
-            } else {
-              if (cd <= this.distances[j].reach) {
-                this._highlightGridPosition(hl, {
-                  x: gx,
-                  y: gy,
-                  border: this.borderColor,
-                  color: this.distances[j].color,
-                  alpha: this.distances[j].alpha,
-                });
-                withinReach = this.distances[j];
-                break;
-              }
+            if (cd <= this.distances[j].reach) {
+              this._highlightGridPosition(hl, {
+                x: gx,
+                y: gy,
+                border: this.distances[j].lineColor,
+                color: this.distances[j].color,
+                alpha: this.distances[j].alpha,
+              });
+              withinReach = this.distances[j];
+              break;
             }
-
-            // if (
-            //   canvas.grid.measureDistance(
-            //     tokenPositions[i],
-            //     { x: gx, y: gy },
-            //     { gridSpaces: true }
-            //   ) <= this.distances[j].reach
-            // ) {
-            //   if (outline_mode) this._foundSquare(gx, gy, canvas.dimensions.size, j);
-            //   else {
-            //     this._highlightGridPosition(hl, {
-            //       x: gx,
-            //       y: gy,
-            //       border: this.borderColor,
-            //       color: this.distances[j].color,
-            //       alpha: 0.1,
-            //     });
-            //   }
-
-            //   withinReach = this.distances[j];
-            //   break;
-            // }
           }
           if (withinReach) break;
         }
-        // if (withinReach) positions.push();
       }
     }
 
-    //test
-    if (outline_mode) this._renderLines(hl);
-    //test
     return positions;
   }
 
@@ -222,84 +173,31 @@ export class ReachHighlighter {
     }
   }
 
-  // _highlightGridPositions(hl) {
-  //   const grid = canvas.grid.grid;
-  //   const d = canvas.dimensions;
-  //   const { x, y } = this.token;
-  //   const maxDistance = this.distances[this.distances.length - 1].reach;
-  //   const distanceV =
-  //     maxDistance + Math.max(0, (1 - this.token.document.height) * canvas.dimensions.distance);
-  //   const distanceH =
-  //     maxDistance + Math.max(0, (1 - this.token.document.width) * canvas.dimensions.distance);
-
-  //   // Get number of rows and columns
-  //   const [maxRow, maxCol] = grid.getGridPositionFromPixels(d.width, d.height);
-  //   let nRows = Math.ceil((distanceH * 1.5) / d.distance / (d.size / grid.h));
-  //   let nCols = Math.ceil((distanceV * 1.5) / d.distance / (d.size / grid.w));
-  //   [nRows, nCols] = [Math.min(nRows, maxRow), Math.min(nCols, maxCol)];
-
-  //   // Get the offset of the template origin relative to the top-left grid space
-  //   const [tx, ty] = grid.getTopLeft(x, y);
-  //   const [row0, col0] = grid.getGridPositionFromPixels(tx, ty);
-
-  //   // Identify grid coordinates covered by the template Graphics
-  //   const tokenPositions = this._getTokenGridPositions();
-  //   const positions = [];
-  //   for (let r = -nRows; r < nRows + this.token.document.height; r++) {
-  //     for (let c = -nCols; c < nCols + this.token.document.width; c++) {
-  //       const [gx, gy] = grid.getPixelsFromGridPosition(row0 + r, col0 + c);
-
-  //       let withinReach = false;
-  //       for (let j = 0; j < this.distances.length; j++) {
-  //         for (let i = 0; i < tokenPositions.length; i++) {
-  //           if (
-  //             canvas.grid.measureDistance(
-  //               tokenPositions[i],
-  //               { x: gx, y: gy },
-  //               { gridSpaces: true }
-  //             ) <= this.distances[j].reach
-  //           ) {
-  //             this._highlightGridPosition(hl, {
-  //               x: gx,
-  //               y: gy,
-  //               border: this.borderColor,
-  //               color: this.distances[j].color,
-  //               alpha: 0.1,
-  //             });
-  //             withinReach = true;
-  //             break;
-  //           }
-  //         }
-  //         if (withinReach) break;
-  //       }
-  //       if (withinReach) positions.push({ x: gx, y: gy });
-  //     }
-  //   }
-  //   return positions;
-  // }
-
   _highlightGridPosition(
     layer,
-    { x, y, color = 0x33bbff, border = null, alpha = 0.1, shape = null } = {}
+    { x, y, color = 0x33bbff, border = null, alpha = 0.1, shape = null, shrink = 0.8 } = {}
   ) {
-    canvas.grid.grid.highlightGridPosition(layer, {
-      x,
-      y,
-      color,
-      border,
-      alpha: alpha ?? 0.1,
-      shape,
-    });
+    if (!layer.highlight(x, y)) return;
+    if (canvas.grid.grid.getPolygon) {
+      const offsetX = canvas.grid.w * (1.0 - shrink);
+      const offsetY = canvas.grid.h * (1.0 - shrink);
+      shape = new PIXI.Polygon(
+        canvas.grid.grid.getPolygon(
+          x + offsetX / 2,
+          y + offsetY / 2,
+          Math.ceil(canvas.grid.w) - offsetX,
+          Math.ceil(canvas.grid.h) - offsetY
+        )
+      );
+    } else {
+      const s = canvas.dimensions.size;
+      const offset = s * (1.0 - shrink);
+      shape = new PIXI.Rectangle(x + offset / 2, y + offset / 2, s - offset, s - offset);
+    }
 
-    // Smaller shape drawing
-    // let s = canvas.dimensions.size;
-
-    // let ds = s * 0.3;
-    // shape = new PIXI.Rectangle(x + ds / 2, y + ds / 2, s - ds, s - ds);
-    // if (!shape) return;
-    // layer.beginFill(color, alpha);
-    // if (Number.isFinite(border)) layer.lineStyle(2, border, Math.min(alpha * 1.5, 1.0));
-    // layer.drawShape(shape).endFill();
+    layer.beginFill(color, alpha);
+    if (Number.isFinite(border)) layer.lineStyle(2, border, Math.min(alpha * 1.5, 1.0));
+    layer.drawShape(shape).endFill();
   }
 
   _getTokenGridPositions() {
@@ -346,6 +244,53 @@ export function registerReachHighlightHooks() {
       token._tgReach.highlightGrid();
     }
   });
+
+  const selectors = {
+    itemHover: '.item-name',
+    item: '.item',
+    itemId: 'data-item-id',
+    reaches: ['system.range.value', 'system.range.long'],
+    colors: ['#00ff00', '#ffdd00', '#ff0000'],
+  };
+
+  Hooks.on('renderActorSheet', (sheet, form, options) => {
+    const actor = options.actor;
+
+    $(form)
+      .find(selectors.itemHover)
+      .on('mouseenter', (event) => {
+        const token = sheet.token?.object;
+        if (!token) return;
+
+        const itemId = $(event.target).closest(selectors.item).attr(selectors.itemId);
+        const item = actor.items.get(itemId);
+
+        if (!item) {
+          TacticalGrid.clearReach(token);
+          return;
+        }
+
+        const distances = [];
+        for (let i = 0; i < selectors.reaches.length; i++) {
+          let r = selectors.reaches[i];
+          let range = foundry.utils.getProperty(item, r);
+          if (range) {
+            let color = i < selectors.colors.length ? selectors.colors[i] : '#ff00c8';
+            distances.push({ reach: Number(range), color, lineColor: color });
+          }
+        }
+
+        if (distances.length) {
+          TacticalGrid.highlightReach(token, distances, {
+            roundToken: false,
+          });
+        }
+      })
+      .on('mouseleave', (event) => {
+        const token = sheet.token?.object;
+        if (token) TacticalGrid.clearReach(token);
+      });
+  });
 }
 // recursive exploration using `shiftPosition`
 
@@ -355,34 +300,4 @@ function constructGridArray(nRows, nCols) {
     grid[i] = new Array(nRows);
   }
   return grid;
-}
-
-function propsToKey(props) {
-  return JSON.stringify(props);
-}
-
-class LineCollection {
-  items = new Map();
-  add(...props) {
-    this.items.set(propsToKey(props), props);
-    return this;
-  }
-  clear() {
-    this.items.clear();
-  }
-  delete(...props) {
-    return this.items.delete(propsToKey(props));
-  }
-  forEach(cb) {
-    return this.items.forEach((v) => cb(...v));
-  }
-  has(...props) {
-    return this.items.has(propsToKey(props));
-  }
-  get size() {
-    return this.items.size;
-  }
-  values() {
-    return this.items.values();
-  }
 }

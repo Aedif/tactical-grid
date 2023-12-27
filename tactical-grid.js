@@ -22,8 +22,8 @@ Hooks.on('init', () => {
   registerKeybindings();
   registerReachHighlightHooks();
 
-  const highlightReach = function (token, distances, borderColor) {
-    new ReachHighlighter(token, distances, borderColor);
+  const highlightReach = function (token, distances, options) {
+    new ReachHighlighter(token, distances, options);
   };
 
   const clearReach = function (token) {
@@ -33,7 +33,9 @@ Hooks.on('init', () => {
     }
   };
 
-  game.modules.get('aedifs-tactical-grid').api = { highlightReach, clearReach };
+  globalThis.TacticalGrid = { highlightReach, clearReach };
+
+  game.modules.get('aedifs-tactical-grid').api = globalThis.TacticalGrid;
   CONFIG.debug.atg = false;
 });
 
