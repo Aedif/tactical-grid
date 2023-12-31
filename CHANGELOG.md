@@ -1,3 +1,7 @@
+# 1.19.1
+
+- Fixed range highlight not clearing on token destroy
+
 # 1.19.0
 
 - New settings: `Range`

@@ -260,6 +260,8 @@ export function registerRangeHighlightHooks() {
     if (token._tgRange && token._original) {
       token._tgRange.token = token._original;
       token._original._tgRange.highlightGrid();
+    } else if (token._tgRange) {
+      RangeHighlightAPI.clearRangeHighlight(token);
     }
   });
 
