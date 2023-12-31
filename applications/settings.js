@@ -56,6 +56,51 @@ export const MODULE_CONFIG = {
     threeQuartersCover: '',
     totalCover: '',
   },
+  range: {
+    item: {
+      enabled: false,
+      combatOnly: false,
+    },
+    token: {
+      enabled: false,
+      combatOnly: false,
+    },
+    colors: [
+      {
+        color: '#00ff00',
+        alpha: 0.1,
+        lineColor: '#00ff00',
+        lineWidth: 2,
+        lineAlpha: 0.4,
+        shrink: 0.8,
+      },
+      {
+        color: '#ffae00',
+        alpha: 0.1,
+        lineColor: '#ffae00',
+        lineWidth: 2,
+        lineAlpha: 0.4,
+        shrink: 0.8,
+      },
+      {
+        color: '#ff0000',
+        alpha: 0.1,
+        lineColor: '#ff0000',
+        lineWidth: 2,
+        lineAlpha: 0.4,
+        shrink: 0.8,
+      },
+    ],
+    roundToken: false,
+    defaultColor: {
+      color: '#ffffff',
+      alpha: 0.1,
+      lineColor: '#ffffff',
+      lineWidth: 2,
+      lineAlpha: 0.4,
+      shrink: 0.8,
+    },
+  },
 };
 
 export const MODULE_CLIENT_CONFIG = {
@@ -134,13 +179,16 @@ export default class TGSettingsConfig extends FormApplication {
   async _updateObject(event, formData) {
     const settings = expandObject(formData);
 
+    if (settings.range.colors) settings.range.colors = Object.values(settings.range.colors);
+    else settings.range.colors = [];
+
     for (const [k, v] of Object.entries(settings.dispositionColors)) {
       settings.dispositionColors[k] = Number(Color.fromString(v));
     }
     settings.marker.color = Number(Color.fromString(settings.marker.color));
     settings.marker.border = Number(Color.fromString(settings.marker.border));
 
-    updateSettings(settings);
+    await updateSettings(settings);
   }
 
   activateListeners(html) {
@@ -152,6 +200,26 @@ export default class TGSettingsConfig extends FormApplication {
         html.find('[name="defaultViewDistance"]').prop('disabled', event.target.checked);
       })
       .trigger('change');
+    html.find('.addRangeColor').on('click', this._onAddRangeColor.bind(this));
+    html.find('.deleteRangeColor').on('click', this._onDeleteRangeColor.bind(this));
+  }
+
+  async _onAddRangeColor(event) {
+    const formData = this._getSubmitData({});
+    await this._updateObject(event, formData);
+
+    MODULE_CONFIG.range.colors.push(foundry.utils.deepClone(MODULE_CONFIG.range.defaultColor));
+    this.render(true);
+  }
+
+  async _onDeleteRangeColor(event) {
+    const formData = foundry.utils.expandObject(this._getSubmitData({}));
+    const index = $(event.target).closest('.deleteRangeColor').data('index');
+    console.log(formData);
+    delete formData.range.colors[index];
+
+    await this._updateObject(event, formData);
+    this.render(true);
   }
 }
 
@@ -387,7 +455,7 @@ function _onSettingChange(newSettings) {
 
 export async function updateSettings(newSettings) {
   const settings = mergeObject(deepClone(MODULE_CONFIG), newSettings, { insertKeys: false });
-  game.settings.set('aedifs-tactical-grid', 'settings', settings);
+  await game.settings.set('aedifs-tactical-grid', 'settings', settings);
 }
 
 // ======================

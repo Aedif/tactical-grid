@@ -86,6 +86,13 @@
       "displayDistancesOnTokenDrag": {
         "name": "Display Distances on Token Drag (`Drag Ruler` module)",
         "hint": "When enabled distances between the dragged token and all visible Tokens will be calculated and displayed on them."
+      },
+      "range": {
+        "item-range": "Item Range Highlighter",
+        "token-range": "Token Range Highlighter",
+        "combat-only": "Combat Only",
+        "ranges": "Ranges",
+        "grid-shape-shrink": "Grid Shape Shrink"
       }
     },
     "keybindings": {
