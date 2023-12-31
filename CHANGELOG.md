@@ -1,3 +1,37 @@
+# 1.19.0
+
+- New settings: `Range`
+  - Allows on-hover token and item range highlighting
+
+**API**
+
+- Accessed either via `TacticalGrid` or `game.modules.get("aedifs-tactical-grid").api`
+- `TacticalGrid.rangeHighlight(...)`
+
+```js
+/**
+ * Highlights ranges around the token using either the supplied range values or automatically calculated system specific ranges if only a token or a token and an item are provided.
+ * @param {Token} token                                  Token to highlight the ranges around
+ * @param {Array[Number]|Array[Object]|null} opts.ranges Array of ranges as numerical values or objects defining the range and look of the highlight
+ *                                                        e.g. [5, 30, 60]
+ *                                                        e.g. [ {range: 30, color: '#00ff00', alpha: 0.1, lineColor: '#00ff00', lineWidth: 2, lineAlpha: 0.4, shrink: 0.8, }]
+ * @param {Item} opts.item                               Item to be evaluated by the system specific range calculator to determine `ranges` automatically
+ * @param {Boolean} opts.roundToken                      If `true` the token will be treated as a circle instead of a rectangle on gridless scenes
+ * @returns {null}
+ */
+static rangeHighlight(token, { ranges, roundToken = MODULE_CONFIG.range.roundToken, item } = {})
+```
+
+- `TacticalGrid.clearRangeHighlight(...)`
+
+```js
+/**
+ * Clears highlights applied using TacticalGrid.rangeHighlight(...)
+ * @param {Token} token Token to remove the highlights from
+ */
+static clearRangeHighlight(token)
+```
+
 # 1.18.6
 
 - Fixed Templates disappearing and measurements returning as NaN when dragging a Template with `Drag Ruler` module active

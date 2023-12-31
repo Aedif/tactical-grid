@@ -1,27 +1,25 @@
 import { MODULE_CONFIG } from '../applications/settings.js';
 import { getHexOffsets } from './measurer.js';
 
-export class RangeHighlighter {
-  constructor(token, distances, { borderColor, roundToken = false } = {}) {
+class RangeHighlighter {
+  constructor(token, ranges, { roundToken = false } = {}) {
     this.token = token;
     this.roundToken = roundToken;
 
-    this.borderColor = borderColor ? new PIXI.Color(borderColor).toNumber() : null;
-    this.fillColor = '#0000ff';
-    if (distances instanceof Array) {
-      this.distances = distances.sort((r1, r2) => r1.reach - r2.reach);
+    if (ranges instanceof Array) {
+      this.ranges = ranges.sort((r1, r2) => r1.range - r2.range);
     } else {
-      this.distances = [distances];
+      this.ranges = [ranges];
     }
 
-    this.distances.map((d) => {
+    this.ranges.map((d) => {
       if (d.color) d.color = new PIXI.Color(d.color).toNumber();
       if (d.lineColor) d.lineColor = new PIXI.Color(d.lineColor).toNumber();
       return d;
     });
 
     canvas.grid.addHighlightLayer(this.highlightId);
-    this.token._tgReach = this;
+    this.token._tgRange = this;
     this.highlightGrid();
   }
 
@@ -46,27 +44,27 @@ export class RangeHighlighter {
 
     // If we are in grid-less mode, highlight the shape directly
     if (grid.type === CONST.GRID_TYPES.GRIDLESS) {
-      this.distances = this.distances.sort((r1, r2) => r2.reach - r1.reach);
-      for (const r of this.distances) {
+      this.ranges = this.ranges.sort((r1, r2) => r2.range - r1.range);
+      for (const r of this.ranges) {
         let shape;
 
         if (this.roundToken) {
           shape = new PIXI.Ellipse(
             this.token.center.x,
             this.token.center.y,
-            r.reach * canvas.dimensions.distancePixels + this.token.w / 2,
-            r.reach * canvas.dimensions.distancePixels + this.token.h / 2
+            r.range * canvas.dimensions.distancePixels + this.token.w / 2,
+            r.range * canvas.dimensions.distancePixels + this.token.h / 2
           );
         } else {
-          const width = this.token.w + r.reach * 2 * canvas.dimensions.distancePixels;
-          const height = this.token.h + r.reach * 2 * canvas.dimensions.distancePixels;
+          const width = this.token.w + r.range * 2 * canvas.dimensions.distancePixels;
+          const height = this.token.h + r.range * 2 * canvas.dimensions.distancePixels;
 
           shape = new PIXI.RoundedRectangle(
             this.token.center.x - width / 2,
             this.token.center.y - height / 2,
             width,
             height,
-            r.reach * canvas.dimensions.distancePixels
+            r.range * canvas.dimensions.distancePixels
           );
         }
 
@@ -101,7 +99,7 @@ export class RangeHighlighter {
     const grid = canvas.grid.grid;
     const d = canvas.dimensions;
     const { x, y } = this.token;
-    const maxDistance = this.distances[this.distances.length - 1].reach;
+    const maxDistance = this.ranges[this.ranges.length - 1].range;
     const distanceV =
       maxDistance + Math.max(0, (1 - this.token.document.height) * canvas.dimensions.distance);
     const distanceH =
@@ -130,8 +128,8 @@ export class RangeHighlighter {
       for (let c = col0 - nCols; c < hCols; c++) {
         const [gx, gy] = grid.getPixelsFromGridPosition(r, c);
 
-        let withinReach;
-        for (let j = 0; j < this.distances.length; j++) {
+        let withinRange;
+        for (let j = 0; j < this.ranges.length; j++) {
           for (let i = 0; i < tokenPositions.length; i++) {
             let cd = canvas.grid.measureDistance(
               tokenPositions[i],
@@ -139,17 +137,17 @@ export class RangeHighlighter {
               { gridSpaces: true }
             );
 
-            if (cd <= this.distances[j].reach) {
+            if (cd <= this.ranges[j].range) {
               this._highlightGridPosition(hl, {
                 x: gx,
                 y: gy,
-                ...this.distances[j],
+                ...this.ranges[j],
               });
-              withinReach = this.distances[j];
+              withinRange = this.ranges[j];
               break;
             }
           }
-          if (withinReach) break;
+          if (withinRange) break;
         }
       }
     }
@@ -234,6 +232,8 @@ export class RangeHighlighter {
 
 // recursive exploration using `shiftPosition`
 function constructGridArray(nRows, nCols) {
+  nRows = Math.floor(nRows);
+  nCols = Math.floor(nCols);
   const grid = new Array(nCols);
   for (let i = 0; i < nCols; i++) {
     grid[i] = new Array(nRows);
@@ -244,43 +244,30 @@ function constructGridArray(nRows, nCols) {
 export function registerRangeHighlightHooks() {
   // Refresh highlights
   Hooks.on('refreshToken', (token) => {
-    if (token._tgReach) {
-      token._tgReach.highlightGrid();
-    } else if (token._original?._tgReach) {
+    if (token._tgRange) {
+      token._tgRange.highlightGrid();
+    } else if (token._original?._tgRange) {
       // borrow original tokens RangeHighlighter
-      token._tgReach = token._original._tgReach;
-      token._tgReach.token = token;
-      token._tgReach.highlightGrid();
+      token._tgRange = token._original._tgRange;
+      token._tgRange.token = token;
+      token._tgRange.highlightGrid();
     }
   });
 
   // Remove highlights
   Hooks.on('destroyToken', (token) => {
     // Return RangeHighlighter to the original token on drag-end
-    if (token._tgReach && token._original) {
-      token._tgReach.token = token._original;
-      token._original._tgReach.highlightGrid();
+    if (token._tgRange && token._original) {
+      token._tgRange.token = token._original;
+      token._original._tgRange.highlightGrid();
     }
   });
-
-  // Item Reach Highlighting
-  let reachCalculator;
-  switch (game.system.id) {
-    case 'dnd5e':
-      reachCalculator = Dnd5eReach;
-      break;
-    case 'pf2e':
-      reachCalculator = Pf2eReach;
-      break;
-    default:
-      reachCalculator = SystemReach;
-  }
 
   Hooks.on('hoverToken', (token, hoverIn) => {
     if (!MODULE_CONFIG.range.token.enabled) return;
     if (MODULE_CONFIG.range.token.combatOnly && !game.combat?.started) return;
     if (hoverIn && token.actor) {
-      RangeHighlightAPI.rangeHighlight(token, reachCalculator.getTokenRange(token));
+      RangeHighlightAPI.rangeHighlight(token);
     } else {
       RangeHighlightAPI.clearRangeHighlight(token);
     }
@@ -312,8 +299,7 @@ export function registerRangeHighlightHooks() {
           return;
         }
 
-        const distances = reachCalculator.getItemRange(item, token);
-        RangeHighlightAPI.rangeHighlight(token, distances);
+        RangeHighlightAPI.rangeHighlight(token, { item });
       })
       .on('mouseleave', (event) => {
         const token = sheet.token?.object;
@@ -322,7 +308,68 @@ export function registerRangeHighlightHooks() {
   });
 }
 
-class SystemReach {
+export class RangeHighlightAPI {
+  /**
+   * Highlights ranges around the token using either the supplied range values or automatically calculated system specific ranges if only a token or a token and an item are provided.
+   * @param {Token} token                                  Token to highlight the ranges around
+   * @param {Array[Number]|Array[Object]|null} opts.ranges Array of ranges as numerical values or objects defining the range and look of the highlight
+   *                                                        e.g. [5, 30, 60]
+   *                                                        e.g. [ {range: 30, color: '#00ff00', alpha: 0.1, lineColor: '#00ff00', lineWidth: 2, lineAlpha: 0.4, shrink: 0.8, }]
+   * @param {Item} opts.item                               Item to be evaluated by the system specific range calculator to determine `ranges` automatically
+   * @param {Boolean} opts.roundToken                      If `true` the token will be treated as a circle instead of a rectangle on gridless scenes
+   * @returns {null}
+   */
+  static rangeHighlight(token, { ranges, roundToken = MODULE_CONFIG.range.roundToken, item } = {}) {
+    if (!ranges) {
+      let rangeCalculator;
+      switch (game.system.id) {
+        case 'dnd5e':
+          rangeCalculator = Dnd5eRange;
+          break;
+        case 'pf2e':
+          rangeCalculator = Pf2eRange;
+          break;
+        default:
+          rangeCalculator = SystemRange;
+      }
+
+      if (item) ranges = rangeCalculator.getItemRange(item, token);
+      else ranges = rangeCalculator.getTokenRange(token);
+    }
+
+    if (ranges.length === 0) {
+      RangeHighlightAPI.clearRangeHighlight(token);
+      return;
+    }
+
+    if (Number.isFinite(ranges[0])) {
+      const colors = MODULE_CONFIG.range.colors;
+      ranges = ranges
+        .sort((a, b) => a - b)
+        .map((d, i) => {
+          return {
+            range: d,
+            ...(i < colors.length ? colors[i] : MODULE_CONFIG.range.defaultColor),
+          };
+        });
+    }
+
+    new RangeHighlighter(token, ranges, { roundToken });
+  }
+
+  /**
+   * Clears highlights applied using TacticalGrid.rangeHighlight(...)
+   * @param {Token} token Token to remove the highlights from
+   */
+  static clearRangeHighlight(token) {
+    if (token._tgRange) {
+      token._tgRange.clear();
+      token._tgRange = null;
+    }
+  }
+}
+
+class SystemRange {
   static getTokenRange(token) {
     return [5];
   }
@@ -332,10 +379,10 @@ class SystemReach {
   }
 }
 
-class Dnd5eReach extends SystemReach {
+class Dnd5eRange extends SystemRange {
   static getTokenRange(token) {
     const actor = token.actor;
-    const reaches = new Set([5]);
+    const allRanges = new Set([5]);
 
     actor.items
       .filter(
@@ -345,15 +392,15 @@ class Dnd5eReach extends SystemReach {
           ['martialM', 'simpleM', 'natural', 'improv'].includes(item.system.weaponType)
       )
       .forEach((item) => {
-        const distances = this.getItemRange(item, token).sort();
-        distances.forEach((d) => reaches.add(d));
+        const ranges = this.getItemRange(item, token).sort();
+        ranges.forEach((d) => allRanges.add(d));
       });
 
-    return Array.from(reaches);
+    return Array.from(allRanges);
   }
 
   static getItemRange(item, token) {
-    const distances = [];
+    const ranges = [];
 
     if (item.system.range) {
       let range = item.system.range.value || 0;
@@ -379,17 +426,17 @@ class Dnd5eReach extends SystemReach {
       if (['mwak', 'msak', 'mpak'].includes(item.system.actionType) && !item.system.properties?.thr)
         longRange = 0;
 
-      if (range) distances.push(range);
-      if (longRange) distances.push(longRange);
+      if (range) ranges.push(range);
+      if (longRange) ranges.push(longRange);
     }
 
-    return distances;
+    return ranges;
   }
 }
 
-class Pf2eReach extends SystemReach {
+class Pf2eRange extends SystemRange {
   static getItemRange(item) {
-    const distances = [];
+    const ranges = [];
 
     let range = item.range?.increment;
     let longRange = item.range?.max;
@@ -400,66 +447,9 @@ class Pf2eReach extends SystemReach {
       if (Number.isFinite(rangeVal)) range = rangeVal;
     }
 
-    if (range) distances.push(range);
-    if (longRange) distances.push(longRange);
+    if (range) ranges.push(range);
+    if (longRange) ranges.push(longRange);
 
-    return distances;
-  }
-}
-
-export class RangeHighlightAPI {
-  /**
-   * Draws a highlight around the provided token using the provided distances
-   * @param {Token} token
-   * @param {Array[Number]|Array[Object]|null} distances
-   * @param {Object} options
-   * @returns
-   */
-  static rangeHighlight(token, distances, options) {
-    if (!distances) {
-      let reachCalculator;
-      switch (game.system.id) {
-        case 'dnd5e':
-          reachCalculator = Dnd5eReach;
-          break;
-        case 'pf2e':
-          reachCalculator = Pf2eReach;
-          break;
-        default:
-          reachCalculator = SystemReach;
-      }
-
-      distances = reachCalculator.getTokenRange(token);
-    }
-
-    if (distances.length === 0) {
-      RangeHighlightAPI.clearRangeHighlight(token);
-      return;
-    }
-
-    if (Number.isFinite(distances[0])) {
-      const colors = MODULE_CONFIG.range.colors;
-      distances = distances
-        .sort((a, b) => a - b)
-        .map((d, i) => {
-          return {
-            reach: d,
-            ...(i < colors.length ? colors[i] : MODULE_CONFIG.range.defaultColor),
-          };
-        });
-    }
-
-    new RangeHighlighter(token, distances, options);
-  }
-
-  /**
-   * Clears highlights applied using TacticalGrid.rangeHighlight(...)
-   * @param {Token} token token to remove the highlights from
-   */
-  static clearRangeHighlight(token) {
-    if (token._tgReach) {
-      token._tgReach.clear();
-      token._tgReach = null;
-    }
+    return ranges;
   }
 }
