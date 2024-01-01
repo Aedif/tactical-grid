@@ -1,5 +1,6 @@
 import { MODULE_CONFIG } from '../applications/settings.js';
 import { getHexOffsets } from './measurer.js';
+import { getRangeCalculator, registerExternalModuleHooks } from './rangeExtSupport.js';
 
 class RangeHighlighter {
   constructor(token, ranges, { roundToken = false } = {}) {
@@ -20,7 +21,7 @@ class RangeHighlighter {
 
     canvas.grid.addHighlightLayer(this.highlightId);
     this.token._tgRange = this;
-    this.highlightGrid();
+    this.highlight();
   }
 
   get highlightId() {
@@ -31,9 +32,27 @@ class RangeHighlighter {
     const grid = canvas.grid;
     const hl = grid.getHighlightLayer(this.highlightId);
     hl.clear();
+    clearTimeout(this._timer);
   }
 
-  highlightGrid() {
+  highlight() {
+    const now = new Date().getTime();
+
+    if (
+      canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
+      this._timeSinceLastHighlight &&
+      now - this._timeSinceLastHighlight < 150
+    ) {
+      clearTimeout(this._timer);
+      this._timer = setTimeout(this._highlightGrid.bind(this), 150);
+    } else {
+      this._highlightGrid();
+    }
+  }
+
+  _highlightGrid() {
+    this._timeSinceLastHighlight = new Date().getTime();
+
     // Clear the existing highlight layer
     const grid = canvas.grid;
     const hl = grid.getHighlightLayer(this.highlightId);
@@ -98,12 +117,20 @@ class RangeHighlighter {
   _highlightGridPositions(hl) {
     const grid = canvas.grid.grid;
     const d = canvas.dimensions;
-    const { x, y } = this.token;
+    let { x, y } = grid.getSnappedPosition(
+      this.token.x,
+      this.token.y,
+      canvas.tokens.gridPrecision,
+      { token: this.token }
+    );
+
     const maxDistance = this.ranges[this.ranges.length - 1].range;
-    const distanceV =
-      maxDistance + Math.max(0, (1 - this.token.document.height) * canvas.dimensions.distance);
-    const distanceH =
-      maxDistance + Math.max(0, (1 - this.token.document.width) * canvas.dimensions.distance);
+
+    const tokenHeight = Math.ceil(this.token.document.height);
+    const tokenWidth = Math.ceil(this.token.document.width);
+
+    const distanceV = maxDistance + Math.max(0, (1 - tokenHeight) * canvas.dimensions.distance);
+    const distanceH = maxDistance + Math.max(0, (1 - tokenWidth) * canvas.dimensions.distance);
 
     // Get number of rows and columns
     const [maxRow, maxCol] = grid.getGridPositionFromPixels(d.width, d.height);
@@ -112,37 +139,24 @@ class RangeHighlighter {
     [nRows, nCols] = [Math.min(nRows, maxRow), Math.min(nCols, maxCol)];
 
     // Get the offset of the template origin relative to the top-left grid space
-    const [tx, ty] = grid.getTopLeft(x, y);
-    const [row0, col0] = grid.getGridPositionFromPixels(tx, ty);
+    const [row0, col0] = grid.getGridPositionFromPixels(x, y);
 
-    // Identify grid coordinates covered by the template Graphics
-    const hRows = row0 + nRows + this.token.document.height;
-    const hCols = col0 + nCols + this.token.document.width;
+    // Identify grid coordinates roughly covered by anticipated max range
+    const hRows = row0 + nRows + tokenHeight;
+    const hCols = col0 + nCols + tokenWidth;
 
-    const tokenPositions = this._getTokenGridPositions();
-    const positions = constructGridArray(
-      nRows * 2 + this.token.document.height,
-      nCols * 2 + this.token.document.width
-    );
+    const tokenPositions = this._getTokenGridPositions(x, y);
     for (let r = row0 - nRows; r < hRows; r++) {
       for (let c = col0 - nCols; c < hCols; c++) {
-        const [gx, gy] = grid.getPixelsFromGridPosition(r, c);
+        const [x, y] = grid.getPixelsFromGridPosition(r, c);
 
         let withinRange;
         for (let j = 0; j < this.ranges.length; j++) {
           for (let i = 0; i < tokenPositions.length; i++) {
-            let cd = canvas.grid.measureDistance(
-              tokenPositions[i],
-              { x: gx, y: gy },
-              { gridSpaces: true }
-            );
+            let cd = canvas.grid.measureDistance(tokenPositions[i], { x, y }, { gridSpaces: true });
 
             if (cd <= this.ranges[j].range) {
-              this._highlightGridPosition(hl, {
-                x: gx,
-                y: gy,
-                ...this.ranges[j],
-              });
+              this._highlightGridPosition(hl, x, y, this.ranges[j]);
               withinRange = this.ranges[j];
               break;
             }
@@ -151,23 +165,13 @@ class RangeHighlighter {
         }
       }
     }
-
-    return positions;
   }
 
   _highlightGridPosition(
     layer,
-    {
-      x,
-      y,
-      color,
-      alpha = 0.1,
-      shape,
-      shrink = 0.8,
-      lineColor,
-      lineWidth = 2,
-      lineAlpha = 0.3,
-    } = {}
+    x,
+    y,
+    { color, alpha = 0.1, shape, shrink = 0.8, lineColor, lineWidth = 2, lineAlpha = 0.3 } = {}
   ) {
     if (!layer.highlight(x, y)) return;
 
@@ -192,7 +196,7 @@ class RangeHighlighter {
     layer.drawShape(shape).endFill();
   }
 
-  _getTokenGridPositions() {
+  _getTokenGridPositions(tx, ty) {
     const positions = [];
 
     if (
@@ -206,8 +210,8 @@ class RangeHighlighter {
           const offsetX = this.token.w * offset[0];
           const offsetY = this.token.h * offset[1];
           positions.push({
-            x: this.token.x + offsetX,
-            y: this.token.y + offsetY,
+            x: tx + offsetX,
+            y: ty + offsetY,
           });
         }
       }
@@ -219,10 +223,9 @@ class RangeHighlighter {
         for (let w = 0; w < this.token.w / canvas.grid.size; w++) {
           const offsetY = canvas.grid.size * h;
           const offsetX = canvas.grid.size * w;
-          positions.push({
-            x: this.token.x + offsetX,
-            y: this.token.y + offsetY,
-          });
+
+          //let [x, y] = canvas.grid.grid.getTopLeft(tx + offsetX, ty + offsetY);
+          positions.push({ x: tx + offsetX, y: ty + offsetY });
         }
       }
     }
@@ -230,27 +233,16 @@ class RangeHighlighter {
   }
 }
 
-// recursive exploration using `shiftPosition`
-function constructGridArray(nRows, nCols) {
-  nRows = Math.floor(nRows);
-  nCols = Math.floor(nCols);
-  const grid = new Array(nCols);
-  for (let i = 0; i < nCols; i++) {
-    grid[i] = new Array(nRows);
-  }
-  return grid;
-}
-
 export function registerRangeHighlightHooks() {
   // Refresh highlights
   Hooks.on('refreshToken', (token) => {
     if (token._tgRange) {
-      token._tgRange.highlightGrid();
+      token._tgRange.highlight();
     } else if (token._original?._tgRange) {
       // borrow original tokens RangeHighlighter
       token._tgRange = token._original._tgRange;
       token._tgRange.token = token;
-      token._tgRange.highlightGrid();
+      token._tgRange.highlight();
     }
   });
 
@@ -259,7 +251,7 @@ export function registerRangeHighlightHooks() {
     // Return RangeHighlighter to the original token on drag-end
     if (token._tgRange && token._original) {
       token._tgRange.token = token._original;
-      token._original._tgRange.highlightGrid();
+      token._original._tgRange.highlight();
     } else if (token._tgRange) {
       RangeHighlightAPI.clearRangeHighlight(token);
     }
@@ -308,6 +300,8 @@ export function registerRangeHighlightHooks() {
         if (token) TacticalGrid.clearRangeHighlight(token);
       });
   });
+
+  registerExternalModuleHooks();
 }
 
 export class RangeHighlightAPI {
@@ -323,18 +317,7 @@ export class RangeHighlightAPI {
    */
   static rangeHighlight(token, { ranges, roundToken = MODULE_CONFIG.range.roundToken, item } = {}) {
     if (!ranges) {
-      let rangeCalculator;
-      switch (game.system.id) {
-        case 'dnd5e':
-          rangeCalculator = Dnd5eRange;
-          break;
-        case 'pf2e':
-          rangeCalculator = Pf2eRange;
-          break;
-        default:
-          rangeCalculator = SystemRange;
-      }
-
+      const rangeCalculator = getRangeCalculator();
       if (item) ranges = rangeCalculator.getItemRange(item, token);
       else ranges = rangeCalculator.getTokenRange(token);
     }
@@ -360,6 +343,16 @@ export class RangeHighlightAPI {
   }
 
   /**
+   * Parses Item uuid and attempts to highlight ranges for any associated tokens
+   * @param {String} uuid            Item uuid
+   * @param {Object} opts.roundToken If `true` tokens will be treated as a circles instead of a rectangles on gridless scenes
+   */
+  static async rangeHighlightItemUuid(uuid, { roundToken = MODULE_CONFIG.range.roundToken } = {}) {
+    const { tokens, item } = await _tokensAndItemFromItemUuid(uuid);
+    tokens?.forEach((t) => this.rangeHighlight(t, { item, roundToken }));
+  }
+
+  /**
    * Clears highlights applied using TacticalGrid.rangeHighlight(...)
    * @param {Token} token Token to remove the highlights from
    */
@@ -369,89 +362,27 @@ export class RangeHighlightAPI {
       token._tgRange = null;
     }
   }
-}
 
-class SystemRange {
-  static getTokenRange(token) {
-    return [5];
-  }
-
-  static getItemRange(item, token) {
-    return [];
-  }
-}
-
-class Dnd5eRange extends SystemRange {
-  static getTokenRange(token) {
-    const actor = token.actor;
-    const allRanges = new Set([5]);
-
-    actor.items
-      .filter(
-        (item) =>
-          item.system.equipped &&
-          item.system.actionType === 'mwak' &&
-          ['martialM', 'simpleM', 'natural', 'improv'].includes(item.system.weaponType)
-      )
-      .forEach((item) => {
-        const ranges = this.getItemRange(item, token).sort();
-        ranges.forEach((d) => allRanges.add(d));
-      });
-
-    return Array.from(allRanges);
-  }
-
-  static getItemRange(item, token) {
-    const ranges = [];
-
-    if (item.system.range) {
-      let range = item.system.range.value || 0;
-      let longRange = item.system.range.long || 0;
-      const actor = token.actor;
-
-      if (foundry.utils.getProperty(actor, 'flags.midi-qol.sharpShooter') && range < longRange)
-        range = longRange;
-      if (
-        item.system.actionType === 'rsak' &&
-        foundry.utils.getProperty(actor, 'flags.dnd5e.spellSniper')
-      ) {
-        range = 2 * range;
-        longRange = 2 * longRange;
-      }
-
-      if (item.system.range.units === 'touch') {
-        range = 5;
-        longRange = 0;
-        if (item.system.properties?.rch) range *= 2;
-      }
-
-      if (['mwak', 'msak', 'mpak'].includes(item.system.actionType) && !item.system.properties?.thr)
-        longRange = 0;
-
-      if (range) ranges.push(range);
-      if (longRange) ranges.push(longRange);
-    }
-
-    return ranges;
+  /**
+   * Parses Item uuid and attempts to clear range highlights on any associated tokens
+   * @param {*} uuid
+   */
+  static async clearRangeHighlightItemUuid(uuid) {
+    const { tokens } = await _tokensAndItemFromItemUuid(uuid);
+    tokens?.forEach((t) => this.clearRangeHighlight(t, { item, roundToken }));
   }
 }
 
-class Pf2eRange extends SystemRange {
-  static getItemRange(item) {
-    const ranges = [];
+async function _tokensAndItemFromItemUuid(uuid) {
+  const item = await fromUuid(uuid);
+  if (!item) return {};
+  const embedded = parseUuid(uuid).embedded;
+  const tokenId = embedded[embedded.findIndex((t) => t === 'Token') + 1];
+  const token = canvas.tokens.get(tokenId);
 
-    let range = item.range?.increment;
-    let longRange = item.range?.max;
+  let tokens;
+  if (token) tokens = [token];
+  else tokens = item.actor?.getActiveTokens(true) || [];
 
-    let rangeVal = item.system.range?.value;
-    if (rangeVal) {
-      rangeVal = parseInt(rangeVal);
-      if (Number.isFinite(rangeVal)) range = rangeVal;
-    }
-
-    if (range) ranges.push(range);
-    if (longRange) ranges.push(longRange);
-
-    return ranges;
-  }
+  return { tokens, item };
 }

@@ -215,7 +215,6 @@ export default class TGSettingsConfig extends FormApplication {
   async _onDeleteRangeColor(event) {
     const formData = foundry.utils.expandObject(this._getSubmitData({}));
     const index = $(event.target).closest('.deleteRangeColor').data('index');
-    console.log(formData);
     delete formData.range.colors[index];
 
     await this._updateObject(event, formData);
