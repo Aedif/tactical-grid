@@ -369,7 +369,7 @@ export class RangeHighlightAPI {
    */
   static async clearRangeHighlightItemUuid(uuid) {
     const { tokens } = await _tokensAndItemFromItemUuid(uuid);
-    tokens?.forEach((t) => this.clearRangeHighlight(t, { item, roundToken }));
+    tokens?.forEach((t) => this.clearRangeHighlight(t));
   }
 }
 

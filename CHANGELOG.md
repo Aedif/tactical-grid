@@ -1,3 +1,14 @@
+# 1.19.2
+
+**Range**
+
+- Highlights during Token drag will now show ranges based off of snapped Token position
+- Highlight calls are now throttled on square and hex scenes
+- Module support:
+  - Action Pack
+  - Argon - Combat HUD
+  - Token Action HUD
+
 # 1.19.1
 
 - Fixed range highlight not clearing on token destroy
