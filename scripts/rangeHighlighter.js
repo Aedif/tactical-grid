@@ -274,14 +274,14 @@ export function registerRangeHighlightHooks() {
   };
 
   Hooks.on('renderActorSheet', (sheet, form, options) => {
-    if (!MODULE_CONFIG.range.item.enabled) return;
-    if (MODULE_CONFIG.range.item.combatOnly && !game.combat?.started) return;
+    if (!itemRangeHighlightEnabled()) return;
 
     const actor = sheet.object;
 
     $(form)
       .find(selectors.itemHover)
       .on('mouseenter', (event) => {
+        if (!itemRangeHighlightEnabled()) return;
         const token = sheet.token?.object;
         if (!token) return;
 
@@ -385,4 +385,10 @@ async function _tokensAndItemFromItemUuid(uuid) {
   else tokens = item.actor?.getActiveTokens(true) || [];
 
   return { tokens, item };
+}
+
+export function itemRangeHighlightEnabled() {
+  if (!MODULE_CONFIG.range.item.enabled) return false;
+  if (MODULE_CONFIG.range.item.combatOnly && !game.combat?.started) return false;
+  return true;
 }

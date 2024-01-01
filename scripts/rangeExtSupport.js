@@ -1,5 +1,4 @@
-import { MODULE_CONFIG } from '../applications/settings.js';
-import { RangeHighlightAPI } from './rangeHighlighter.js';
+import { RangeHighlightAPI, itemRangeHighlightEnabled } from './rangeHighlighter.js';
 
 export function getRangeCalculator() {
   switch (game.system.id) {
@@ -123,7 +122,7 @@ function _actionPack() {
     html
       .find('.item-name')
       .on('mouseover', async (event) => {
-        if (!MODULE_CONFIG.range.item.enabled) return;
+        if (!itemRangeHighlightEnabled()) return;
         RangeHighlightAPI.rangeHighlightItemUuid(
           $(event.target).closest('.item').data('item-uuid')
         );
@@ -141,7 +140,7 @@ function _actionPack() {
 function _argonHud() {
   if (!game.modules.get('enhancedcombathud')?.active) return;
   Hooks.on('renderCoreHUD', (hud, html, opts) => {
-    if (!MODULE_CONFIG.range.item.enabled) return;
+    if (!itemRangeHighlightEnabled()) return;
     hud.itemButtons.forEach((button) => {
       $(button.element)
         .on('mouseover', (event) => {
@@ -162,7 +161,7 @@ function _tokenActionHud() {
 
   let token;
   Hooks.on('renderTokenActionHud', (hud, html, opts) => {
-    if (!MODULE_CONFIG.range.item.enabled) {
+    if (!itemRangeHighlightEnabled()) {
       token = null;
       return;
     }
