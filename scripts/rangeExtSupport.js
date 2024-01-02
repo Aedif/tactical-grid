@@ -1,19 +1,97 @@
 import { RangeHighlightAPI, itemRangeHighlightEnabled } from './rangeHighlighter.js';
 
+// ===========================
+// ==== ACTOR SHEET HOOKS ====
+// ===========================
+
+export function registerActorSheetHooks() {
+  if (game.system.id === 'crucible') {
+    Hooks.on('renderActorSheet', _crucibleActorSheetHook);
+  } else {
+    Hooks.on('renderActorSheet', _genericActorSheetHook);
+  }
+}
+
+function _genericActorSheetHook(sheet, form, options) {
+  if (!itemRangeHighlightEnabled()) return;
+
+  $(form)
+    .find('.item-name')
+    .on('mouseenter', (event) =>
+      _hoverItem(sheet, $(event.target).closest(`[data-item-id]`).attr('data-item-id'))
+    )
+    .on('mouseleave', () => _hoverLeaveItem(sheet));
+}
+
+function _crucibleActorSheetHook(sheet, form, options) {
+  if (!itemRangeHighlightEnabled()) return;
+
+  form = $(form);
+
+  form
+    .find('.line-item')
+    .on('mouseenter', (event) =>
+      _hoverItem(sheet, $(event.target).closest(`[data-item-id]`).attr('data-item-id'))
+    )
+    .on('mouseleave', () => _hoverLeaveItem(sheet));
+
+  form
+    .find('.action[data-action-id="strike"]')
+    .on('mouseenter', () => {
+      const actor = sheet.object;
+      const weapon = actor.actions.strike.usage.weapon;
+      if (weapon) _hoverItem(sheet, weapon.id);
+    })
+    .on('mouseleave', () => _hoverLeaveItem(sheet));
+}
+
+/**
+ * Respond to mouse hovering over an item with itemId
+ * @param {ActorSheet} sheet
+ * @param {String} itemId
+ * @returns {null}
+ */
+function _hoverItem(sheet, itemId) {
+  if (!itemRangeHighlightEnabled()) return;
+  const token = sheet.token?.object;
+  if (!token) return;
+
+  const actor = sheet.object;
+  const item = actor.items.get(itemId);
+
+  if (!item) {
+    RangeHighlightAPI.clearRangeHighlight(token);
+    return;
+  }
+
+  RangeHighlightAPI.rangeHighlight(token, { item });
+}
+
+/**
+ * Respond to mouse ending hover over an item
+ * @param {ActorSheet} sheet
+ */
+function _hoverLeaveItem(sheet) {
+  const token = sheet.token?.object;
+  if (token) TacticalGrid.clearRangeHighlight(token);
+}
+
+// ===========================
+// ==== RANGE CALCULATORS ====
+// ===========================
+
 export function getRangeCalculator() {
   switch (game.system.id) {
     case 'dnd5e':
       return Dnd5eRange;
     case 'pf2e':
       return Pf2eRange;
+    case 'crucible':
+      return CrucibleRange;
     default:
       return SystemRange;
   }
 }
-
-// ===========================
-// ==== RANGE CALCULATORS ====
-// ===========================
 
 class SystemRange {
   static getTokenRange(token) {
@@ -100,6 +178,29 @@ class Pf2eRange extends SystemRange {
   }
 }
 
+class CrucibleRange extends SystemRange {
+  static getTokenRange(token) {
+    const allRanges = new Set([1]);
+
+    token.actor.items.forEach((item) => {
+      if (item.system.equipped && item.system.range && !item.system.config.category.ranged) {
+        allRanges.add(item.system.range);
+      }
+    });
+
+    return Array.from(allRanges);
+  }
+
+  static getItemRange(item, token) {
+    const ranges = [];
+
+    let range = item.system.range || 0;
+    if (range) ranges.push(range);
+
+    return ranges;
+  }
+}
+
 // =================================
 // ==== External Module Support ====
 // =================================
@@ -144,7 +245,6 @@ function _argonHud() {
     hud.itemButtons.forEach((button) => {
       $(button.element)
         .on('mouseover', (event) => {
-          console.log(button);
           RangeHighlightAPI.rangeHighlight(button.token, { item: button.item });
         })
         .on('mouseleave', (event) => {

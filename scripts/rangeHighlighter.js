@@ -1,6 +1,10 @@
 import { MODULE_CONFIG } from '../applications/settings.js';
 import { getHexOffsets } from './measurer.js';
-import { getRangeCalculator, registerExternalModuleHooks } from './rangeExtSupport.js';
+import {
+  getRangeCalculator,
+  registerActorSheetHooks,
+  registerExternalModuleHooks,
+} from './rangeExtSupport.js';
 
 class RangeHighlighter {
   constructor(token, ranges, { roundToken = false } = {}) {
@@ -267,40 +271,7 @@ export function registerRangeHighlightHooks() {
     }
   });
 
-  const selectors = {
-    itemHover: '.item-name',
-    item: '.item',
-    itemId: 'data-item-id',
-  };
-
-  Hooks.on('renderActorSheet', (sheet, form, options) => {
-    if (!itemRangeHighlightEnabled()) return;
-
-    const actor = sheet.object;
-
-    $(form)
-      .find(selectors.itemHover)
-      .on('mouseenter', (event) => {
-        if (!itemRangeHighlightEnabled()) return;
-        const token = sheet.token?.object;
-        if (!token) return;
-
-        const itemId = $(event.target).closest(`[${selectors.itemId}]`).attr(selectors.itemId);
-        const item = actor.items.get(itemId);
-
-        if (!item) {
-          TacticalGrid.clearRangeHighlight(token);
-          return;
-        }
-
-        RangeHighlightAPI.rangeHighlight(token, { item });
-      })
-      .on('mouseleave', (event) => {
-        const token = sheet.token?.object;
-        if (token) TacticalGrid.clearRangeHighlight(token);
-      });
-  });
-
+  registerActorSheetHooks();
   registerExternalModuleHooks();
 }
 

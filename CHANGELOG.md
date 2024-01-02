@@ -1,3 +1,9 @@
+# 1.19.4
+
+**Range**
+
+- Crucible system support; Weapons and Strike action
+
 # 1.19.3
 
 - Fixed Item RangeHighlight snot disabling properly in and out of combat
