@@ -1,3 +1,8 @@
+# 1.20.0
+
+- Highlight optimizations on square grids
+- Support for custom fonts
+
 # 1.19.4
 
 **Range**

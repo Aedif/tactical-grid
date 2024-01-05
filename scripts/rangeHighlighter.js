@@ -128,6 +128,8 @@ class RangeHighlighter {
       { token: this.token }
     );
 
+    const gs = canvas.grid.size;
+
     const maxDistance = this.ranges[this.ranges.length - 1].range;
 
     const tokenHeight = Math.ceil(this.token.document.height);
@@ -142,30 +144,83 @@ class RangeHighlighter {
     let nCols = Math.ceil((distanceV * 1.5) / d.distance / (d.size / grid.w));
     [nRows, nCols] = [Math.min(nRows, maxRow), Math.min(nCols, maxCol)];
 
-    // Get the offset of the template origin relative to the top-left grid space
-    const [row0, col0] = grid.getGridPositionFromPixels(x, y);
+    // Get the offset of the token origin relative to the top-left grid space
+    let [row0, col0] = grid.getGridPositionFromPixels(x, y);
 
     // Identify grid coordinates roughly covered by anticipated max range
     const hRows = row0 + nRows + tokenHeight;
     const hCols = col0 + nCols + tokenWidth;
 
     const tokenPositions = this._getTokenGridPositions(x, y);
-    for (let r = row0 - nRows; r < hRows; r++) {
-      for (let c = col0 - nCols; c < hCols; c++) {
-        const [x, y] = grid.getPixelsFromGridPosition(r, c);
 
-        let withinRange;
-        for (let j = 0; j < this.ranges.length; j++) {
-          for (let i = 0; i < tokenPositions.length; i++) {
-            let cd = canvas.grid.measureDistance(tokenPositions[i], { x, y }, { gridSpaces: true });
+    if (canvas.grid.type === CONST.GRID_TYPES.SQUARE) {
+      const gs = canvas.grid.size;
+      row0 = row0 + Math.floor(this.token.document.height / 2);
+      col0 = col0 + Math.floor(this.token.document.width / 2);
 
-            if (cd <= this.ranges[j].range) {
-              this._highlightGridPosition(hl, x, y, this.ranges[j]);
-              withinRange = this.ranges[j];
-              break;
+      const wEven = this.token.document.width % 2 === 0 ? 1 : 0;
+      const hEven = this.token.document.height % 2 === 0 ? 1 : 0;
+
+      for (let r = row0; r < hRows; r++) {
+        for (let c = col0; c < hCols; c++) {
+          const pos = { x: c * gs, y: r * gs };
+
+          let withinRange;
+          for (let j = 0; j < this.ranges.length; j++) {
+            const range = this.ranges[j];
+            for (let i = 0; i < tokenPositions.length; i++) {
+              let cd = canvas.grid.measureDistance(tokenPositions[i], pos, { gridSpaces: true });
+
+              if (cd <= range.range) {
+                this._highlightGridPosition(hl, pos, range);
+
+                // Mirror, 2 lines of symmetry
+                this._highlightGridPosition(
+                  hl,
+                  { x: (col0 - (c - col0) - wEven) * gs, y: pos.y },
+                  range
+                );
+
+                this._highlightGridPosition(
+                  hl,
+                  { x: (col0 - (c - col0) - wEven) * gs, y: (row0 - (r - row0) - hEven) * gs },
+                  range
+                );
+
+                this._highlightGridPosition(
+                  hl,
+                  { x: pos.x, y: (row0 - (r - row0) - hEven) * gs },
+                  range
+                );
+
+                withinRange = range;
+                break;
+              }
             }
+            if (withinRange) break;
           }
-          if (withinRange) break;
+        }
+      }
+    } else {
+      for (let r = row0 - nRows; r < hRows; r++) {
+        for (let c = col0 - nCols; c < hCols; c++) {
+          const [x, y] = grid.getPixelsFromGridPosition(r, c);
+          const pos = { x, y };
+
+          let withinRange;
+          for (let j = 0; j < this.ranges.length; j++) {
+            const range = this.ranges[j];
+            for (let i = 0; i < tokenPositions.length; i++) {
+              let cd = canvas.grid.measureDistance(tokenPositions[i], pos, { gridSpaces: true });
+
+              if (cd <= range.range) {
+                this._highlightGridPosition(hl, pos, range);
+                withinRange = range;
+                break;
+              }
+            }
+            if (withinRange) break;
+          }
         }
       }
     }
@@ -173,8 +228,7 @@ class RangeHighlighter {
 
   _highlightGridPosition(
     layer,
-    x,
-    y,
+    { x, y } = {},
     { color, alpha = 0.1, shape, shrink = 0.8, lineColor, lineWidth = 2, lineAlpha = 0.3 } = {}
   ) {
     if (!layer.highlight(x, y)) return;
@@ -223,15 +277,39 @@ class RangeHighlighter {
 
     // Fallback on square if hex is not in use or token width does not match height
     if (!positions.length) {
-      for (let h = 0; h < this.token.h / canvas.grid.size; h++) {
-        for (let w = 0; w < this.token.w / canvas.grid.size; w++) {
-          const offsetY = canvas.grid.size * h;
-          const offsetX = canvas.grid.size * w;
-
-          //let [x, y] = canvas.grid.grid.getTopLeft(tx + offsetX, ty + offsetY);
-          positions.push({ x: tx + offsetX, y: ty + offsetY });
-        }
+      // For optimization only return the outer edge of the square
+      const tokenGridWidth = this.token.w / canvas.grid.size;
+      const tokenGridHeight = this.token.h / canvas.grid.size;
+      for (let i = 0; i < tokenGridWidth; i++) {
+        positions.push({ x: tx + canvas.grid.size * i, y: ty });
       }
+      for (let i = 0; i < tokenGridWidth; i++) {
+        positions.push({
+          x: tx + canvas.grid.size * i,
+          y: ty + canvas.grid.size * (tokenGridHeight - 1),
+        });
+      }
+      for (let i = 1; i < tokenGridHeight; i++) {
+        positions.push({
+          x: tx + canvas.grid.size * (tokenGridWidth - 1),
+          y: ty + canvas.grid.size * i,
+        });
+      }
+
+      for (let i = 1; i < tokenGridHeight; i++) {
+        positions.push({ x: tx, y: ty + canvas.grid.size * i });
+      }
+
+      // Returns all squares
+      // for (let h = 0; h < this.token.h / canvas.grid.size; h++) {
+      //   for (let w = 0; w < this.token.w / canvas.grid.size; w++) {
+      //     const offsetY = canvas.grid.size * h;
+      //     const offsetX = canvas.grid.size * w;
+
+      //     //let [x, y] = canvas.grid.grid.getTopLeft(tx + offsetX, ty + offsetY);
+      //     positions.push({ x: tx + offsetX, y: ty + offsetY });
+      //   }
+      // }
     }
     return positions;
   }

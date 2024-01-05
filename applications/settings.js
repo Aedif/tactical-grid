@@ -151,7 +151,11 @@ export default class TGSettingsConfig extends FormApplication {
     data.marker.color = new Color(data.marker.color).toString();
     data.marker.border = new Color(data.marker.border).toString();
 
-    data.fonts = Object.keys(CONFIG.fontDefinitions);
+    data.fonts = [];
+    FontConfig._collectDefinitions().forEach(
+      (f) => (data.fonts = data.fonts.concat(Object.keys(f)))
+    );
+
     data.units = canvas.scene?.grid.units || 'ft';
 
     data.calculators = [
