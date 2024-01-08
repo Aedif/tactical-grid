@@ -116,8 +116,7 @@ class Dnd5eRange extends SystemRange {
           ['martialM', 'simpleM', 'natural', 'improv'].includes(item.system.weaponType)
       )
       .forEach((item) => {
-        const ranges = this.getItemRange(item, token).sort();
-        ranges.forEach((d) => allRanges.add(d));
+        if (item.system.properties?.rch) allRanges.add(10);
       });
 
     return Array.from(allRanges);
@@ -212,6 +211,59 @@ export function registerExternalModuleHooks() {
   _argonHud();
   // Token Action HUD
   _tokenActionHud();
+  // DnD5e Macro Bar
+  _dnd5eMacroBar();
+}
+
+// DnD5e Macro Bar
+function _dnd5eMacroBar() {
+  if (game.system.id !== 'dnd5e') return;
+  const getActorAndToken = function () {
+    let actor;
+    const speaker = ChatMessage.getSpeaker();
+
+    if (speaker.token) actor = game.actors.tokens[speaker.token];
+    actor ??= game.actors.get(speaker.actor);
+    if (!actor) return [];
+
+    const token = canvas.tokens?.get(speaker.token ?? '');
+    if (!token) return [];
+
+    return [actor, token];
+  };
+
+  $('#ui-middle')
+    .on('mouseover', '.macro', (event) => {
+      if (!itemRangeHighlightEnabled()) return;
+      const macro = game.macros.get($(event.target).closest('.macro').data('macro-id'));
+      if (macro?.getFlag('dnd5e', 'itemMacro')) {
+        // RegEx courtesy of Illandril
+        // https://github.com/illandril/FoundryVTT-hotbar-uses
+        const match = macro.command.match(
+          /^\s*dnd5e\s*\.\s*documents\s*\.\s*macro\s*\.\s*rollItem\s*\(\s*(?<q>["'`])(?<itemName>.+?)\k<q>\s*\)\s*;?\s*$/
+        );
+        if (!match) return;
+        const itemName = match.groups?.itemName;
+
+        let [actor, token] = getActorAndToken();
+
+        if (!token) return;
+
+        const item = actor.items.filter((item) => item.name === itemName)?.[0];
+        if (item) {
+          RangeHighlightAPI.rangeHighlight(token, { item });
+        } else {
+          RangeHighlightAPI.clearRangeHighlight(token);
+        }
+      }
+    })
+    .on('mouseleave', '.macro', (event) => {
+      const macro = game.macros.get($(event.target).closest('.macro').data('macro-id'));
+      if (macro?.getFlag('dnd5e', 'itemMacro')) {
+        let [actor, token] = getActorAndToken();
+        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      }
+    });
 }
 
 // Action Pack

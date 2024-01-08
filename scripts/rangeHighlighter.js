@@ -7,9 +7,10 @@ import {
 } from './rangeExtSupport.js';
 
 class RangeHighlighter {
-  constructor(token, ranges, { roundToken = false } = {}) {
+  constructor(token, ranges, { roundToken = false, movement = false } = {}) {
     this.token = token;
     this.roundToken = roundToken;
+    this.movement = movement;
 
     if (ranges instanceof Array) {
       this.ranges = ranges.sort((r1, r2) => r1.range - r2.range);
@@ -97,24 +98,84 @@ class RangeHighlighter {
 
     // Otherwise, highlight specific grid positions
     else {
-      this._highlightGridPositions(hl);
+      if (this.movement) {
+        this._highlightGridMovement(hl);
+      } else {
+        this._highlightGridPositions(hl);
+      }
     }
   }
 
-  _drawShape(hl, shape, { color, alpha = 0.1, lineColor, lineAlpha = 0.3, lineWidth = 2 } = {}) {
-    if (!color && !lineColor) color = 0xffffff;
+  // Work in progress
+  _highlightGridMovement(hl) {
+    const grid = canvas.grid.grid;
+    let { x, y } = grid.getSnappedPosition(
+      this.token.x,
+      this.token.y,
+      canvas.tokens.gridPrecision,
+      { token: this.token }
+    );
 
-    if (Number.isFinite(color)) hl.beginFill(color, alpha);
-    if (Number.isFinite(lineColor)) hl.lineStyle(lineWidth, lineColor, lineAlpha);
+    let [row0, col0] = grid.getGridPositionFromPixels(x, y);
 
-    hl.drawShape(shape).endFill();
+    const tokenPositions = this._getTokenGridPositions(x, y);
+
+    const clone = this.token.clone();
+    clone.document.x = this.token.document.x;
+    clone.document.y = this.token.document.y;
+
+    const traversed = new Map();
+    traversed.set(`${x}.${y}`, { distance: 0, range: this.ranges[0] });
+    this._traverse({ x, y }, 5, traversed, clone);
+
+    traversed.forEach((val, key) => {
+      const [x, y] = key.split('.');
+      // const [x, y] = grid.getPixelsFromGridPosition(Number(r), Number(c));
+      this._highlightGridPosition(hl, { x: Number(x), y: Number(y) }, val.range);
+
+      // console.log(range, key);
+    });
   }
 
-  _addLine(line, dIndex) {
-    if (this.polyLines[dIndex].has(line)) {
-      this.uniquePolyLines[dIndex].delete(line);
-    } else {
-      this.uniquePolyLines[dIndex].add(line);
+  //
+
+  _traverse(pos, distance, traversed, token) {
+    const range = this.ranges.find((r) => distance <= r.range);
+    if (!range) return;
+
+    const dirs = [
+      [1, 1],
+      [0, -1],
+      [0, 1],
+      [1, 0],
+      [-1, 0],
+      [-1, -1],
+      [1, -1],
+      [-1, 1],
+    ];
+
+    for (const dir of dirs) {
+      token.document.x = pos.x;
+      token.document.y = pos.y;
+      token.x = pos.x;
+      token.y = pos.y;
+
+      const { x, y } = _getShiftedPosition(dir[0], dir[1], token, token.getCenter(pos.x, pos.y));
+      if (x === pos.x && y === pos.y) continue;
+      if (x < 0 || y < 0 || x > canvas.grid.width || y > canvas.grid.height) continue;
+
+      const key = `${x}.${y}`;
+      if (!traversed.has(key) || traversed.get(key).distance > distance) {
+        traversed.set(key, { range, distance });
+        this._traverse(
+          { x, y },
+          distance + 5 + (dir[0] !== 0 && dir[1] !== 0 ? 5 : 0),
+          traversed,
+          token
+        );
+      }
+
+      // }
     }
   }
 
@@ -127,8 +188,6 @@ class RangeHighlighter {
       canvas.tokens.gridPrecision,
       { token: this.token }
     );
-
-    const gs = canvas.grid.size;
 
     const maxDistance = this.ranges[this.ranges.length - 1].range;
 
@@ -224,6 +283,15 @@ class RangeHighlighter {
         }
       }
     }
+  }
+
+  _drawShape(hl, shape, { color, alpha = 0.1, lineColor, lineAlpha = 0.3, lineWidth = 2 } = {}) {
+    if (!color && !lineColor) color = 0xffffff;
+
+    if (Number.isFinite(color)) hl.beginFill(color, alpha);
+    if (Number.isFinite(lineColor)) hl.lineStyle(lineWidth, lineColor, lineAlpha);
+
+    hl.drawShape(shape).endFill();
   }
 
   _highlightGridPosition(
@@ -440,4 +508,23 @@ export function itemRangeHighlightEnabled() {
   if (!MODULE_CONFIG.range.item.enabled) return false;
   if (MODULE_CONFIG.range.item.combatOnly && !game.combat?.started) return false;
   return true;
+}
+
+function _getShiftedPosition(dx, dy, token, origin) {
+  let { x, y, width, height } = token.document;
+  const s = canvas.dimensions.size;
+
+  // Identify the coordinate of the starting grid space
+  let x0 = x;
+  let y0 = y;
+  if (canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) {
+    const c = token.center;
+    x0 = width <= 1 ? c.x : x + s / 2;
+    y0 = height <= 1 ? c.y : y + s / 2;
+  }
+
+  // Shift the position and test collision
+  const [x1, y1] = canvas.grid.grid.shiftPosition(x0, y0, dx, dy, { token });
+  let collide = token.checkCollision(token.getCenter(x1, y1), { origin });
+  return collide ? { x, y } : { x: x1, y: y1 };
 }

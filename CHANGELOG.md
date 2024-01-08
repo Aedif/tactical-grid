@@ -1,3 +1,11 @@
+# 1.21.0
+
+**Range Highlighter**
+
+- DnD5e
+  - Throwable melee weapons will no longer be display their throw range on Token hover
+  - Hovering over Item Macros on the macro bar will now trigger Item Highlighting if enabled
+
 # 1.20.0
 
 - Highlight optimizations on square grids
