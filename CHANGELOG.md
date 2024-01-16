@@ -1,9 +1,21 @@
+# 1.22.0
+
+- Distance display on Token drag no longer requires `Drag Ruler`
+- Improved range highlighting of PF2e melee weapons
+- Range highlighting should now automatically toggle off on combat end
+
+Module support:
+
+- `Alternative Token Cover`
+- `Elevation Ruler`
+- `Token Action HUD PF2e` (courtesy of Silvertower)
+
 # 1.21.0
 
 **Range Highlighter**
 
 - DnD5e
-  - Throwable melee weapons will no longer be display their throw range on Token hover
+  - Throwable melee weapons will no longer display their throw range on Token hover
   - Hovering over Item Macros on the macro bar will now trigger Item Highlighting if enabled
 
 # 1.20.0
