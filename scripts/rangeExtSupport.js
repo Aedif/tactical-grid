@@ -173,6 +173,11 @@ class Pf2eRange extends SystemRange {
     if (range) ranges.push(range);
     if (longRange) ranges.push(longRange);
 
+    if (!ranges.length && item.isMelee) {
+      if (item.system.traits.value?.includes('reach')) ranges.push(10);
+      else ranges.push(5);
+    }
+
     return ranges;
   }
 }
@@ -321,6 +326,7 @@ function _tokenActionHud() {
   });
 
   Hooks.on('tokenActionHudSystemActionHoverOn', (event, item) => {
+    console.log(item);
     if (token) RangeHighlightAPI.rangeHighlight(token, { item });
   });
 

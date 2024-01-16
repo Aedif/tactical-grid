@@ -84,7 +84,7 @@
         "hint": "When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them."
       },
       "displayDistancesOnTokenDrag": {
-        "name": "Display Distances on Token Drag (`Drag Ruler` module)",
+        "name": "Display Distances on Token Drag",
         "hint": "When enabled distances between the dragged token and all visible Tokens will be calculated and displayed on them."
       },
       "range": {

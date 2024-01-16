@@ -165,6 +165,7 @@ export default class TGSettingsConfig extends FormApplication {
       { name: 'Alternative Token Visibility', value: 'tokenvisibility' },
       { name: 'MidiQOL (mirror `Calculate Cover` setting)', value: 'midi-qol' },
       { name: 'PF2e Perception', value: 'pf2e-perception' },
+      { name: 'Alternative Token Cover', value: 'tokencover' },
     ];
 
     for (const calculator of data.calculators) {
@@ -287,25 +288,21 @@ export function registerSettings() {
     'rulerActivatedDistanceMeasure'
   );
 
-  if (game.modules.get('drag-ruler')) {
-    game.settings.register('aedifs-tactical-grid', 'tokenActivatedDistanceMeasure', {
-      name: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.name'),
-      hint: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.hint'),
-      scope: 'client',
-      config: true,
-      type: Boolean,
-      default: MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure,
-      onChange: async (val) => {
-        MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = val;
-        unregisterRulerLibWrapperMethods();
-        registerRulerLibWrapperMethods();
-      },
-    });
-    MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = game.settings.get(
-      'aedifs-tactical-grid',
-      'tokenActivatedDistanceMeasure'
-    );
-  }
+  game.settings.register('aedifs-tactical-grid', 'tokenActivatedDistanceMeasure', {
+    name: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.name'),
+    hint: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.hint'),
+    scope: 'client',
+    config: true,
+    type: Boolean,
+    default: MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure,
+    onChange: (val) => {
+      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = val;
+    },
+  });
+  MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = game.settings.get(
+    'aedifs-tactical-grid',
+    'tokenActivatedDistanceMeasure'
+  );
 
   game.settings.register('aedifs-tactical-grid', 'rulerDistanceMeasureGirdSpaces', {
     name: 'Ruler: Grid Spaces',
@@ -502,9 +499,10 @@ export function registerRulerLibWrapperMethods() {
       function (wrapped, ...args) {
         let result = wrapped(...args);
         if (this.user.id === game.user.id) {
+          const tokenPreviews = canvas.tokens.preview.children;
           if (
-            (!this.draggedEntity && MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) ||
-            (this.draggedEntity && MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) ||
+            (!tokenPreviews.length && MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) ||
+            (tokenPreviews.length && MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) ||
             DistanceMeasurer.keyPressed
           ) {
             const opts = args[1] ?? {};

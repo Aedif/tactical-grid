@@ -99,6 +99,9 @@ function registerLayerHooks(layer) {
  */
 Hooks.on('deleteCombat', () => {
   GRID_MASK.container?.drawMask();
+  for (const t of canvas.tokens.placeables) {
+    TacticalGrid.clearRangeHighlight(t);
+  }
 });
 
 Hooks.on('combatStart', () => {

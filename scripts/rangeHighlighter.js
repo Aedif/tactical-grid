@@ -1,5 +1,5 @@
-import { MODULE_CONFIG } from '../applications/settings.js';
-import { getHexOffsets } from './measurer.js';
+import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
+import { DistanceMeasurer, getHexOffsets } from './measurer.js';
 import {
   getRangeCalculator,
   registerActorSheetHooks,
@@ -7,16 +7,12 @@ import {
 } from './rangeExtSupport.js';
 
 class RangeHighlighter {
-  constructor(token, ranges, { roundToken = false, movement = false } = {}) {
+  constructor(token, ranges, { roundToken = false } = {}) {
     this.token = token;
     this.roundToken = roundToken;
-    this.movement = movement;
 
-    if (ranges instanceof Array) {
-      this.ranges = ranges.sort((r1, r2) => r1.range - r2.range);
-    } else {
-      this.ranges = [ranges];
-    }
+    if (ranges instanceof Array) this.ranges = ranges;
+    else this.ranges = [ranges];
 
     this.ranges.map((d) => {
       if (d.color) d.color = new PIXI.Color(d.color).toNumber();
@@ -24,9 +20,25 @@ class RangeHighlighter {
       return d;
     });
 
-    canvas.grid.addHighlightLayer(this.highlightId);
+    if (this.token._tgRange) {
+      this._transferRanges(this.token._tgRange);
+    }
     this.token._tgRange = this;
+    this.ranges = ranges.sort((r1, r2) => r1.range - r2.range);
+
+    canvas.grid.addHighlightLayer(this.highlightId);
     this.highlight();
+  }
+
+  _transferRanges(rh) {
+    for (const range of rh.ranges) {
+      if (range.id) {
+        const r = this.ranges.find((r) => r.id === range.id);
+        if (!r) this.ranges.push(range);
+      }
+    }
+
+    rh.clear();
   }
 
   get highlightId() {
@@ -98,84 +110,7 @@ class RangeHighlighter {
 
     // Otherwise, highlight specific grid positions
     else {
-      if (this.movement) {
-        this._highlightGridMovement(hl);
-      } else {
-        this._highlightGridPositions(hl);
-      }
-    }
-  }
-
-  // Work in progress
-  _highlightGridMovement(hl) {
-    const grid = canvas.grid.grid;
-    let { x, y } = grid.getSnappedPosition(
-      this.token.x,
-      this.token.y,
-      canvas.tokens.gridPrecision,
-      { token: this.token }
-    );
-
-    let [row0, col0] = grid.getGridPositionFromPixels(x, y);
-
-    const tokenPositions = this._getTokenGridPositions(x, y);
-
-    const clone = this.token.clone();
-    clone.document.x = this.token.document.x;
-    clone.document.y = this.token.document.y;
-
-    const traversed = new Map();
-    traversed.set(`${x}.${y}`, { distance: 0, range: this.ranges[0] });
-    this._traverse({ x, y }, 5, traversed, clone);
-
-    traversed.forEach((val, key) => {
-      const [x, y] = key.split('.');
-      // const [x, y] = grid.getPixelsFromGridPosition(Number(r), Number(c));
-      this._highlightGridPosition(hl, { x: Number(x), y: Number(y) }, val.range);
-
-      // console.log(range, key);
-    });
-  }
-
-  //
-
-  _traverse(pos, distance, traversed, token) {
-    const range = this.ranges.find((r) => distance <= r.range);
-    if (!range) return;
-
-    const dirs = [
-      [1, 1],
-      [0, -1],
-      [0, 1],
-      [1, 0],
-      [-1, 0],
-      [-1, -1],
-      [1, -1],
-      [-1, 1],
-    ];
-
-    for (const dir of dirs) {
-      token.document.x = pos.x;
-      token.document.y = pos.y;
-      token.x = pos.x;
-      token.y = pos.y;
-
-      const { x, y } = _getShiftedPosition(dir[0], dir[1], token, token.getCenter(pos.x, pos.y));
-      if (x === pos.x && y === pos.y) continue;
-      if (x < 0 || y < 0 || x > canvas.grid.width || y > canvas.grid.height) continue;
-
-      const key = `${x}.${y}`;
-      if (!traversed.has(key) || traversed.get(key).distance > distance) {
-        traversed.set(key, { range, distance });
-        this._traverse(
-          { x, y },
-          distance + 5 + (dir[0] !== 0 && dir[1] !== 0 ? 5 : 0),
-          traversed,
-          token
-        );
-      }
-
-      // }
+      this._highlightGridPositions(hl);
     }
   }
 
@@ -319,6 +254,7 @@ class RangeHighlighter {
     }
     if (Number.isFinite(color)) layer.beginFill(color, alpha);
     if (Number.isFinite(lineColor)) layer.lineStyle(lineWidth, lineColor, lineAlpha);
+    else layer.lineStyle(0);
     layer.drawShape(shape).endFill();
   }
 
@@ -394,6 +330,16 @@ export function registerRangeHighlightHooks() {
       token._tgRange.token = token;
       token._tgRange.highlight();
     }
+
+    if (
+      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure &&
+      token._original &&
+      canvas.controls.ruler?._state === Ruler.STATES.INACTIVE
+    ) {
+      DistanceMeasurer.showMeasures({
+        snap: !game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT),
+      });
+    }
   });
 
   // Remove highlights
@@ -403,7 +349,15 @@ export function registerRangeHighlightHooks() {
       token._tgRange.token = token._original;
       token._original._tgRange.highlight();
     } else if (token._tgRange) {
-      RangeHighlightAPI.clearRangeHighlight(token);
+      RangeHighlightAPI.clearRangeHighlight(token, { force: true });
+    }
+
+    if (
+      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure &&
+      token._original &&
+      canvas.controls.ruler?._state === Ruler.STATES.INACTIVE
+    ) {
+      DistanceMeasurer.hideMeasures();
     }
   });
 
@@ -473,10 +427,28 @@ export class RangeHighlightAPI {
    * Clears highlights applied using TacticalGrid.rangeHighlight(...)
    * @param {Token} token Token to remove the highlights from
    */
-  static clearRangeHighlight(token) {
+  static clearRangeHighlight(token, { force = false, id } = {}) {
     if (token._tgRange) {
-      token._tgRange.clear();
-      token._tgRange = null;
+      if (force) {
+        token._tgRange.clear();
+        token._tgRange = null;
+        return;
+      }
+      const ranges = token._tgRange.ranges;
+      let nRanges = [];
+      for (const range of ranges) {
+        if (range.id && range.id !== id) {
+          nRanges.push(range);
+        }
+      }
+
+      if (nRanges.length === 0) {
+        token._tgRange.clear();
+        token._tgRange = null;
+      } else if (nRanges.length !== ranges.length) {
+        token._tgRange.ranges = nRanges;
+        token._tgRange.highlight();
+      }
     }
   }
 

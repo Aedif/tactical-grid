@@ -61,26 +61,49 @@ export class DistanceMeasurer {
         MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure ||
         DistanceMeasurer.keyPressed) &&
       ruler &&
-      ruler._state !== Ruler.STATES.INACTIVE
+      ruler._state !== Ruler.STATES.INACTIVE &&
+      !originToken?.hasPreview
     ) {
-      if (!originToken?.hasPreview) {
-        if (ruler.draggedEntity instanceof Token) {
-          originToken = ruler.draggedEntity.clone();
-        } else {
-          originToken = null;
-        }
-      }
-      origin = { x: ruler.destination.x, y: ruler.destination.y };
+      originToken = null;
+      origin = deepClone(ruler.destination);
       highlight = false;
     } else if (originToken) {
+      if (originToken.hasPreview) {
+        originToken = originToken._preview;
+
+        const clonedPreview = this.getClone(originToken);
+        if (this.snap) {
+          const { x, y } = canvas.grid.getSnappedPosition(
+            originToken.x,
+            originToken.y,
+            canvas.tokens.gridPrecision
+          );
+          clonedPreview.document.x = x;
+          clonedPreview.document.y = y;
+        } else {
+          clonedPreview.document.x = originToken.document.x;
+          clonedPreview.document.y = originToken.document.y;
+        }
+        clonedPreview.document.elevation = originToken.document.elevation;
+
+        // 'Elevation Ruler' module support
+        // https://foundryvtt.com/packages/elevationruler
+        if (
+          ruler?._state !== Ruler.STATES.INACTIVE &&
+          ruler.destination._userElevationIncrements != null
+        ) {
+          clonedPreview.document.elevation +=
+            ruler.destination._userElevationIncrements * canvas.dimensions.distance;
+        }
+
+        originToken = clonedPreview;
+        highlight = false;
+      }
+
       origin = {
         x: originToken.center.x,
         y: originToken.center.y,
       };
-    }
-
-    if (originToken?.hasPreview) {
-      originToken = originToken._preview;
     }
 
     if (pos) origin = pos;
@@ -150,10 +173,9 @@ export class DistanceMeasurer {
     for (const token of visibleTokens) {
       let fromPoint = origin;
 
-      // If originToken has a preview it means the token is being dragged and we should do measurements
-      // not from a point but a rectangle the size of the token and thus find the closest point/grid space
-      // between the dragged and measured to token
-      if (this.originToken?._original) {
+      // If we have an originToken we should do measurements not from a point but a rectangle the size of the token
+      // and thus find the closest point/grid space between the dragged and measured to token
+      if (DistanceMeasurer.originToken) {
         fromPoint = nearestOriginPoint(
           DistanceMeasurer.originToken,
           token,
@@ -164,14 +186,6 @@ export class DistanceMeasurer {
       const distances = [];
 
       if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
-        if (DistanceMeasurer.originToken) {
-          fromPoint = nearestOriginPoint(
-            DistanceMeasurer.originToken,
-            token,
-            DistanceMeasurer.origin
-          );
-        }
-
         // Gridless
         let target = {
           ...token.center,

@@ -219,6 +219,30 @@ export function computeCoverBonus(attacker, target) {
           coverBonus = 0;
       }
       break;
+    case 'tokencover':
+      {
+        if (!game.modules.get('tokencover')?.active) return null;
+
+        let coverCalc = attacker.tokenCover?.coverCalc;
+        if (!coverCalc) {
+          attacker.tokencover = {
+            coverCalc: new (game.modules.get('tokencover').api.CoverCalculator)(attacker),
+          };
+          coverCalc = attacker.tokencover.coverCalc;
+        }
+
+        const coverValue = coverCalc.percentCover(target);
+        if (coverValue < (game.settings.get('tokencover', 'cover-trigger-percent-low') ?? 0.5))
+          coverBonus = 0;
+        else if (
+          coverValue < (game.settings.get('tokencover', 'cover-trigger-percent-medium') ?? 0.75)
+        )
+          coverBonus = HALF_COVER;
+        else if (coverValue < (game.settings.get('tokencover', 'cover-trigger-percent-high') ?? 1))
+          coverBonus = THREE_QUARTERS_COVER;
+        else coverBonus = FULL_COVER;
+      }
+      break;
     case 'pf2e-perception':
       {
         if (!game.modules.get('pf2e-perception')?.active) return null;
@@ -249,7 +273,6 @@ export function computeCoverBonus(attacker, target) {
       coverBonus = null;
       break;
   }
-
   return coverBonus;
 }
 
