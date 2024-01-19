@@ -1,3 +1,8 @@
+# 1.22.1
+
+- Improved snapping behaviour
+- Fixed debugger reporting wrong position
+
 # 1.22.0
 
 - Distance display on Token drag no longer requires `Drag Ruler`

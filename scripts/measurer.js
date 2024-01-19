@@ -23,10 +23,12 @@ export class DistanceMeasurer {
    * @param {Boolean} options.gridSpaces should measurements be in grade space increments
    * @param {Boolean} options.snap should origin snap to grid
    */
-  static showMeasures({ gridSpaces = true, snap = true } = {}) {
+  static showMeasures({ gridSpaces = true } = {}) {
     // if (!game.combat?.started) return;
     DistanceMeasurer.gridSpaces = gridSpaces;
-    DistanceMeasurer.snap = snap;
+    DistanceMeasurer.snap =
+      canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
+      !game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT);
     if (!canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
       canvas.grid.addHighlightLayer(DistanceMeasurer.hlName);
     }
@@ -80,9 +82,13 @@ export class DistanceMeasurer {
           );
           clonedPreview.document.x = x;
           clonedPreview.document.y = y;
+          clonedPreview.x = x;
+          clonedPreview.y = y;
         } else {
           clonedPreview.document.x = originToken.document.x;
           clonedPreview.document.y = originToken.document.y;
+          clonedPreview.x = originToken.x;
+          clonedPreview.y = originToken.y;
         }
         clonedPreview.document.elevation = originToken.document.elevation;
 
@@ -261,21 +267,6 @@ export class DistanceMeasurer {
       if (DistanceMeasurer.originToken && MODULE_CONFIG.cover.calculator !== 'none') {
         if (DistanceMeasurer.originToken.id !== token.id) {
           let attacker = DistanceMeasurer.originToken;
-          if (DistanceMeasurer.originToken._original) {
-            if (DistanceMeasurer.snap && canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) {
-              attacker = this.getClone(DistanceMeasurer.originToken);
-
-              let x = DistanceMeasurer.origin.x - attacker.w / 2;
-              let y = DistanceMeasurer.origin.y - attacker.h / 2;
-
-              attacker.x = x;
-              attacker.y = y;
-              attacker.document.x = x;
-              attacker.document.y = y;
-            } else {
-              attacker = DistanceMeasurer.originToken;
-            }
-          }
 
           if (CONFIG.debug.atg) {
             const dg = canvas.controls.debug;

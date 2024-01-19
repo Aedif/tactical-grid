@@ -505,10 +505,8 @@ export function registerRulerLibWrapperMethods() {
             (tokenPreviews.length && MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) ||
             DistanceMeasurer.keyPressed
           ) {
-            const opts = args[1] ?? {};
             DistanceMeasurer.showMeasures({
               gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
-              snap: opts.snap ?? opts.gridSpaces,
             });
           }
         }

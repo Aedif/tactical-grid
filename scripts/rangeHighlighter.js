@@ -46,8 +46,7 @@ class RangeHighlighter {
   }
 
   clear() {
-    const grid = canvas.grid;
-    const hl = grid.getHighlightLayer(this.highlightId);
+    const hl = canvas.grid.getHighlightLayer(this.highlightId);
     hl.clear();
     clearTimeout(this._timer);
   }
@@ -336,9 +335,7 @@ export function registerRangeHighlightHooks() {
       token._original &&
       canvas.controls.ruler?._state === Ruler.STATES.INACTIVE
     ) {
-      DistanceMeasurer.showMeasures({
-        snap: !game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT),
-      });
+      DistanceMeasurer.showMeasures();
     }
   });
 
