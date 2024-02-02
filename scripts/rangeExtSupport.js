@@ -326,7 +326,6 @@ function _tokenActionHud() {
   });
 
   Hooks.on('tokenActionHudSystemActionHoverOn', (event, item) => {
-    console.log(item);
     if (token) RangeHighlightAPI.rangeHighlight(token, { item });
   });
 

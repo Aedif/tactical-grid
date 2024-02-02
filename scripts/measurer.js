@@ -43,87 +43,91 @@ export class DistanceMeasurer {
     canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
   }
 
+  static _tokenAtRulerOrigin(ruler) {
+    const rOrigin = ruler.waypoints[0];
+    const token = canvas.tokens.controlled.find(
+      (t) =>
+        Number.between(rOrigin.x, t.x, t.x + t.hitArea.width) &&
+        Number.between(rOrigin.y, t.y, t.y + t.hitArea.height)
+    );
+
+    if (token) {
+      const destination = { ...ruler.destination };
+      destination.x -= token.w / 2;
+      destination.y -= token.h / 2;
+      const clone = this.getClone(token, this.snap, destination);
+      return clone;
+    }
+    return null;
+  }
+
   static setOrigin(pos = null) {
     let origin;
     let originToken = null;
     let highlight = true;
 
-    if (canvas.tokens.hover?.transform) {
-      originToken = canvas.tokens.hover;
-    } else if (canvas.tokens.controlled.length === 1) {
-      originToken = canvas.tokens.controlled[0];
-    }
-
     // If a ruler is active we will not use a token as origin
     // unless the token has a preview implying it is being dragged
     // together with the ruler (e.g. `Drag Ruler` module)
     const ruler = canvas.controls.ruler;
+    let rulerMeasurement = false;
+
+    // If there are no token previews and the ruler is active we may may pickup the token at ruler origin
     if (
-      (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure ||
-        MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure ||
-        DistanceMeasurer.keyPressed) &&
+      !canvas.tokens.preview.children.length &&
       ruler &&
       ruler._state !== Ruler.STATES.INACTIVE &&
-      !originToken?.hasPreview
+      (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure ||
+        MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure ||
+        DistanceMeasurer.keyPressed)
     ) {
-      originToken = null;
-      origin = deepClone(ruler.destination);
-      highlight = false;
-    } else if (originToken) {
-      if (originToken.hasPreview) {
-        originToken = originToken._preview;
+      rulerMeasurement = true;
+      originToken = DistanceMeasurer._tokenAtRulerOrigin(ruler);
 
-        const clonedPreview = this.getClone(originToken);
-        if (this.snap) {
-          const { x, y } = canvas.grid.getSnappedPosition(
-            originToken.x,
-            originToken.y,
-            canvas.tokens.gridPrecision
-          );
-          clonedPreview.document.x = x;
-          clonedPreview.document.y = y;
-          clonedPreview.x = x;
-          clonedPreview.y = y;
-        } else {
-          clonedPreview.document.x = originToken.document.x;
-          clonedPreview.document.y = originToken.document.y;
-          clonedPreview.x = originToken.x;
-          clonedPreview.y = originToken.y;
-        }
-        clonedPreview.document.elevation = originToken.document.elevation;
+      if (!originToken) {
+        origin = deepClone(ruler.destination);
+      }
+    }
 
-        // 'Elevation Ruler' module support
-        // https://foundryvtt.com/packages/elevationruler
-        if (
-          ruler?._state !== Ruler.STATES.INACTIVE &&
-          ruler.destination._userElevationIncrements != null
-        ) {
-          clonedPreview.document.elevation +=
-            ruler.destination._userElevationIncrements * canvas.dimensions.distance;
-        }
-
-        originToken = clonedPreview;
-        highlight = false;
+    if (!rulerMeasurement) {
+      // Check if a token is being hovered over or controlled to use it as origin
+      if (canvas.tokens.hover?.transform) {
+        originToken = canvas.tokens.hover;
+      } else if (canvas.tokens.controlled.length === 1) {
+        originToken = canvas.tokens.controlled[0];
       }
 
-      origin = {
-        x: originToken.center.x,
-        y: originToken.center.y,
-      };
+      if (originToken) {
+        if (originToken.hasPreview || pos) {
+          if (!pos) originToken = originToken._preview;
+          originToken = this.getClone(originToken, this.snap, pos);
+          highlight = Boolean(pos);
+        }
+      }
+    }
+
+    // 'Elevation Ruler' module support
+    // https://foundryvtt.com/packages/elevationruler
+    if (
+      originToken &&
+      ruler?._state !== Ruler.STATES.INACTIVE &&
+      ruler.destination._userElevationIncrements != null
+    ) {
+      originToken.document.elevation +=
+        ruler.destination._userElevationIncrements * canvas.dimensions.distance;
     }
 
     if (pos) origin = pos;
 
-    if (origin) {
+    if (originToken) {
+      if (highlight) DistanceMeasurer.highlightTokenGridPosition(originToken);
+    } else if (origin) {
       const [x, y] = canvas.grid.grid.getTopLeft(origin.x, origin.y);
-
-      if (
-        highlight &&
-        (!DistanceMeasurer.origin ||
-          DistanceMeasurer.origin.x !== origin.x ||
-          DistanceMeasurer.origin.y !== origin.y)
-      )
+      origin.x = x + canvas.grid.size / 2;
+      origin.y = y + canvas.grid.size / 2;
+      if (highlight) {
         DistanceMeasurer.highlightPosition(x, y);
+      }
     }
 
     DistanceMeasurer.origin = origin;
@@ -132,6 +136,29 @@ export class DistanceMeasurer {
 
   static clearHighlight() {
     canvas.grid.clearHighlightLayer(DistanceMeasurer.hlName);
+  }
+
+  static highlightTokenGridPosition(token) {
+    DistanceMeasurer.clearHighlight();
+    const layer = canvas.grid.highlightLayers[DistanceMeasurer.hlName];
+    if (!layer) return;
+
+    let shape;
+    if (
+      MODULE_CONFIG.measurement.gridlessCircle &&
+      canvas.grid.type === CONST.GRID_TYPES.GRIDLESS
+    ) {
+      shape = new PIXI.Ellipse(token.center.x, token.center.y, token.w / 2, token.h / 2);
+    } else {
+      shape = new PIXI.Rectangle(token.x, token.y, token.w, token.h);
+    }
+
+    if (Number.isFinite(MODULE_CONFIG.marker.color))
+      layer.beginFill(MODULE_CONFIG.marker.color, MODULE_CONFIG.marker.alpha);
+    if (Number.isFinite(MODULE_CONFIG.marker.border))
+      layer.lineStyle(2, MODULE_CONFIG.marker.color, MODULE_CONFIG.marker.alpha);
+    else layer.lineStyle(0);
+    layer.drawShape(shape).endFill();
   }
 
   static highlightPosition(x, y) {
@@ -157,14 +184,7 @@ export class DistanceMeasurer {
 
   static drawLabels() {
     DistanceMeasurer.deleteLabels();
-    if (!DistanceMeasurer.origin) return;
-
-    const origin = { ...DistanceMeasurer.origin };
-    if (canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) {
-      const [x, y] = canvas.grid.grid.getTopLeft(origin.x, origin.y);
-      origin.x = x + canvas.grid.size / 2;
-      origin.y = y + canvas.grid.size / 2;
-    }
+    if (!(DistanceMeasurer.origin || DistanceMeasurer.originToken)) return;
 
     let visibleTokens = canvas.tokens.placeables.filter(
       (p) => p.visible || p.impreciseVisible // Vision5e support
@@ -177,16 +197,14 @@ export class DistanceMeasurer {
     }
 
     for (const token of visibleTokens) {
-      let fromPoint = origin;
+      let fromPoint;
 
       // If we have an originToken we should do measurements not from a point but a rectangle the size of the token
       // and thus find the closest point/grid space between the dragged and measured to token
       if (DistanceMeasurer.originToken) {
-        fromPoint = nearestOriginPoint(
-          DistanceMeasurer.originToken,
-          token,
-          DistanceMeasurer.origin
-        );
+        fromPoint = nearestOriginPoint(DistanceMeasurer.originToken, token);
+      } else {
+        fromPoint = { ...DistanceMeasurer.origin };
       }
 
       const distances = [];
@@ -307,20 +325,38 @@ export class DistanceMeasurer {
     }
   }
 
-  static getClone(token) {
+  static getClone(token, snap = false, pos = null) {
     if (
       this.clone &&
       this.clone.id === token.id &&
       this.clone.w === token.w &&
       this.clone.h === token.h
-    )
-      return this.clone;
-    // if (this.clone) this.clone.destroy();
+    ) {
+      //
+    } else {
+      // if (this.clone) this.clone.destroy();
+      const cloneDoc = token.document.clone({}, { keepId: true });
+      this.clone = new CONFIG.Token.objectClass(cloneDoc);
+      this.clone.eventMode = 'none';
+      cloneDoc._object = this.clone;
+    }
 
-    const cloneDoc = token.document.clone({}, { keepId: true });
-    this.clone = new CONFIG.Token.objectClass(cloneDoc);
-    this.clone.eventMode = 'none';
-    cloneDoc._object = this.clone;
+    if (pos) {
+      const [x, y] = canvas.grid.grid.getTopLeft(pos.x, pos.y);
+      pos.x = x;
+      pos.y = y;
+    }
+
+    if (!pos) pos = { x: token.x, y: token.y };
+    if (snap) pos = canvas.grid.getSnappedPosition(pos.x, pos.y, canvas.tokens.gridPrecision);
+
+    // Set position to original
+    this.clone.document.x = pos.x;
+    this.clone.document.y = pos.y;
+    this.clone.x = pos.x;
+    this.clone.y = pos.y;
+
+    this.clone.document.elevation = token.document.elevation;
 
     return this.clone;
   }
@@ -459,23 +495,23 @@ export class DistanceMeasurer {
  * Find the closest point on the origin token, to the target token
  * @param {Token} oToken origin token
  * @param {Token} tToken target token
- * @param {object} origin
  * @returns {x, y} closest grid space or border edge (gridless)
  */
-function nearestOriginPoint(oToken, tToken, origin) {
+function nearestOriginPoint(oToken, tToken) {
+  const center = oToken.center;
   if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
     if (MODULE_CONFIG.measurement.gridlessCircle) {
       return nearestPointToCircle(
-        { ...origin, r: Math.min(oToken.w, oToken.h) / 2 },
+        { ...center, r: Math.min(oToken.w, oToken.h) / 2 },
         tToken.center
       );
     } else {
       return nearestPointToRectangle(
         {
-          minX: origin.x - oToken.w / 2,
-          minY: origin.y - oToken.h / 2,
-          maxX: origin.x + oToken.w / 2,
-          maxY: origin.y + oToken.h / 2,
+          minX: center.x - oToken.w / 2,
+          minY: center.y - oToken.h / 2,
+          maxX: center.x + oToken.w / 2,
+          maxY: center.y + oToken.h / 2,
         },
         tToken.center
       );
@@ -491,8 +527,8 @@ function nearestOriginPoint(oToken, tToken, origin) {
     if (offsets) {
       for (const offset of offsets) {
         gridPoints.push({
-          x: origin.x - oToken.w / 2 + oToken.w * offset[0],
-          y: origin.y - oToken.h / 2 + oToken.h * offset[1],
+          x: center.x - oToken.w / 2 + oToken.w * offset[0],
+          y: center.y - oToken.h / 2 + oToken.h * offset[1],
         });
       }
     }
@@ -502,15 +538,15 @@ function nearestOriginPoint(oToken, tToken, origin) {
     for (let h = 0; h < oToken.h / canvas.grid.size; h++) {
       for (let w = 0; w < oToken.w / canvas.grid.size; w++) {
         gridPoints.push({
-          x: origin.x - oToken.w / 2 + canvas.grid.size * w + canvas.grid.size / 2,
-          y: origin.y - oToken.h / 2 + canvas.grid.size * h + canvas.grid.size / 2,
+          x: center.x - oToken.w / 2 + canvas.grid.size * w + canvas.grid.size / 2,
+          y: center.y - oToken.h / 2 + canvas.grid.size * h + canvas.grid.size / 2,
         });
       }
     }
   }
 
   // Find the grid point with the shortest distance to tToken
-  if (!gridPoints.length) return origin;
+  if (!gridPoints.length) return center;
 
   const tCenter = tToken.center;
   let closest = gridPoints[0];

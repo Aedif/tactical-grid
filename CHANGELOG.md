@@ -1,3 +1,8 @@
+# 1.23.0
+
+- While dragging a ruler originating at a token the module will use clone of the token to perform cover calculations and take into account elevation
+  - Clicking on the canvas while holding the `Display Distances` control will do the same
+
 # 1.22.1
 
 - Improved snapping behaviour
