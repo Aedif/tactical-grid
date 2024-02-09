@@ -158,6 +158,10 @@ class Dnd5eRange extends SystemRange {
 }
 
 class Pf2eRange extends SystemRange {
+  static getTokenRange(token) {
+    return [token.actor?.getReach?.({ action: 'attack' }) || 0];
+  }
+
   static getItemRange(item) {
     const ranges = [];
 
