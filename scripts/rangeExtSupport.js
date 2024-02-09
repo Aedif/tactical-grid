@@ -159,7 +159,9 @@ class Dnd5eRange extends SystemRange {
 
 class Pf2eRange extends SystemRange {
   static getTokenRange(token) {
-    return [token.actor?.getReach?.({ action: 'attack' }) || 0];
+    const reach = { range: token.actor?.getReach?.({ action: 'attack' }) || 0 };
+    if (reach.range === 10) reach.measureDistance = this._reachMeasureDistance;
+    return [reach];
   }
 
   static getItemRange(item) {
@@ -178,11 +180,35 @@ class Pf2eRange extends SystemRange {
     if (longRange) ranges.push(longRange);
 
     if (!ranges.length && item.isMelee) {
-      if (item.system.traits.value?.includes('reach')) ranges.push(10);
+      if (item.system.traits.value?.includes('reach'))
+        ranges.push({ range: 10, measureDistance: this._reachMeasureDistance });
       else ranges.push(5);
     }
 
     return ranges;
+  }
+
+  // PF2e has an exception for distance measurements for the 10ft reach. This a modified PF2e `measureDistances`
+  // function to account for this
+  static _reachMeasureDistance(origin, target, options) {
+    const ray = new Ray(origin, target);
+    const segments = [{ ray }];
+
+    if (!options.gridSpaces)
+      return BaseGrid.prototype.measureDistances.call(this, segments, options);
+
+    let nDiagonal = 0;
+    const d = canvas.dimensions;
+    return segments.map((s) => {
+      const r = s.ray,
+        nx = Math.abs(Math.ceil(r.dx / d.size)),
+        ny = Math.abs(Math.ceil(r.dy / d.size)),
+        nd = Math.min(nx, ny),
+        ns = Math.abs(ny - nx);
+      nDiagonal += nd;
+      const nd10 = Math.floor(nDiagonal / 2) - Math.floor((nDiagonal - nd) / 2);
+      return (nd10 + (nd - nd10) + ns) * d.distance;
+    });
   }
 }
 

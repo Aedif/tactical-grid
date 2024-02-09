@@ -1,3 +1,9 @@
+# 1.23.1
+
+- Courtesy of [CarlosFdez](https://github.com/CarlosFdez) PF2e range highlighting now supports [10ft reach](https://2e.aonprd.com/Rules.aspx?ID=352) measurement exception
+
+  `Unlike with measuring most distances, 10-foot reach can reach 2 squares diagonally. Reach greater than 10 feet is measured normally; 20-foot reach can reach 3 squares diagonally, 30-foot reach can reach 4, and so on.`
+
 # 1.23.0
 
 - While dragging a ruler originating at a token the module will use clone of the token to perform cover calculations and take into account elevation

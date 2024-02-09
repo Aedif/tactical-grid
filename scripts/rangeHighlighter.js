@@ -161,8 +161,10 @@ class RangeHighlighter {
           let withinRange;
           for (let j = 0; j < this.ranges.length; j++) {
             const range = this.ranges[j];
+            const measureDistance =
+              range.measureDistance ?? canvas.grid.measureDistance.bind(canvas.grid);
             for (let i = 0; i < tokenPositions.length; i++) {
-              let cd = canvas.grid.measureDistance(tokenPositions[i], pos, { gridSpaces: true });
+              let cd = measureDistance(tokenPositions[i], pos, { gridSpaces: true });
 
               if (cd <= range.range) {
                 this._highlightGridPosition(hl, pos, range);
@@ -395,17 +397,25 @@ export class RangeHighlightAPI {
       return;
     }
 
-    if (Number.isFinite(ranges[0])) {
-      const colors = MODULE_CONFIG.range.colors;
-      ranges = ranges
-        .sort((a, b) => a - b)
-        .map((d, i) => {
+    const colors = MODULE_CONFIG.range.colors;
+
+    // Process numerical and object ranges assigning them color configurations as per module settings
+    ranges = ranges
+      .sort((a, b) => a.range - b.range)
+      .map((r, i) => {
+        const c = i < colors.length ? colors[i] : MODULE_CONFIG.range.defaultColor;
+
+        if (Number.isFinite(r)) {
           return {
-            range: d,
-            ...(i < colors.length ? colors[i] : MODULE_CONFIG.range.defaultColor),
+            range: r,
+            ...c,
           };
-        });
-    }
+        } else if (r.color == null && r.lineColor == null) {
+          const c = i < colors.length ? colors[i] : MODULE_CONFIG.range.defaultColor;
+          return { ...c, ...r };
+        }
+        return r;
+      });
 
     new RangeHighlighter(token, ranges, { roundToken });
   }
