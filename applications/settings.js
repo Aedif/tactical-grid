@@ -57,6 +57,7 @@ export const MODULE_CONFIG = {
     halfCover: '',
     threeQuartersCover: '',
     totalCover: '',
+    combatOnly: false,
   },
   range: {
     item: {
@@ -66,6 +67,7 @@ export const MODULE_CONFIG = {
     token: {
       enabled: false,
       combatOnly: false,
+      dispositions: {},
     },
     colors: [
       {
@@ -174,6 +176,15 @@ export default class TGSettingsConfig extends FormApplication {
       if (calculator.value !== 'none') {
         calculator.disabled = !game.modules.get(calculator.value)?.active;
       }
+    }
+
+    data.dispositions = [];
+    for (const [k, v] of Object.entries(CONST.TOKEN_DISPOSITIONS)) {
+      data.dispositions.push({
+        value: v,
+        label: game.i18n.localize(`TOKEN.DISPOSITION.${k}`),
+        enabled: MODULE_CONFIG.range.token.dispositions[v],
+      });
     }
 
     return data;

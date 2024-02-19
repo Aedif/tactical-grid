@@ -1,3 +1,29 @@
+# 1.24.0
+
+- **Distance Measurement**
+
+  - Now takes into account token volume (token z-axis height is assumed to be the same as its y-axis height)
+  - On a square grids diagonal and double-diagonal movement multipliers can now be configured
+    - Diagonals (grid-space moves in x and y direction) are 1.5x by default (equivalent to 5/10/5 rule)
+    - Double-diagonals (grid-space moves in x, y, and z direction) are 1.75 by default
+  - On gridless scenes with `Gridless: Circle Border` setting enabled, the module will consider tokens to be cylindrical
+  - Fixed point to token measurements on gridless scenes
+  - Fixed measurements returning as zero when dragging a token over another
+  - On PF2e, token-to-token measurements will be delegated to the system provided `distanceTo` function
+
+- **Range Highlighter**
+
+  - Permanent highlights can now be setup via `ranges` flag
+    - e.g. `_token.document.setFlag('aedifs-tactical-grid', 'ranges', [ {range: 10, lineColor: '#00ff00', lineWidth: 2, lineAlpha: 0.4, id: "MyCustomAura" }])`
+    - e.g. `_token.document.unsetFlag('aedifs-tactical-grid', 'ranges')`
+    - Highlights setup via flags will be visible to all players
+  - New setting `Range` > `Token` > `Dispositions Highlighted for Players`
+    - Players will only see reach highlights for owned tokens or tokens with dispositions selected here
+
+- **Cover**
+  - New setting: `Combat Only`
+    - When enabled cover will only be calculated in active combat
+
 # 1.23.1
 
 - Courtesy of [CarlosFdez](https://github.com/CarlosFdez) PF2e range highlighting now supports [10ft reach](https://2e.aonprd.com/Rules.aspx?ID=352) measurement exception

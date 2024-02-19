@@ -375,6 +375,11 @@ export function registerRangeHighlightHooks() {
   Hooks.on('hoverToken', (token, hoverIn) => {
     if (!MODULE_CONFIG.range.token.enabled) return;
     if (MODULE_CONFIG.range.token.combatOnly && !game.combat?.started) return;
+    if (
+      !game.user.isGM &&
+      !(token.owner || MODULE_CONFIG.range.token.dispositions[token.document.disposition])
+    )
+      return;
     if (hoverIn && token.actor) {
       RangeHighlightAPI.rangeHighlight(token);
     } else {
@@ -388,10 +393,10 @@ export function registerRangeHighlightHooks() {
   };
 
   Hooks.on('createToken', (token) => {
-    checkApplyFlagRanges(token);
+    if (token.object) checkApplyFlagRanges(token.object);
   });
 
-  Hooks.on('updateToken', (token, change, opts, userId) => {
+  Hooks.on('updateToken', (token, change) => {
     const mFlags = change.flags?.[MODULE_ID];
     if (mFlags && token.object) {
       if ('-=ranges' in mFlags || 'ranges' in mFlags) {

@@ -284,7 +284,11 @@ export class DistanceMeasurer {
 
       /// Calculate Cover
       let cover;
-      if (DistanceMeasurer.originToken && MODULE_CONFIG.cover.calculator !== 'none') {
+      if (
+        DistanceMeasurer.originToken &&
+        MODULE_CONFIG.cover.calculator !== 'none' &&
+        (!MODULE_CONFIG.cover.combatOnly || game.combat?.started)
+      ) {
         if (DistanceMeasurer.originToken.id !== token.id) {
           let attacker = DistanceMeasurer.originToken;
 
@@ -442,6 +446,11 @@ export class DistanceMeasurer {
   }
 
   static getDistance(origin, target, targetToken, options) {
+    // Delegate distance measurements to PF2e's `distanceTo` util
+    if (game.system.id === 'pf2e' && targetToken && options.originToken) {
+      return options.originToken.distanceTo(targetToken);
+    }
+
     targetToken = targetToken?.document;
     let originToken = options.originToken?.document;
 

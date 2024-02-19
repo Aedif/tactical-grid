@@ -92,7 +92,8 @@
         "token-range": "Token Range Highlighter",
         "combat-only": "Combat Only",
         "ranges": "Ranges",
-        "grid-shape-shrink": "Grid Shape Shrink"
+        "grid-shape-shrink": "Grid Shape Shrink",
+        "dispositions": "Dispositions Highlighted for Players"
       },
       "diagonalMultiplier": {
         "name": "Diagonal Multiplier",
