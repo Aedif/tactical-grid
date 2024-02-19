@@ -91,7 +91,7 @@ export class DistanceMeasurer {
 
     if (!rulerMeasurement) {
       // Check if a token is being hovered over or controlled to use it as origin
-      if (canvas.tokens.hover?.transform) {
+      if (canvas.tokens.hover?.transform && !canvas.tokens.preview.children.length) {
         originToken = canvas.tokens.hover;
       } else if (canvas.tokens.controlled.length === 1) {
         originToken = canvas.tokens.controlled[0];
@@ -123,8 +123,10 @@ export class DistanceMeasurer {
       if (highlight) DistanceMeasurer.highlightTokenGridPosition(originToken);
     } else if (origin) {
       const [x, y] = canvas.grid.grid.getTopLeft(origin.x, origin.y);
-      origin.x = x + canvas.grid.size / 2;
-      origin.y = y + canvas.grid.size / 2;
+      if (canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) {
+        origin.x = x + canvas.grid.size / 2;
+        origin.y = y + canvas.grid.size / 2;
+      }
       if (highlight) {
         DistanceMeasurer.highlightPosition(x, y);
       }
@@ -440,26 +442,73 @@ export class DistanceMeasurer {
   }
 
   static getDistance(origin, target, targetToken, options) {
-    let distance;
-    // If the tokens have elevation we want to create a faux target coordinate in 2d space
-    // so that we can then let foundry utils calculate the appropriate distance based on diagonal rules
-    let originElevation = options.originToken ? options.originToken.document.elevation : 0;
-    let verticalDistance =
-      (canvas.grid.size / canvas.dimensions.distance) *
-      Math.abs(targetToken.document.elevation - originElevation);
-    if (!MODULE_CONFIG.measurement.includeElevation) verticalDistance = 0;
-    if (verticalDistance != 0) {
-      let dx = target.x - origin.x;
-      let dy = target.y - origin.y;
-      let mag = Math.max(Math.sqrt(dx * dx + dy * dy), 0.0000001);
-      let angle = Math.atan(verticalDistance / mag);
-      let length = mag / Math.cos(angle);
+    targetToken = targetToken?.document;
+    let originToken = options.originToken?.document;
 
-      let ray = Ray.fromAngle(0, 0, angle, length);
-      const segments = [{ ray }];
-      distance = canvas.grid.grid.measureDistances(segments, options)[0];
+    if (MODULE_CONFIG.measurement.includeElevation) {
+      const sdr = canvas.grid.size / canvas.dimensions.distance;
+
+      if (origin.z == null) origin.z = Math.floor((originToken ? originToken.elevation : 0) * sdr);
+      if (origin.height == null)
+        origin.height = Math.floor((originToken?.width || 0) * canvas.grid.size);
+      if (target.z == null) target.z = Math.floor((targetToken ? targetToken.elevation : 0) * sdr);
+      if (target.height == null)
+        target.height = Math.floor((targetToken?.width || 0) * canvas.grid.size);
     } else {
-      distance = canvas.grid.measureDistance(origin, target, options);
+      origin.z = 0;
+      origin.height = 0;
+      target.z = 0;
+      target.height = 0;
+    }
+
+    let dx = origin.x - target.x,
+      dy = origin.y - target.y;
+
+    let distance;
+    const d = canvas.dimensions;
+    if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS || !options.gridSpaces) {
+      let dz = Math.abs(origin.z - target.z);
+      // Take into account token z-axis heights by subtracting the lower token
+      if (origin.z < target.z) {
+        if (originToken) dz -= originToken.width * canvas.grid.size;
+      } else if (target.z < origin.z) {
+        if (targetToken) dz -= targetToken.width * canvas.grid.size;
+      }
+      if (dz < 0) dz = 0;
+
+      distance = (Math.sqrt(dx * dx + dy * dy + dz * dz) / d.size) * d.distance;
+    } else {
+      let dz;
+      // If origin and target are on the same plane we ignore z component
+      if (origin.z === target.z) dz = 0;
+      else if (origin.z > target.z && origin.z < target.z + target.height) dz = 0;
+      else if (target.z > origin.z && target.z < origin.z + origin.height) dz = 0;
+      else {
+        origin.z = canvas.grid.getSnappedPosition(0, origin.z).y;
+        target.z = canvas.grid.getSnappedPosition(0, target.z).y;
+        dz =
+          Math.abs(
+            Math.min(origin.z + origin.height - target.z, target.z + target.height - origin.z)
+          ) + canvas.grid.w;
+      }
+
+      let nx = Math.abs(Math.ceil(dx / d.size)),
+        ny = Math.abs(Math.ceil(dy / d.size)),
+        nd = Math.min(nx, ny),
+        nz = Math.ceil(dz / d.size),
+        sorted = [nx, ny, nz].sort((a, b) => a - b),
+        moves = {
+          doubleDiagonal: sorted[0],
+          diagonal: sorted[1] - sorted[0],
+          straight: sorted[2] - sorted[1],
+        };
+
+      distance =
+        Math.floor(
+          moves.doubleDiagonal * MODULE_CONFIG.measurement.doubleDiagonalMultiplier +
+            moves.diagonal * MODULE_CONFIG.measurement.diagonalMultiplier +
+            moves.straight
+        ) * d.distance;
     }
 
     let precision = 10 ** MODULE_CONFIG.measurement.precision;

@@ -1,5 +1,10 @@
 import { GridMaskContainer } from './scripts/container.js';
-import { cleanLayerName, registerGridWrappers, unregisterGridWrappers } from './scripts/utils.js';
+import {
+  MODULE_ID,
+  cleanLayerName,
+  registerGridWrappers,
+  unregisterGridWrappers,
+} from './scripts/utils.js';
 import {
   MODULE_CONFIG,
   registerRulerLibWrapperMethods,
@@ -27,7 +32,7 @@ Hooks.on('init', () => {
     clearRangeHighlight: RangeHighlightAPI.clearRangeHighlight,
   };
 
-  game.modules.get('aedifs-tactical-grid').api = globalThis.TacticalGrid;
+  game.modules.get(MODULE_ID).api = globalThis.TacticalGrid;
   CONFIG.debug.atg = false;
 });
 
@@ -113,7 +118,7 @@ Hooks.on('highlightObjects', () => {
 });
 
 Hooks.on('canvasInit', (canvas) => {
-  let tacticalLineWidth = canvas.scene.getFlag('aedifs-tactical-grid', 'gridLineWidth');
+  let tacticalLineWidth = canvas.scene.getFlag(MODULE_ID, 'gridLineWidth');
   if (tacticalLineWidth && tacticalLineWidth > 1) {
     registerGridWrappers(tacticalLineWidth);
   } else {

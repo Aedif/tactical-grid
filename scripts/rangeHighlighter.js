@@ -5,6 +5,7 @@ import {
   registerActorSheetHooks,
   registerExternalModuleHooks,
 } from './rangeExtSupport.js';
+import { MODULE_ID } from './utils.js';
 
 class RangeHighlighter {
   constructor(token, ranges, { roundToken = false } = {}) {
@@ -72,6 +73,17 @@ class RangeHighlighter {
     // Clear the existing highlight layer
     const grid = canvas.grid;
     const hl = grid.getHighlightLayer(this.highlightId);
+
+    if (!hl._tgCustomVisibility) {
+      const token = this.token;
+      Object.defineProperty(hl, 'visible', {
+        get: function () {
+          return token.visible;
+        },
+        set: function () {},
+      });
+      hl._tgCustomVisibility = true;
+    }
 
     //if (this.token._animation) return;
 
@@ -367,6 +379,31 @@ export function registerRangeHighlightHooks() {
       RangeHighlightAPI.rangeHighlight(token);
     } else {
       RangeHighlightAPI.clearRangeHighlight(token);
+    }
+  });
+
+  const checkApplyFlagRanges = function (token) {
+    const ranges = token.document.getFlag(MODULE_ID, 'ranges');
+    if (ranges) RangeHighlightAPI.rangeHighlight(token, { ranges });
+  };
+
+  Hooks.on('createToken', (token) => {
+    checkApplyFlagRanges(token);
+  });
+
+  Hooks.on('updateToken', (token, change, opts, userId) => {
+    const mFlags = change.flags?.[MODULE_ID];
+    if (mFlags && token.object) {
+      if ('-=ranges' in mFlags || 'ranges' in mFlags) {
+        RangeHighlightAPI.clearRangeHighlight(token.object, { force: true });
+        checkApplyFlagRanges(token.object);
+      }
+    }
+  });
+
+  Hooks.on('canvasReady', () => {
+    for (const token of canvas.tokens.placeables) {
+      checkApplyFlagRanges(token);
     }
   });
 

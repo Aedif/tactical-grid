@@ -1,6 +1,6 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
 import { CustomSpriteMaskFilter } from '../filters/CustomSpriteMaskFilter.js';
-import { cleanLayerName, getDispositionColor, getGridColorString } from './utils.js';
+import { MODULE_ID, cleanLayerName, getDispositionColor, getGridColorString } from './utils.js';
 
 export class GridMaskContainer extends CachedContainer {
   /** @override */
@@ -30,10 +30,7 @@ export class GridMaskContainer extends CachedContainer {
 
     if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return this.deactivateMask();
 
-    let sceneEnabled = canvas.scene.getFlag(
-      'aedifs-tactical-grid',
-      `${cleanLayerName(layer)}Enabled`
-    );
+    let sceneEnabled = canvas.scene.getFlag(MODULE_ID, `${cleanLayerName(layer)}Enabled`);
     if (sceneEnabled != null && !sceneEnabled) return this.deactivateMask();
     if (sceneEnabled == null && !MODULE_CONFIG.layerEnabled[cleanLayerName(layer)])
       return this.deactivateMask();
@@ -48,7 +45,7 @@ export class GridMaskContainer extends CachedContainer {
     const applicableTokens = layer.placeables.filter(
       (p) =>
         (MODULE_CONFIG.enableOnControl && p.controlled) ||
-        (MODULE_CONFIG.enableOnHover && (p.hover || hasPreview(p)))
+        (MODULE_CONFIG.enableOnHover && (layer.highlightObjects || p.hover || hasPreview(p)))
     );
 
     if (MODULE_CONFIG.enableOnRuler && typeof libWrapper === 'function') {
@@ -101,13 +98,12 @@ export class GridMaskContainer extends CachedContainer {
         if (!viewDistance) continue;
 
         let viewShape =
-          p.document?.getFlag('aedifs-tactical-grid', 'viewShape') ||
-          MODULE_CONFIG.defaultViewShape;
+          p.document?.getFlag(MODULE_ID, 'viewShape') || MODULE_CONFIG.defaultViewShape;
 
         const width = p.width;
         const height = p.height;
 
-        let shapeColor = p.document?.getFlag('aedifs-tactical-grid', 'color');
+        let shapeColor = p.document?.getFlag(MODULE_ID, 'color');
         if (shapeColor) {
           shapeColor = Number(Color.fromString(shapeColor));
         } else if (
@@ -129,7 +125,7 @@ export class GridMaskContainer extends CachedContainer {
               .endFill();
             break;
           case 'square-soft':
-            sprite = PIXI.Sprite.from('modules\\aedifs-tactical-grid\\images\\square_mask.webp');
+            sprite = PIXI.Sprite.from(`modules\\${MODULE_ID}\\images\\square_mask.webp`);
             break;
           case 'hexagonRow':
             let pointsRow = HexagonalGrid.pointyHexPoints
@@ -144,7 +140,7 @@ export class GridMaskContainer extends CachedContainer {
             sprite = new PIXI.Graphics().beginFill(shapeColor).drawPolygon(pointsCol).endFill();
             break;
           case 'circle-soft':
-            sprite = PIXI.Sprite.from('modules\\aedifs-tactical-grid\\images\\circle_mask.webp');
+            sprite = PIXI.Sprite.from(`modules\\${MODULE_ID}\\images\\circle_mask.webp`);
             break;
           case 'circle':
           default:
@@ -175,7 +171,7 @@ export class GridMaskContainer extends CachedContainer {
   }
 
   _getViewDistance(p) {
-    let viewDistance = p.document?.getFlag('aedifs-tactical-grid', 'viewDistance');
+    let viewDistance = p.document?.getFlag(MODULE_ID, 'viewDistance');
     if (viewDistance == null && MODULE_CONFIG.usePropertyBasedDistance) {
       viewDistance = getProperty(p.document ?? p, MODULE_CONFIG.propertyDistance);
       if (viewDistance) viewDistance /= canvas.scene.grid.distance;

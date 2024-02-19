@@ -1,18 +1,18 @@
 import { MODULE_CONFIG, updateSettings } from '../applications/settings.js';
 import { GRID_MASK } from '../tactical-grid.js';
 import { DistanceMeasurer } from './measurer.js';
-import { cleanLayerName } from './utils.js';
+import { MODULE_ID, cleanLayerName } from './utils.js';
 
 export function registerKeybindings() {
   const toggleSceneGrid = async function () {
     if (canvas.scene) {
       let settingName = `${cleanLayerName(canvas.activeLayer)}Enabled`;
-      let val = canvas.scene.getFlag('aedifs-tactical-grid', settingName);
+      let val = canvas.scene.getFlag(MODULE_ID, settingName);
       if (val != null && !val) {
-        await canvas.scene.unsetFlag('aedifs-tactical-grid', settingName);
+        await canvas.scene.unsetFlag(MODULE_ID, settingName);
         ui.notifications.info(`Tactical Grid: Scene Setting REMOVED { ${settingName} }`);
       } else {
-        await canvas.scene.setFlag('aedifs-tactical-grid', settingName, !val);
+        await canvas.scene.setFlag(MODULE_ID, settingName, !val);
         ui.notifications.info(
           `Tactical Grid: Scene Setting ADDED { ${settingName} = ${val ? 'False' : 'True'} }`
         );
@@ -21,9 +21,9 @@ export function registerKeybindings() {
   };
 
   let lastPress;
-  game.keybindings.register('aedifs-tactical-grid', 'toggleGrid', {
-    name: game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.name'),
-    hint: game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.hint'),
+  game.keybindings.register(MODULE_ID, 'toggleGrid', {
+    name: game.i18n.localize(`${MODULE_ID}.keybindings.toggleGrid.name`),
+    hint: game.i18n.localize(`${MODULE_ID}.keybindings.toggleGrid.hint`),
     editable: [],
     onUp: async () => {
       if (lastPress) {
@@ -50,9 +50,9 @@ export function registerKeybindings() {
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
   });
 
-  game.keybindings.register('aedifs-tactical-grid', 'sceneToggleGrid', {
-    name: game.i18n.localize('aedifs-tactical-grid.keybindings.sceneToggleGrid.name'),
-    hint: game.i18n.localize('aedifs-tactical-grid.keybindings.sceneToggleGrid.hint'),
+  game.keybindings.register(MODULE_ID, 'sceneToggleGrid', {
+    name: game.i18n.localize(`${MODULE_ID}.keybindings.sceneToggleGrid.name`),
+    hint: game.i18n.localize(`${MODULE_ID}.keybindings.sceneToggleGrid.hint`),
     editable: [],
     onDown: () => {
       toggleSceneGrid();
@@ -61,7 +61,7 @@ export function registerKeybindings() {
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
   });
 
-  game.keybindings.register('aedifs-tactical-grid', 'displayDistanceGridSpacing', {
+  game.keybindings.register(MODULE_ID, 'displayDistanceGridSpacing', {
     name: 'Display Distances (Grid Spacing)',
     hint: '',
     editable: [],
@@ -77,7 +77,7 @@ export function registerKeybindings() {
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
   });
 
-  game.keybindings.register('aedifs-tactical-grid', 'displayDistance', {
+  game.keybindings.register(MODULE_ID, 'displayDistance', {
     name: 'Display Distances',
     hint: '',
     editable: [],

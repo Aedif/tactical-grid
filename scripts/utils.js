@@ -1,5 +1,7 @@
 import { MODULE_CONFIG } from '../applications/settings.js';
 
+export const MODULE_ID = 'aedifs-tactical-grid';
+
 // Because PF2e is a special snowflake
 export function cleanLayerName(layer) {
   return layer.name.replace('PF2e', '');
@@ -31,7 +33,7 @@ export function registerGridWrappers(lineWidth) {
 
     if (isNewerVersion('11', game.version)) {
       squareWrap = libWrapper.register(
-        'aedifs-tactical-grid',
+        MODULE_ID,
         'SquareGrid.prototype._drawLine',
         function (points, lineColor, lineAlpha) {
           let line = new PIXI.Graphics();
@@ -45,7 +47,7 @@ export function registerGridWrappers(lineWidth) {
       );
     } else {
       squareWrap = libWrapper.register(
-        'aedifs-tactical-grid',
+        MODULE_ID,
         'SquareGrid.prototype.draw',
         function (options = {}) {
           Object.getPrototypeOf(SquareGrid).prototype.draw.call(this, options);
@@ -81,7 +83,7 @@ export function registerGridWrappers(lineWidth) {
     }
 
     let hexWrap = libWrapper.register(
-      'aedifs-tactical-grid',
+      MODULE_ID,
       'HexagonalGrid.prototype._drawGrid',
       function ({ color = null, alpha = null } = {}) {
         color = color ?? this.options.color;
@@ -110,7 +112,7 @@ export function registerGridWrappers(lineWidth) {
 export function unregisterGridWrappers() {
   if (typeof libWrapper === 'function') {
     for (const wrp of registeredWrappers) {
-      libWrapper.unregister('aedifs-tactical-grid', wrp, false);
+      libWrapper.unregister(MODULE_ID, wrp, false);
     }
     registeredWrappers = [];
   }
@@ -140,7 +142,7 @@ export function nearestPointToRectangle(rect, p) {
  */
 export function nearestPointToCircle(c, p) {
   // If c === p, return any edge
-  if (c.x === p.x && c.y === p.y) return p;
+  if (c.x === p.x && c.y === p.y) return { x: p.x, y: p.y };
   let vX = p.x - c.x;
   let vY = p.y - c.y;
   let magV = Math.sqrt(vX * vX + vY * vY);

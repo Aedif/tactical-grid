@@ -1,5 +1,5 @@
 import { DistanceMeasurer, TEXT_STYLE } from '../scripts/measurer.js';
-import { getGridColorString } from '../scripts/utils.js';
+import { MODULE_ID, getGridColorString } from '../scripts/utils.js';
 import { GRID_MASK } from '../tactical-grid.js';
 import { readDeprecated } from './deprecatedSettings.js';
 
@@ -43,6 +43,8 @@ export const MODULE_CONFIG = {
     enableFontScaling: true,
     baseGridSize: 100,
     ignoreEffect: '',
+    diagonalMultiplier: 1.5,
+    doubleDiagonalMultiplier: 1.75,
   },
   marker: {
     color: 0xff0000,
@@ -126,9 +128,9 @@ export default class TGSettingsConfig extends FormApplication {
 
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
-      id: 'aedifs-tactical-grid-settings',
+      id: `${MODULE_ID}-settings`,
       classes: ['sheet'],
-      template: 'modules/aedifs-tactical-grid/templates/settings.html',
+      template: `modules/${MODULE_ID}/templates/settings.html`,
       resizable: false,
       minimizable: false,
       title: 'Tactical Grid Settings',
@@ -233,17 +235,17 @@ export function registerSettings() {
   // ran the module and saved the settings in a new format
   readDeprecated(MODULE_CONFIG);
 
-  game.settings.register('aedifs-tactical-grid', 'settings', {
+  game.settings.register(MODULE_ID, 'settings', {
     scope: 'world',
     config: false,
     type: Object,
     default: MODULE_CONFIG,
     onChange: async (val) => _onSettingChange(val),
   });
-  const settings = game.settings.get('aedifs-tactical-grid', 'settings');
+  const settings = game.settings.get(MODULE_ID, 'settings');
   mergeObject(MODULE_CONFIG, settings);
 
-  game.settings.register('aedifs-tactical-grid', 'disableTacticalGrid', {
+  game.settings.register(MODULE_ID, 'disableTacticalGrid', {
     name: 'Disable Tactical Grid',
     hint: 'Disables tactical grid for this client.',
     scope: 'client',
@@ -255,12 +257,9 @@ export function registerSettings() {
       GRID_MASK.container?.drawMask();
     },
   });
-  MODULE_CLIENT_CONFIG.disableTacticalGrid = game.settings.get(
-    'aedifs-tactical-grid',
-    'disableTacticalGrid'
-  );
+  MODULE_CLIENT_CONFIG.disableTacticalGrid = game.settings.get(MODULE_ID, 'disableTacticalGrid');
 
-  game.settings.registerMenu('aedifs-tactical-grid', 'settings', {
+  game.settings.registerMenu(MODULE_ID, 'settings', {
     name: 'Configure Settings',
     hint: '',
     label: 'Settings',
@@ -270,9 +269,9 @@ export function registerSettings() {
     restricted: true,
   });
 
-  game.settings.register('aedifs-tactical-grid', 'rulerActivatedDistanceMeasure', {
-    name: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnRulerDrag.name'),
-    hint: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnRulerDrag.hint'),
+  game.settings.register(MODULE_ID, 'rulerActivatedDistanceMeasure', {
+    name: game.i18n.localize(`${MODULE_ID}.settings.displayDistancesOnRulerDrag.name`),
+    hint: game.i18n.localize(`${MODULE_ID}.settings.displayDistancesOnRulerDrag.hint`),
     scope: 'client',
     config: true,
     type: Boolean,
@@ -284,13 +283,13 @@ export function registerSettings() {
     },
   });
   MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure = game.settings.get(
-    'aedifs-tactical-grid',
+    MODULE_ID,
     'rulerActivatedDistanceMeasure'
   );
 
-  game.settings.register('aedifs-tactical-grid', 'tokenActivatedDistanceMeasure', {
-    name: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.name'),
-    hint: game.i18n.localize('aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.hint'),
+  game.settings.register(MODULE_ID, 'tokenActivatedDistanceMeasure', {
+    name: game.i18n.localize(`${MODULE_ID}.settings.displayDistancesOnTokenDrag.name`),
+    hint: game.i18n.localize(`${MODULE_ID}.settings.displayDistancesOnTokenDrag.hint`),
     scope: 'client',
     config: true,
     type: Boolean,
@@ -300,11 +299,11 @@ export function registerSettings() {
     },
   });
   MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = game.settings.get(
-    'aedifs-tactical-grid',
+    MODULE_ID,
     'tokenActivatedDistanceMeasure'
   );
 
-  game.settings.register('aedifs-tactical-grid', 'rulerDistanceMeasureGirdSpaces', {
+  game.settings.register(MODULE_ID, 'rulerDistanceMeasureGirdSpaces', {
     name: 'Ruler: Grid Spaces',
     hint: 'Calculate Ruler triggered distance measurements in grid space increments.',
     scope: 'client',
@@ -316,11 +315,11 @@ export function registerSettings() {
     },
   });
   MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces = game.settings.get(
-    'aedifs-tactical-grid',
+    MODULE_ID,
     'rulerDistanceMeasureGirdSpaces'
   );
 
-  game.i18n.localize('aedifs-tactical-grid.keybindings.toggleGrid.name');
+  game.i18n.localize(`${MODULE_ID}.keybindings.toggleGrid.name`);
 
   registerRulerLibWrapperMethods();
 
@@ -329,9 +328,9 @@ export function registerSettings() {
    *  =======================================================
    */
   Hooks.on('renderTokenConfig', (tokenConfig) => {
-    const viewDistance = tokenConfig.object.getFlag('aedifs-tactical-grid', 'viewDistance') ?? '';
-    const viewShape = tokenConfig.object.getFlag('aedifs-tactical-grid', 'viewShape') ?? '';
-    const shapeColor = tokenConfig.object.getFlag('aedifs-tactical-grid', 'color') ?? '';
+    const viewDistance = tokenConfig.object.getFlag(MODULE_ID, 'viewDistance') ?? '';
+    const viewShape = tokenConfig.object.getFlag(MODULE_ID, 'viewShape') ?? '';
+    const shapeColor = tokenConfig.object.getFlag(MODULE_ID, 'color') ?? '';
     const gridColor = getGridColorString();
 
     let options = '<option value=""></option>';
@@ -347,30 +346,26 @@ export function registerSettings() {
     <div class="form-group slim">
       <label>View Distance <span class="units">(Grid spaces)</span></label>
       <div class="form-fields">
-        <input type="number" value="${viewDistance}" step="any" name="flags.aedifs-tactical-grid.viewDistance">
+        <input type="number" value="${viewDistance}" step="any" name="flags.${MODULE_ID}.viewDistance">
       </div>
-      <p class="notes">${game.i18n.localize(
-        'aedifs-tactical-grid.settings.defaultViewDistance.hint'
-      )}</p>
+      <p class="notes">${game.i18n.localize(`${MODULE_ID}.settings.defaultViewDistance.hint`)}</p>
     </div>
     <div class="form-group">
       <label>View Shape</label>
       <div class="form-fields">
-          <select name="flags.aedifs-tactical-grid.viewShape">
+          <select name="flags.${MODULE_ID}.viewShape">
             ${options}
           </select>
       </div>
-      <p class="hint">${game.i18n.localize(
-        'aedifs-tactical-grid.settings.defaultViewShape.hint'
-      )}</p>
+      <p class="hint">${game.i18n.localize(`${MODULE_ID}.settings.defaultViewShape.hint`)}</p>
       </div>
       <div class="form-group">
         <label>Color</label>
         <div class="form-fields">
-          <input class="color" type="text" name="flags.aedifs-tactical-grid.color" value="${shapeColor}">
+          <input class="color" type="text" name="flags.${MODULE_ID}.color" value="${shapeColor}">
           <input type="color" value="${
             shapeColor ?? gridColor
-          }" data-edit="flags.aedifs-tactical-grid.color">
+          }" data-edit="flags.${MODULE_ID}.color">
         </div>
       </div>
   </fieldset>
@@ -383,7 +378,7 @@ export function registerSettings() {
   if (typeof libWrapper === 'function') {
     ['Token', 'TokenLayer'].forEach((clsName) => {
       libWrapper.register(
-        'aedifs-tactical-grid',
+        MODULE_ID,
         `${clsName}.prototype._onClickLeft`,
         function (wrapped, ...args) {
           let result = wrapped(...args);
@@ -404,7 +399,7 @@ export function registerSettings() {
      *  =================================
      */
     Hooks.on('renderSceneConfig', (sceneConfig) => {
-      const lineWidth = sceneConfig.object.getFlag('aedifs-tactical-grid', 'gridLineWidth') ?? 1;
+      const lineWidth = sceneConfig.object.getFlag(MODULE_ID, 'gridLineWidth') ?? 1;
 
       const control = $(`
 <fieldset>
@@ -455,7 +450,7 @@ function _onSettingChange(newSettings) {
 
 export async function updateSettings(newSettings) {
   const settings = mergeObject(deepClone(MODULE_CONFIG), newSettings, { insertKeys: false });
-  await game.settings.set('aedifs-tactical-grid', 'settings', settings);
+  await game.settings.set(MODULE_ID, 'settings', settings);
 }
 
 // ======================
@@ -470,7 +465,7 @@ export function registerRulerLibWrapperMethods() {
     let id;
     if (MODULE_CONFIG.enableOnRuler) {
       id = libWrapper.register(
-        'aedifs-tactical-grid',
+        MODULE_ID,
         'CONFIG.Canvas.rulerClass.prototype._onDragStart',
         function (wrapped, ...args) {
           let result = wrapped(...args);
@@ -481,7 +476,7 @@ export function registerRulerLibWrapperMethods() {
       );
       rulerWrappers.push(id);
       id = libWrapper.register(
-        'aedifs-tactical-grid',
+        MODULE_ID,
         'CONFIG.Canvas.rulerClass.prototype._onMouseMove',
         function (wrapped, ...args) {
           let result = wrapped(...args);
@@ -494,7 +489,7 @@ export function registerRulerLibWrapperMethods() {
     }
 
     id = libWrapper.register(
-      'aedifs-tactical-grid',
+      MODULE_ID,
       'CONFIG.Canvas.rulerClass.prototype.measure',
       function (wrapped, ...args) {
         let result = wrapped(...args);
@@ -517,7 +512,7 @@ export function registerRulerLibWrapperMethods() {
     rulerWrappers.push(id);
 
     id = libWrapper.register(
-      'aedifs-tactical-grid',
+      MODULE_ID,
       'CONFIG.Canvas.rulerClass.prototype._endMeasurement',
       function (wrapped, ...args) {
         let result = wrapped(...args);
@@ -536,7 +531,7 @@ export function registerRulerLibWrapperMethods() {
 function unregisterRulerLibWrapperMethods() {
   if (typeof libWrapper === 'function') {
     for (const id of rulerWrappers) {
-      libWrapper.unregister('aedifs-tactical-grid', id);
+      libWrapper.unregister(MODULE_ID, id);
     }
     rulerWrappers = [];
   }
