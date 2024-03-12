@@ -486,6 +486,8 @@ export class DistanceMeasurer {
       if (dz < 0) dz = 0;
 
       distance = (Math.sqrt(dx * dx + dy * dy + dz * dz) / d.size) * d.distance;
+    } else if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE) {
+      distance = this.getHexDistance(origin, target, options);
     } else {
       let dz;
       // If origin and target are on the same plane we ignore z component
@@ -525,6 +527,36 @@ export class DistanceMeasurer {
       (Math.round(distance * precision) / precision).toFixed(MODULE_CONFIG.measurement.precision)
     );
     return number;
+  }
+
+  static getHexDistance(origin, target, options) {
+    let dz;
+    // If origin and target are on the same plane we ignore z component
+    if (origin.z === target.z) dz = 0;
+    else if (origin.z > target.z && origin.z < target.z + target.height) dz = 0;
+    else if (target.z > origin.z && target.z < origin.z + origin.height) dz = 0;
+    else {
+      origin.z = canvas.grid.getSnappedPosition(0, origin.z).y;
+      target.z = canvas.grid.getSnappedPosition(0, target.z).y;
+      dz =
+        Math.abs(
+          Math.min(origin.z + origin.height - target.z, target.z + target.height - origin.z)
+        ) + canvas.grid.w;
+    }
+
+    if (dz != 0) {
+      let dx = target.x - origin.x;
+      let dy = target.y - origin.y;
+      let mag = Math.max(Math.sqrt(dx * dx + dy * dy), 0.0000001);
+      let angle = Math.atan(dz / mag);
+      let length = mag / Math.cos(angle);
+
+      let ray = Ray.fromAngle(0, 0, angle, length);
+      const segments = [{ ray }];
+      return canvas.grid.grid.measureDistances(segments, options)[0];
+    } else {
+      return canvas.grid.measureDistance(origin, target, options);
+    }
   }
 
   static genLabel(distance) {
