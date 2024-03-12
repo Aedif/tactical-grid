@@ -155,7 +155,6 @@ class Dnd5eRange extends SystemRange {
         longRange = 0;
       }
 
-      console.log(item.system.properties, item.system.actionType);
       if (['mwak', 'msak', 'mpak'].includes(item.system.actionType)) {
         if (this._hasProperty(item, 'thr')) {
           thrMelee = this._hasProperty(item, 'rch') ? 10 : 5;

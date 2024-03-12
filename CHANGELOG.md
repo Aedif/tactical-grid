@@ -1,3 +1,9 @@
+# 1.24.1
+
+- Hex distance calculation improvements
+- DnD5e >=3.0.0 item range highlight fixes
+  - Thrown melee weapons will now include melee, short, and long range
+
 # 1.24.0
 
 - **Distance Measurement**
