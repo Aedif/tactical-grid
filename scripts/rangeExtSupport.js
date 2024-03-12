@@ -104,6 +104,15 @@ class SystemRange {
 }
 
 class Dnd5eRange extends SystemRange {
+  static _hasProperty(item, property) {
+    const properties = item.system.properties;
+    if (properties) {
+      if (properties instanceof Set) return properties.has(property); // Dnd5e >=3.0.0
+      else return properties[property]; // DnD5e <3.0.0
+    }
+    return false;
+  }
+
   static getTokenRange(token) {
     const actor = token.actor;
     const allRanges = new Set([5]);
@@ -116,7 +125,7 @@ class Dnd5eRange extends SystemRange {
           ['martialM', 'simpleM', 'natural', 'improv'].includes(item.system.weaponType)
       )
       .forEach((item) => {
-        if (item.system.properties?.rch) allRanges.add(10);
+        if (this._hasProperty(item, 'rch')) allRanges.add(10);
       });
 
     return Array.from(allRanges);
@@ -128,6 +137,7 @@ class Dnd5eRange extends SystemRange {
     if (item.system.range) {
       let range = item.system.range.value || 0;
       let longRange = item.system.range.long || 0;
+      let thrMelee = 0;
       const actor = token.actor;
 
       if (foundry.utils.getProperty(actor, 'flags.midi-qol.sharpShooter') && range < longRange)
@@ -141,14 +151,20 @@ class Dnd5eRange extends SystemRange {
       }
 
       if (item.system.range.units === 'touch') {
-        range = 5;
+        range = this._hasProperty(item, 'rch') ? 10 : 5;
         longRange = 0;
-        if (item.system.properties?.rch) range *= 2;
       }
 
-      if (['mwak', 'msak', 'mpak'].includes(item.system.actionType) && !item.system.properties?.thr)
-        longRange = 0;
+      console.log(item.system.properties, item.system.actionType);
+      if (['mwak', 'msak', 'mpak'].includes(item.system.actionType)) {
+        if (this._hasProperty(item, 'thr')) {
+          thrMelee = this._hasProperty(item, 'rch') ? 10 : 5;
+        } else {
+          longRange = 0;
+        }
+      }
 
+      if (thrMelee) ranges.push(thrMelee);
       if (range) ranges.push(range);
       if (longRange) ranges.push(longRange);
     }
