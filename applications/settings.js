@@ -105,6 +105,7 @@ export const MODULE_CONFIG = {
       shrink: 0.8,
     },
   },
+  distanceCalcOffset: 0,
 };
 
 export const MODULE_CLIENT_CONFIG = {
@@ -166,7 +167,6 @@ export default class TGSettingsConfig extends FormApplication {
       { name: 'None', value: 'none' },
       { name: "Simbul's Cover Calculator", value: 'simbuls-cover-calculator' },
       { name: 'Levels Auto Cover', value: 'levelsautocover' },
-      { name: 'Alternative Token Visibility', value: 'tokenvisibility' },
       { name: 'MidiQOL (mirror `Calculate Cover` setting)', value: 'midi-qol' },
       { name: 'PF2e Perception', value: 'pf2e-perception' },
       { name: 'Alternative Token Cover', value: 'tokencover' },
@@ -255,6 +255,18 @@ export function registerSettings() {
   });
   const settings = game.settings.get(MODULE_ID, 'settings');
   mergeObject(MODULE_CONFIG, settings);
+
+  // Hidden setting used to add a static offset for distance measurements
+  game.settings.register(MODULE_ID, 'distanceCalcOffset', {
+    scope: 'world',
+    config: false,
+    type: Number,
+    default: MODULE_CONFIG.distanceCalcOffset,
+    onChange: (val) => {
+      MODULE_CONFIG.distanceCalcOffset = val;
+    },
+  });
+  MODULE_CONFIG.distanceCalcOffset = game.settings.get(MODULE_ID, 'distanceCalcOffset');
 
   game.settings.register(MODULE_ID, 'disableTacticalGrid', {
     name: 'Disable Tactical Grid',

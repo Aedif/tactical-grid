@@ -101,6 +101,13 @@ class SystemRange {
   static getItemRange(item, token) {
     return [];
   }
+
+  static _getUnitAdjustedRange(gridSpaces) {
+    const units = canvas.scene.grid.units;
+    if (units === 'ft') return 5 * gridSpaces;
+    else if (units === 'm') return 1.5 * gridSpaces;
+    return 0;
+  }
 }
 
 class Dnd5eRange extends SystemRange {
@@ -115,7 +122,7 @@ class Dnd5eRange extends SystemRange {
 
   static getTokenRange(token) {
     const actor = token.actor;
-    const allRanges = new Set([5]);
+    const allRanges = new Set([this._getUnitAdjustedRange(1)]);
 
     actor.items
       .filter(
@@ -125,7 +132,7 @@ class Dnd5eRange extends SystemRange {
           ['martialM', 'simpleM', 'natural', 'improv'].includes(item.system.weaponType)
       )
       .forEach((item) => {
-        if (this._hasProperty(item, 'rch')) allRanges.add(10);
+        if (this._hasProperty(item, 'rch')) allRanges.add(this._getUnitAdjustedRange(2));
       });
 
     return Array.from(allRanges);
@@ -137,6 +144,13 @@ class Dnd5eRange extends SystemRange {
     if (item.system.range) {
       let range = item.system.range.value || 0;
       let longRange = item.system.range.long || 0;
+
+      // If item range is measured in 'ft' but canvas is set to 'm', convert the range value
+      if (item.system.range.units === 'ft' && canvas.scene.grid.units === 'm') {
+        range *= 0.3;
+        longRange *= 0.3;
+      }
+
       let thrMelee = 0;
       const actor = token.actor;
 
@@ -151,13 +165,13 @@ class Dnd5eRange extends SystemRange {
       }
 
       if (item.system.range.units === 'touch') {
-        range = this._hasProperty(item, 'rch') ? 10 : 5;
+        range = this._getUnitAdjustedRange(this._hasProperty(item, 'rch') ? 2 : 1);
         longRange = 0;
       }
 
       if (['mwak', 'msak', 'mpak'].includes(item.system.actionType)) {
         if (this._hasProperty(item, 'thr')) {
-          thrMelee = this._hasProperty(item, 'rch') ? 10 : 5;
+          thrMelee = this._getUnitAdjustedRange(this._hasProperty(item, 'rch') ? 2 : 1);
         } else {
           longRange = 0;
         }
@@ -203,8 +217,8 @@ class Pf2eRange extends SystemRange {
     return ranges;
   }
 
-  // PF2e has an exception for distance measurements for the 10ft reach. This a modified PF2e `measureDistances`
-  // function to account for this
+  // PF2e has an exception for distance measurements for the 10ft reach.
+  // This is a modified PF2e `measureDistances` function to account for this
   static _reachMeasureDistance(origin, target, options) {
     const ray = new Ray(origin, target);
     const segments = [{ ray }];

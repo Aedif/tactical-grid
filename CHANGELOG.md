@@ -1,3 +1,10 @@
+# 1.25.0
+
+- Removed `Alternative Token Visibility` as a `Cover Calculator` option
+- Fixed errors thrown when `Alternative Token Cover` is chosen as a `Cover Calculator` option
+- Distance measurements and cover will no longer be shown on Tokens with `Secret` dispositions
+- Partial metric support for `Item/Token Range Highlighter`
+
 # 1.24.1
 
 - Hex distance calculation improvements

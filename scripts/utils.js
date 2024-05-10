@@ -203,45 +203,14 @@ export function computeCoverBonus(attacker, target) {
         else coverBonus = -coverData?.data?.results.value ?? 0;
       }
       break;
-    case 'tokenvisibility':
-      if (!game.modules.get('tokenvisibility')?.active) return null;
-      const coverValue = calcTokenVisibilityCover(attacker, target);
-      switch (coverValue) {
-        case 1:
-          coverBonus = HALF_COVER;
-          break;
-        case 2:
-          coverBonus = THREE_QUARTERS_COVER;
-          break;
-        case 3:
-          coverBonus = FULL_COVER;
-          break;
-        case 0:
-        default:
-          coverBonus = 0;
-      }
-      break;
     case 'tokencover':
       {
         if (!game.modules.get('tokencover')?.active) return null;
 
-        let coverCalc = attacker.tokenCover?.coverCalc;
-        if (!coverCalc) {
-          attacker.tokencover = {
-            coverCalc: new (game.modules.get('tokencover').api.CoverCalculator)(attacker),
-          };
-          coverCalc = attacker.tokencover.coverCalc;
-        }
-
-        const coverValue = coverCalc.percentCover(target);
-        if (coverValue < (game.settings.get('tokencover', 'cover-trigger-percent-low') ?? 0.5))
-          coverBonus = 0;
-        else if (
-          coverValue < (game.settings.get('tokencover', 'cover-trigger-percent-medium') ?? 0.75)
-        )
-          coverBonus = HALF_COVER;
-        else if (coverValue < (game.settings.get('tokencover', 'cover-trigger-percent-high') ?? 1))
-          coverBonus = THREE_QUARTERS_COVER;
+        const coverValue = attacker.tokencover.coverCalculator.targetCover(target);
+        if (coverValue === 0) coverBonus = 0;
+        else if (coverValue === 1) coverBonus = HALF_COVER;
+        else if (coverValue === 2) coverBonus = THREE_QUARTERS_COVER;
         else coverBonus = FULL_COVER;
       }
       break;
@@ -276,28 +245,6 @@ export function computeCoverBonus(attacker, target) {
       break;
   }
   return coverBonus;
-}
-
-function calcTokenVisibilityCover(attacker, target) {
-  const api = game.modules.get('tokenvisibility')?.api;
-  const attackerToken = attacker;
-  const targetToken = target;
-  if (!api || !attackerToken || !targetToken) return null;
-
-  const coverCalc = new api.CoverCalculator(attackerToken, targetToken);
-
-  return coverCalc.targetCover();
-
-  // const version = game.modules.get('tokenvisibility')?.version;
-  // let coverValue;
-  // if (isNewerVersion(version, '0.5.3')) {
-  //   const cover = api.CoverCalculator.coverCalculations(attackerToken, [targetToken]);
-  //   coverValue = cover.get(targetToken) ?? 0;
-  // } else {
-  //   const cover = api.CoverCalculator.coverCalculations([attackerToken], [targetToken]);
-  //   coverValue = cover[attackerToken.id][targetToken.id] ?? 0;
-  // }
-  // return coverValue;
 }
 
 // ===================

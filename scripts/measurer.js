@@ -189,7 +189,9 @@ export class DistanceMeasurer {
     if (!(DistanceMeasurer.origin || DistanceMeasurer.originToken)) return;
 
     let visibleTokens = canvas.tokens.placeables.filter(
-      (p) => p.visible || p.impreciseVisible // Vision5e support
+      (p) =>
+        (p.visible || p.impreciseVisible) &&
+        p.document.disposition !== CONST.TOKEN_DISPOSITIONS.SECRET
     );
 
     if (MODULE_CONFIG.measurement.ignoreEffect) {
@@ -526,7 +528,7 @@ export class DistanceMeasurer {
     let number = parseFloat(
       (Math.round(distance * precision) / precision).toFixed(MODULE_CONFIG.measurement.precision)
     );
-    return number;
+    return number + MODULE_CONFIG.distanceCalcOffset;
   }
 
   static getHexDistance(origin, target, options) {
