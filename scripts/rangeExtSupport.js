@@ -120,17 +120,21 @@ class Dnd5eRange extends SystemRange {
     return false;
   }
 
+  static _isMelee(item) {
+    return (
+      item.system.actionType === 'mwak' &&
+      ['martialM', 'simpleM', 'natural', 'improv'].includes(
+        item.system.weaponType ?? item.system.type?.value
+      )
+    );
+  }
+
   static getTokenRange(token) {
     const actor = token.actor;
     const allRanges = new Set([this._getUnitAdjustedRange(1)]);
 
     actor.items
-      .filter(
-        (item) =>
-          item.system.equipped &&
-          item.system.actionType === 'mwak' &&
-          ['martialM', 'simpleM', 'natural', 'improv'].includes(item.system.weaponType)
-      )
+      .filter((item) => item.system.equipped && this._isMelee(item))
       .forEach((item) => {
         if (this._hasProperty(item, 'rch')) allRanges.add(this._getUnitAdjustedRange(2));
       });
@@ -140,6 +144,8 @@ class Dnd5eRange extends SystemRange {
 
   static getItemRange(item, token) {
     const ranges = [];
+
+    console.log(item);
 
     if (item.system.range) {
       let range = item.system.range.value || 0;

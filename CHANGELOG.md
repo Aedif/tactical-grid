@@ -1,3 +1,7 @@
+# 1.25.1
+
+- Fixed `Token Range Highlighter` for Dnd5e >=3.0.0
+
 # 1.25.0
 
 - Removed `Alternative Token Visibility` as a `Cover Calculator` option
