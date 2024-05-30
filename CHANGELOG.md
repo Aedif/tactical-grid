@@ -1,3 +1,9 @@
+# 1.26.0
+
+**Range Highlighter**
+
+- PF2e Item/Action macro support
+
 # 1.25.1
 
 - Fixed `Token Range Highlighter` for Dnd5e >=3.0.0

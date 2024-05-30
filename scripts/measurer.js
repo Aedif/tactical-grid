@@ -190,8 +190,9 @@ export class DistanceMeasurer {
 
     let visibleTokens = canvas.tokens.placeables.filter(
       (p) =>
-        (p.visible || p.impreciseVisible) &&
-        p.document.disposition !== CONST.TOKEN_DISPOSITIONS.SECRET
+        ((p.visible || p.impreciseVisible) &&
+          p.document.disposition !== CONST.TOKEN_DISPOSITIONS.SECRET) ||
+        game.user.isGM
     );
 
     if (MODULE_CONFIG.measurement.ignoreEffect) {
@@ -363,8 +364,8 @@ export class DistanceMeasurer {
     this.clone.document.y = pos.y;
     this.clone.x = pos.x;
     this.clone.y = pos.y;
-
     this.clone.document.elevation = token.document.elevation;
+    //this.clone.updateSource({ x: pos.x, y: pos.y, elevation: token.document.elevation });
 
     return this.clone;
   }
