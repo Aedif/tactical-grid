@@ -12,9 +12,12 @@ export class GridMaskContainer extends CachedContainer {
 
   onCanvasReady() {
     this.destroyMask();
-    this._grid = canvas.grid.children.find(
-      (c) => c instanceof SquareGrid || c instanceof HexagonalGrid
-    );
+
+    if (foundry.utils.isNewerVersion(game.version, 12)) {
+      this._grid = canvas.interface.grid?.mesh;
+    } else {
+      this._grid = canvas.grid.children.find((c) => c instanceof SquareGrid || c instanceof HexagonalGrid);
+    }
     this.drawMask();
   }
 
@@ -32,8 +35,7 @@ export class GridMaskContainer extends CachedContainer {
 
     let sceneEnabled = canvas.scene.getFlag(MODULE_ID, `${cleanLayerName(layer)}Enabled`);
     if (sceneEnabled != null && !sceneEnabled) return this.deactivateMask();
-    if (sceneEnabled == null && !MODULE_CONFIG.layerEnabled[cleanLayerName(layer)])
-      return this.deactivateMask();
+    if (sceneEnabled == null && !MODULE_CONFIG.layerEnabled[cleanLayerName(layer)]) return this.deactivateMask();
 
     this._grid.visible = false;
 
@@ -97,8 +99,7 @@ export class GridMaskContainer extends CachedContainer {
         let viewDistance = this._getViewDistance(p);
         if (!viewDistance) continue;
 
-        let viewShape =
-          p.document?.getFlag(MODULE_ID, 'viewShape') || MODULE_CONFIG.defaultViewShape;
+        let viewShape = p.document?.getFlag(MODULE_ID, 'viewShape') || MODULE_CONFIG.defaultViewShape;
 
         const width = p.width;
         const height = p.height;
@@ -106,10 +107,7 @@ export class GridMaskContainer extends CachedContainer {
         let shapeColor = p.document?.getFlag(MODULE_ID, 'color');
         if (shapeColor) {
           shapeColor = Number(Color.fromString(shapeColor));
-        } else if (
-          MODULE_CONFIG.assignDispositionBasedColor &&
-          p.document?.hasOwnProperty('disposition')
-        ) {
+        } else if (MODULE_CONFIG.assignDispositionBasedColor && p.document?.hasOwnProperty('disposition')) {
           shapeColor = getDispositionColor(p);
         } else {
           shapeColor = Number(Color.fromString(getGridColorString()));
@@ -118,11 +116,8 @@ export class GridMaskContainer extends CachedContainer {
         let sprite;
         switch (viewShape) {
           case 'square':
-            let length = viewDistance * canvas.grid.w * 2 + width + 1;
-            sprite = new PIXI.Graphics()
-              .beginFill(shapeColor)
-              .drawRect(0, 0, length, length)
-              .endFill();
+            let length = viewDistance * (canvas.grid.sizeX ?? canvas.grid.w) * 2 + width + 1;
+            sprite = new PIXI.Graphics().beginFill(shapeColor).drawRect(0, 0, length, length).endFill();
             break;
           case 'square-soft':
             sprite = PIXI.Sprite.from(`modules\\${MODULE_ID}\\images\\square_mask.webp`);
@@ -130,13 +125,13 @@ export class GridMaskContainer extends CachedContainer {
           case 'hexagonRow':
             let pointsRow = HexagonalGrid.pointyHexPoints
               .flat()
-              .map((v) => v * canvas.grid.w * viewDistance * 2);
+              .map((v) => v * (canvas.grid.sizeX ?? canvas.grid.w) * viewDistance * 2);
             sprite = new PIXI.Graphics().beginFill(shapeColor).drawPolygon(pointsRow).endFill();
             break;
           case 'hexagonCol':
             let pointsCol = HexagonalGrid.flatHexPoints
               .flat()
-              .map((v) => v * canvas.grid.w * viewDistance * 2);
+              .map((v) => v * (canvas.grid.sizeX ?? canvas.grid.w) * viewDistance * 2);
             sprite = new PIXI.Graphics().beginFill(shapeColor).drawPolygon(pointsCol).endFill();
             break;
           case 'circle-soft':
@@ -144,16 +139,13 @@ export class GridMaskContainer extends CachedContainer {
             break;
           case 'circle':
           default:
-            const radius = viewDistance * canvas.grid.w + width / 2;
-            sprite = new PIXI.Graphics()
-              .beginFill(shapeColor)
-              .drawCircle(radius, radius, radius)
-              .endFill();
+            const radius = viewDistance * (canvas.grid.sizeX ?? canvas.grid.w) + width / 2;
+            sprite = new PIXI.Graphics().beginFill(shapeColor).drawCircle(radius, radius, radius).endFill();
         }
 
         if (sprite instanceof PIXI.Sprite) {
-          sprite.width = (viewDistance + 1) * canvas.grid.w * 2 + width;
-          sprite.height = (viewDistance + 1) * canvas.grid.h * 2 + height;
+          sprite.width = (viewDistance + 1) * (canvas.grid.sizeX ?? canvas.grid.w) * 2 + width;
+          sprite.height = (viewDistance + 1) * (canvas.grid.sizeY ?? canvas.grid.h) * 2 + height;
           sprite.tint = shapeColor;
         }
 
@@ -239,7 +231,5 @@ export class GridMaskContainer extends CachedContainer {
  * Utility to check if a placeable has a preview drawn which occurs when it is being dragged
  */
 function hasPreview(placeable) {
-  return Boolean(
-    placeable.layer?.preview?.children?.find((c) => c.id === placeable.id && placeable !== c)
-  );
+  return Boolean(placeable.layer?.preview?.children?.find((c) => c.id === placeable.id && placeable !== c));
 }

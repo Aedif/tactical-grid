@@ -1,10 +1,5 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import {
-  computeCoverBonus,
-  nearestPointToCircle,
-  nearestPointToRectangle,
-  tokenHasEffect,
-} from './utils.js';
+import { computeCoverBonus, nearestPointToCircle, nearestPointToRectangle, tokenHasEffect } from './utils.js';
 
 export let TEXT_STYLE;
 
@@ -29,26 +24,37 @@ export class DistanceMeasurer {
     DistanceMeasurer.snap =
       canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
       !game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT);
-    if (!canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
-      canvas.grid.addHighlightLayer(DistanceMeasurer.hlName);
-    }
+    if (!DistanceMeasurer.getHighlightLayer()) DistanceMeasurer.addHighlightLayer();
     DistanceMeasurer.setOrigin();
     DistanceMeasurer.drawLabels();
+  }
+
+  static getHighlightLayer() {
+    if (foundry.utils.isNewerVersion(game.version, 12))
+      return canvas.interface.grid.highlightLayers[DistanceMeasurer.hlName];
+    else return canvas.grid.highlightLayers[DistanceMeasurer.hlName];
+  }
+
+  static addHighlightLayer() {
+    if (foundry.utils.isNewerVersion(game.version, 12))
+      return canvas.interface.grid.addHighlightLayer(DistanceMeasurer.hlName);
+    else return canvas.grid.addHighlightLayer(DistanceMeasurer.hlName);
   }
 
   static hideMeasures() {
     DistanceMeasurer.deleteLabels();
     DistanceMeasurer.origin = null;
     DistanceMeasurer.originToken = null;
-    canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
+    if (foundry.utils.isNewerVersion(game.version, 12))
+      canvas.interface.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
+    else canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
   }
 
   static _tokenAtRulerOrigin(ruler) {
     const rOrigin = ruler.waypoints[0];
     const token = canvas.tokens.controlled.find(
       (t) =>
-        Number.between(rOrigin.x, t.x, t.x + t.hitArea.width) &&
-        Number.between(rOrigin.y, t.y, t.y + t.hitArea.height)
+        Number.between(rOrigin.x, t.x, t.x + t.hitArea.width) && Number.between(rOrigin.y, t.y, t.y + t.hitArea.height)
     );
 
     if (token) {
@@ -85,7 +91,7 @@ export class DistanceMeasurer {
       originToken = DistanceMeasurer._tokenAtRulerOrigin(ruler);
 
       if (!originToken) {
-        origin = deepClone(ruler.destination);
+        origin = foundry.utils.deepClone(ruler.destination);
       }
     }
 
@@ -108,13 +114,8 @@ export class DistanceMeasurer {
 
     // 'Elevation Ruler' module support
     // https://foundryvtt.com/packages/elevationruler
-    if (
-      originToken &&
-      ruler?._state !== Ruler.STATES.INACTIVE &&
-      ruler.destination._userElevationIncrements != null
-    ) {
-      originToken.document.elevation +=
-        ruler.destination._userElevationIncrements * canvas.dimensions.distance;
+    if (originToken && ruler?._state !== Ruler.STATES.INACTIVE && ruler.destination._userElevationIncrements != null) {
+      originToken.document.elevation += ruler.destination._userElevationIncrements * canvas.dimensions.distance;
     }
 
     if (pos) origin = pos;
@@ -122,7 +123,7 @@ export class DistanceMeasurer {
     if (originToken) {
       if (highlight) DistanceMeasurer.highlightTokenGridPosition(originToken);
     } else if (origin) {
-      const [x, y] = canvas.grid.grid.getTopLeft(origin.x, origin.y);
+      const { x, y } = getTopLeft(origin);
       if (canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) {
         origin.x = x + canvas.grid.size / 2;
         origin.y = y + canvas.grid.size / 2;
@@ -137,19 +138,18 @@ export class DistanceMeasurer {
   }
 
   static clearHighlight() {
-    canvas.grid.clearHighlightLayer(DistanceMeasurer.hlName);
+    if (foundry.utils.isNewerVersion(game.version, 12))
+      return canvas.interface.grid.clearHighlightLayer(DistanceMeasurer.hlName);
+    else canvas.grid.clearHighlightLayer(DistanceMeasurer.hlName);
   }
 
   static highlightTokenGridPosition(token) {
     DistanceMeasurer.clearHighlight();
-    const layer = canvas.grid.highlightLayers[DistanceMeasurer.hlName];
+    const layer = DistanceMeasurer.getHighlightLayer();
     if (!layer) return;
 
     let shape;
-    if (
-      MODULE_CONFIG.measurement.gridlessCircle &&
-      canvas.grid.type === CONST.GRID_TYPES.GRIDLESS
-    ) {
+    if (MODULE_CONFIG.measurement.gridlessCircle && canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
       shape = new PIXI.Ellipse(token.center.x, token.center.y, token.w / 2, token.h / 2);
     } else {
       shape = new PIXI.Rectangle(token.x, token.y, token.w, token.h);
@@ -165,7 +165,7 @@ export class DistanceMeasurer {
 
   static highlightPosition(x, y) {
     DistanceMeasurer.clearHighlight();
-    const layer = canvas.grid.highlightLayers[DistanceMeasurer.hlName];
+    const layer = DistanceMeasurer.getHighlightLayer();
     if (!layer) return;
 
     let options = {
@@ -174,14 +174,19 @@ export class DistanceMeasurer {
       ...MODULE_CONFIG.marker,
     };
 
-    if (!(canvas.grid.grid instanceof SquareGrid || canvas.grid.grid instanceof HexagonalGrid)) {
+    if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
       let r = 20;
       let points = [];
       CROSS_HAIR.forEach((p) => points.push(x + p[0] * r, y + p[1] * r));
       options.shape = new PIXI.Polygon(points);
     }
 
-    canvas.grid.grid.highlightGridPosition(layer, options);
+    DistanceMeasurer.highlightGridPosition(layer, options);
+  }
+
+  static highlightGridPosition(layer, options) {
+    if (foundry.utils.isNewerVersion(game.version, 12)) canvas.interface.grid.highlightPosition(layer.name, options);
+    else canvas.grid.grid.highlightGridPosition(layer, options);
   }
 
   static drawLabels() {
@@ -190,15 +195,12 @@ export class DistanceMeasurer {
 
     let visibleTokens = canvas.tokens.placeables.filter(
       (p) =>
-        ((p.visible || p.impreciseVisible) &&
-          p.document.disposition !== CONST.TOKEN_DISPOSITIONS.SECRET) ||
+        ((p.visible || p.impreciseVisible) && p.document.disposition !== CONST.TOKEN_DISPOSITIONS.SECRET) ||
         game.user.isGM
     );
 
     if (MODULE_CONFIG.measurement.ignoreEffect) {
-      visibleTokens = visibleTokens.filter(
-        (p) => !tokenHasEffect(p, MODULE_CONFIG.measurement.ignoreEffect)
-      );
+      visibleTokens = visibleTokens.filter((p) => !tokenHasEffect(p, MODULE_CONFIG.measurement.ignoreEffect));
     }
 
     for (const token of visibleTokens) {
@@ -222,10 +224,7 @@ export class DistanceMeasurer {
 
         const b = token.bounds;
         if (MODULE_CONFIG.measurement.gridlessCircle) {
-          target = nearestPointToCircle(
-            { ...token.center, r: Math.min(b.width, b.height) / 2 },
-            fromPoint
-          );
+          target = nearestPointToCircle({ ...token.center, r: Math.min(b.width, b.height) / 2 }, fromPoint);
         } else {
           target = nearestPointToRectangle(
             {
@@ -242,11 +241,12 @@ export class DistanceMeasurer {
           originToken: DistanceMeasurer.originToken,
           gridSpaces: false,
         });
-        distances.push({ offsetX: token.w / 2, offsetY: token.h / 2, distance });
-      } else if (
-        canvas.grid.type !== CONST.GRID_TYPES.SQUARE &&
-        token.document.width == token.document.height
-      ) {
+        distances.push({
+          offsetX: token.w / 2,
+          offsetY: token.h / 2,
+          distance,
+        });
+      } else if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE && token.document.width == token.document.height) {
         // Hexagonal Grid
         const offsets = getHexOffsets(token);
         if (offsets) {
@@ -321,13 +321,7 @@ export class DistanceMeasurer {
           );
         } else {
           distances.forEach((d) => {
-            DistanceMeasurer.addUpdateLabel(
-              token,
-              d.offsetX,
-              d.offsetY,
-              DistanceMeasurer.genLabel(d.distance),
-              cover
-            );
+            DistanceMeasurer.addUpdateLabel(token, d.offsetX, d.offsetY, DistanceMeasurer.genLabel(d.distance), cover);
           });
         }
       }
@@ -335,12 +329,7 @@ export class DistanceMeasurer {
   }
 
   static getClone(token, snap = false, pos = null) {
-    if (
-      this.clone &&
-      this.clone.id === token.id &&
-      this.clone.w === token.w &&
-      this.clone.h === token.h
-    ) {
+    if (this.clone && this.clone.id === token.id && this.clone.w === token.w && this.clone.h === token.h) {
       //
     } else {
       // if (this.clone) this.clone.destroy();
@@ -350,14 +339,9 @@ export class DistanceMeasurer {
       cloneDoc._object = this.clone;
     }
 
-    if (pos) {
-      const [x, y] = canvas.grid.grid.getTopLeft(pos.x, pos.y);
-      pos.x = x;
-      pos.y = y;
-    }
-
+    if (pos) pos = getTopLeft(pos);
     if (!pos) pos = { x: token.x, y: token.y };
-    if (snap) pos = canvas.grid.getSnappedPosition(pos.x, pos.y, canvas.tokens.gridPrecision);
+    if (snap) pos = getSnappedPosition(pos);
 
     // Set position to original
     this.clone.document.x = pos.x;
@@ -402,8 +386,7 @@ export class DistanceMeasurer {
       MODULE_CONFIG.measurement.baseGridSize !== canvas.dimensions.size
     ) {
       TEXT_STYLE.fontSize =
-        MODULE_CONFIG.measurement.fontSize *
-        (canvas.dimensions.size / MODULE_CONFIG.measurement.baseGridSize);
+        MODULE_CONFIG.measurement.fontSize * (canvas.dimensions.size / MODULE_CONFIG.measurement.baseGridSize);
     } else {
       TEXT_STYLE.fontSize = MODULE_CONFIG.measurement.fontSize;
     }
@@ -442,7 +425,7 @@ export class DistanceMeasurer {
   }
 
   static clickLeft(pos) {
-    if (canvas.grid.highlightLayers[DistanceMeasurer.hlName]) {
+    if (DistanceMeasurer.getHighlightLayer()) {
       DistanceMeasurer.setOrigin(pos);
       DistanceMeasurer.drawLabels();
     }
@@ -451,7 +434,7 @@ export class DistanceMeasurer {
   static getDistance(origin, target, targetToken, options) {
     // Delegate distance measurements to PF2e's `distanceTo` util
     if (game.system.id === 'pf2e' && targetToken && options.originToken) {
-      return options.originToken.distanceTo(targetToken);
+      return this._applyPrecision(options.originToken.distanceTo(targetToken));
     }
 
     targetToken = targetToken?.document;
@@ -461,11 +444,9 @@ export class DistanceMeasurer {
       const sdr = canvas.grid.size / canvas.dimensions.distance;
 
       if (origin.z == null) origin.z = Math.floor((originToken ? originToken.elevation : 0) * sdr);
-      if (origin.height == null)
-        origin.height = Math.floor((originToken?.width || 0) * canvas.grid.size);
+      if (origin.height == null) origin.height = Math.floor((originToken?.width || 0) * canvas.grid.size);
       if (target.z == null) target.z = Math.floor((targetToken ? targetToken.elevation : 0) * sdr);
-      if (target.height == null)
-        target.height = Math.floor((targetToken?.width || 0) * canvas.grid.size);
+      if (target.height == null) target.height = Math.floor((targetToken?.width || 0) * canvas.grid.size);
     } else {
       origin.z = 0;
       origin.height = 0;
@@ -498,12 +479,11 @@ export class DistanceMeasurer {
       else if (origin.z > target.z && origin.z < target.z + target.height) dz = 0;
       else if (target.z > origin.z && target.z < origin.z + origin.height) dz = 0;
       else {
-        origin.z = canvas.grid.getSnappedPosition(0, origin.z).y;
-        target.z = canvas.grid.getSnappedPosition(0, target.z).y;
+        origin.z = getSnappedPosition({ x: 0, y: origin.z }).y;
+        target.z = getSnappedPosition({ x: 0, y: targey.z }).y;
         dz =
-          Math.abs(
-            Math.min(origin.z + origin.height - target.z, target.z + target.height - origin.z)
-          ) + canvas.grid.w;
+          Math.abs(Math.min(origin.z + origin.height - target.z, target.z + target.height - origin.z)) +
+          (canvas.grid.sizeX ?? canvas.grid.w);
       }
 
       let nx = Math.abs(Math.ceil(dx / d.size)),
@@ -525,6 +505,10 @@ export class DistanceMeasurer {
         ) * d.distance;
     }
 
+    return this._applyPrecision(distance);
+  }
+
+  static _applyPrecision(distance) {
     let precision = 10 ** MODULE_CONFIG.measurement.precision;
     let number = parseFloat(
       (Math.round(distance * precision) / precision).toFixed(MODULE_CONFIG.measurement.precision)
@@ -539,12 +523,11 @@ export class DistanceMeasurer {
     else if (origin.z > target.z && origin.z < target.z + target.height) dz = 0;
     else if (target.z > origin.z && target.z < origin.z + origin.height) dz = 0;
     else {
-      origin.z = canvas.grid.getSnappedPosition(0, origin.z).y;
-      target.z = canvas.grid.getSnappedPosition(0, target.z).y;
+      origin.z = getSnappedPosition({ x: 0, y: origin.z }).y;
+      target.z = getSnappedPosition({ x: 0, y: target.z }).y;
       dz =
-        Math.abs(
-          Math.min(origin.z + origin.height - target.z, target.z + target.height - origin.z)
-        ) + canvas.grid.w;
+        Math.abs(Math.min(origin.z + origin.height - target.z, target.z + target.height - origin.z)) +
+        (canvas.grid.sizeX ?? canvas.grid.w);
     }
 
     if (dz != 0) {
@@ -594,10 +577,7 @@ function nearestOriginPoint(oToken, tToken) {
   const center = oToken.center;
   if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
     if (MODULE_CONFIG.measurement.gridlessCircle) {
-      return nearestPointToCircle(
-        { ...center, r: Math.min(oToken.w, oToken.h) / 2 },
-        tToken.center
-      );
+      return nearestPointToCircle({ ...center, r: Math.min(oToken.w, oToken.h) / 2 }, tToken.center);
     } else {
       return nearestPointToRectangle(
         {
@@ -612,10 +592,7 @@ function nearestOriginPoint(oToken, tToken) {
   }
 
   let gridPoints = [];
-  if (
-    canvas.grid.type !== CONST.GRID_TYPES.SQUARE &&
-    oToken.document.width == oToken.document.height
-  ) {
+  if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE && oToken.document.width == oToken.document.height) {
     const offsets = getHexOffsets(oToken);
     if (offsets) {
       for (const offset of offsets) {
@@ -823,9 +800,7 @@ export function getHexOffsets(token) {
   };
 
   // Flip size 2 hexes
-  offsets[2] = offsets[2].map((o) =>
-    canvas.grid.grid.columnar ? [1 - o[0], o[1]] : [o[0], 1 - o[1]]
-  );
+  offsets[2] = offsets[2].map((o) => (canvas.grid.grid.columnar ? [1 - o[0], o[1]] : [o[0], 1 - o[1]]));
 
   offsets = offsets[token.document.width];
 
@@ -842,4 +817,21 @@ export function getHexOffsets(token) {
   }
 
   return offsets;
+}
+
+export function getSnappedPosition(point) {
+  if (foundry.utils.isNewerVersion(game.version, 12)) {
+    return canvas.tokens.getSnappedPoint(point);
+  } else {
+    return canvas.grid.getSnappedPosition(point.x, point.y);
+  }
+}
+
+export function getTopLeft(point) {
+  if (foundry.utils.isNewerVersion(game.version, 12)) {
+    return canvas.grid.getTopLeftPoint(point);
+  } else {
+    const [x, y] = canvas.grid.grid.getTopLeft(point.x, point.y);
+    return { x, y };
+  }
 }

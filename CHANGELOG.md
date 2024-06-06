@@ -1,3 +1,10 @@
+# 1.27.0
+
+- Foundry v12 support
+- Added a control (`Toggle Range Highlighter`) and a setting (`Enable Range Highlighter`) to toggle `Range Highlighter` on and off for the client.
+- Fixed distance marker getting stuck during Token drag if range highlighting is enabled
+- Fixed `Precision` settings not being applied on PF2e gridless scenes.
+
 # 1.26.0
 
 **Range Highlighter**

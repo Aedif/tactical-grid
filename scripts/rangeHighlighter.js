@@ -1,10 +1,7 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
 import { DistanceMeasurer, getHexOffsets } from './measurer.js';
-import {
-  getRangeCalculator,
-  registerActorSheetHooks,
-  registerExternalModuleHooks,
-} from './rangeExtSupport.js';
+import { getRangeCalculator, registerActorSheetHooks, registerExternalModuleHooks } from './rangeExtSupport.js';
+import { RangeHighlighterV12 } from './rangeHighlighterV12.js';
 import { MODULE_ID } from './utils.js';
 
 class RangeHighlighter {
@@ -128,12 +125,9 @@ class RangeHighlighter {
   _highlightGridPositions(hl) {
     const grid = canvas.grid.grid;
     const d = canvas.dimensions;
-    let { x, y } = grid.getSnappedPosition(
-      this.token.x,
-      this.token.y,
-      canvas.tokens.gridPrecision,
-      { token: this.token }
-    );
+    let { x, y } = grid.getSnappedPosition(this.token.x, this.token.y, canvas.tokens.gridPrecision, {
+      token: this.token,
+    });
 
     const maxDistance = this.ranges[this.ranges.length - 1].range;
 
@@ -173,8 +167,7 @@ class RangeHighlighter {
           let withinRange;
           for (let j = 0; j < this.ranges.length; j++) {
             const range = this.ranges[j];
-            const measureDistance =
-              range.measureDistance ?? canvas.grid.measureDistance.bind(canvas.grid);
+            const measureDistance = range.measureDistance ?? canvas.grid.measureDistance.bind(canvas.grid);
             for (let i = 0; i < tokenPositions.length; i++) {
               let cd = measureDistance(tokenPositions[i], pos, { gridSpaces: true });
 
@@ -182,11 +175,7 @@ class RangeHighlighter {
                 this._highlightGridPosition(hl, pos, range);
 
                 // Mirror, 2 lines of symmetry
-                this._highlightGridPosition(
-                  hl,
-                  { x: (col0 - (c - col0) - wEven) * gs, y: pos.y },
-                  range
-                );
+                this._highlightGridPosition(hl, { x: (col0 - (c - col0) - wEven) * gs, y: pos.y }, range);
 
                 this._highlightGridPosition(
                   hl,
@@ -194,11 +183,7 @@ class RangeHighlighter {
                   range
                 );
 
-                this._highlightGridPosition(
-                  hl,
-                  { x: pos.x, y: (row0 - (r - row0) - hEven) * gs },
-                  range
-                );
+                this._highlightGridPosition(hl, { x: pos.x, y: (row0 - (r - row0) - hEven) * gs }, range);
 
                 withinRange = range;
                 break;
@@ -274,10 +259,7 @@ class RangeHighlighter {
   _getTokenGridPositions(tx, ty) {
     const positions = [];
 
-    if (
-      canvas.grid.type !== CONST.GRID_TYPES.SQUARE &&
-      this.token.document.width == this.token.document.height
-    ) {
+    if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE && this.token.document.width == this.token.document.height) {
       // Hexagonal Grid
       const offsets = getHexOffsets(this.token);
       if (offsets) {
@@ -358,7 +340,8 @@ export function registerRangeHighlightHooks() {
     // Return RangeHighlighter to the original token on drag-end
     if (token._tgRange && token._original) {
       token._tgRange.token = token._original;
-      token._original._tgRange.highlight();
+      token._original._tgRange = token._tgRange;
+      RangeHighlightAPI.clearRangeHighlight(token._original);
     } else if (token._tgRange) {
       RangeHighlightAPI.clearRangeHighlight(token, { force: true });
     }
@@ -374,12 +357,9 @@ export function registerRangeHighlightHooks() {
 
   Hooks.on('hoverToken', (token, hoverIn) => {
     if (!MODULE_CONFIG.range.token.enabled) return;
+    if (!MODULE_CLIENT_CONFIG.rangeHighlighter) return;
     if (MODULE_CONFIG.range.token.combatOnly && !game.combat?.started) return;
-    if (
-      !game.user.isGM &&
-      !(token.owner || MODULE_CONFIG.range.token.dispositions[token.document.disposition])
-    )
-      return;
+    if (!game.user.isGM && !(token.owner || MODULE_CONFIG.range.token.dispositions[token.document.disposition])) return;
     if (hoverIn && token.actor) {
       RangeHighlightAPI.rangeHighlight(token);
     } else {
@@ -459,7 +439,8 @@ export class RangeHighlightAPI {
         return r;
       });
 
-    new RangeHighlighter(token, ranges, { roundToken });
+    if (foundry.utils.isNewerVersion(game.version, 12)) new RangeHighlighterV12(token, ranges, { roundToken });
+    else new RangeHighlighter(token, ranges, { roundToken });
   }
 
   /**
@@ -527,6 +508,7 @@ async function _tokensAndItemFromItemUuid(uuid) {
 
 export function itemRangeHighlightEnabled() {
   if (!MODULE_CONFIG.range.item.enabled) return false;
+  if (!MODULE_CLIENT_CONFIG.rangeHighlighter) return false;
   if (MODULE_CONFIG.range.item.combatOnly && !game.combat?.started) return false;
   return true;
 }

@@ -8,7 +8,9 @@ export function cleanLayerName(layer) {
 }
 
 export function getGridColorString() {
-  return canvas.scene?.grid?.color ?? '#000000';
+  let color = canvas.scene?.grid?.color ?? '#000000';
+  if (color instanceof Color) color = color.toString();
+  return color;
 }
 
 export function getDispositionColor(token) {
@@ -37,10 +39,7 @@ export function registerGridWrappers(lineWidth) {
         'SquareGrid.prototype._drawLine',
         function (points, lineColor, lineAlpha) {
           let line = new PIXI.Graphics();
-          line
-            .lineStyle(lineWidth, lineColor, lineAlpha)
-            .moveTo(points[0], points[1])
-            .lineTo(points[2], points[3]);
+          line.lineStyle(lineWidth, lineColor, lineAlpha).moveTo(points[0], points[1]).lineTo(points[2], points[3]);
           return line;
         },
         'OVERRIDE'
@@ -170,11 +169,7 @@ export function computeCoverBonus(attacker, target) {
 
   switch (calculator) {
     case 'levelsautocover':
-      if (
-        !game.modules.get('levelsautocover')?.active ||
-        !game.settings.get('levelsautocover', 'apiMode')
-      )
-        return null;
+      if (!game.modules.get('levelsautocover')?.active || !game.settings.get('levelsautocover', 'apiMode')) return null;
 
       const coverData = AutoCover.calculateCover(
         attacker.document ? attacker : attacker.object,
@@ -191,10 +186,7 @@ export function computeCoverBonus(attacker, target) {
     case 'simbuls-cover-calculator':
       if (!game.modules.get('simbuls-cover-calculator')?.active) return null;
       if (globalThis.CoverCalculator) {
-        const coverData = globalThis.CoverCalculator.Cover(
-          attacker.document ? attacker : attacker.object,
-          target
-        );
+        const coverData = globalThis.CoverCalculator.Cover(attacker.document ? attacker : attacker.object, target);
         if (attacker === target) {
           coverBonus = 0;
           break;
@@ -256,13 +248,9 @@ export function tokenHasEffect(token, efName) {
     return actorHasEffect(token.actor, efName);
   } else {
     if (game.system.id === 'pf2e') {
-      return (token.document.delta?.items || []).some(
-        (item) => item.name === efName && _activePF2EItem(item)
-      );
+      return (token.document.delta?.items || []).some((item) => item.name === efName && _activePF2EItem(item));
     } else {
-      let has = (token.document.effects || []).some(
-        (ef) => !ef.disabled && !ef.isSuppressed && ef.label === efName
-      );
+      let has = (token.document.effects || []).some((ef) => !ef.disabled && !ef.isSuppressed && ef.label === efName);
       if (has) return true;
       return actorHasEffect(token.actor, efName);
     }
@@ -275,9 +263,7 @@ function actorHasEffect(actor, efName) {
   if (game.system.id === 'pf2e') {
     return (actor.items || []).some((item) => item.name === efName && _activePF2EItem(item));
   } else {
-    return (actor.effects || []).some(
-      (ef) => !ef.disabled && !ef.isSuppressed && ef.name === efName
-    );
+    return (actor.effects || []).some((ef) => !ef.disabled && !ef.isSuppressed && ef.name === efName);
   }
 }
 

@@ -1,4 +1,4 @@
-import { MODULE_CONFIG, updateSettings } from '../applications/settings.js';
+import { MODULE_CLIENT_CONFIG, MODULE_CONFIG, updateSettings } from '../applications/settings.js';
 import { GRID_MASK } from '../tactical-grid.js';
 import { DistanceMeasurer } from './measurer.js';
 import { MODULE_ID, cleanLayerName } from './utils.js';
@@ -13,9 +13,7 @@ export function registerKeybindings() {
         ui.notifications.info(`Tactical Grid: Scene Setting REMOVED { ${settingName} }`);
       } else {
         await canvas.scene.setFlag(MODULE_ID, settingName, !val);
-        ui.notifications.info(
-          `Tactical Grid: Scene Setting ADDED { ${settingName} = ${val ? 'False' : 'True'} }`
-        );
+        ui.notifications.info(`Tactical Grid: Scene Setting ADDED { ${settingName} = ${val ? 'False' : 'True'} }`);
       }
     }
   };
@@ -88,6 +86,17 @@ export function registerKeybindings() {
     onDown: () => {
       DistanceMeasurer.keyPressed = true;
       DistanceMeasurer.showMeasures({ gridSpaces: false });
+    },
+    restricted: false,
+    precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
+  });
+
+  game.keybindings.register(MODULE_ID, 'toggleRangeHighlighting', {
+    name: 'Toggle Range Highlighter',
+    hint: '',
+    editable: [],
+    onUp: () => {
+      game.settings.set(MODULE_ID, 'rangeHighlighter', !MODULE_CLIENT_CONFIG.rangeHighlighter);
     },
     restricted: false,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,

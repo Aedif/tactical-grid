@@ -113,6 +113,7 @@ export const MODULE_CLIENT_CONFIG = {
   tokenActivatedDistanceMeasure: false,
   rulerDistanceMeasureGirdSpaces: true,
   disableTacticalGrid: false,
+  rangeHighlighter: true,
 };
 
 const VIEW_SHAPE_OPTIONS = [
@@ -130,7 +131,7 @@ export default class TGSettingsConfig extends FormApplication {
   }
 
   static get defaultOptions() {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       id: `${MODULE_ID}-settings`,
       classes: ['sheet'],
       template: `modules/${MODULE_ID}/templates/settings.html`,
@@ -145,7 +146,7 @@ export default class TGSettingsConfig extends FormApplication {
 
   async getData(options) {
     const data = super.getData(options);
-    mergeObject(data, deepClone(MODULE_CONFIG));
+    foundry.utils.mergeObject(data, foundry.utils.deepClone(MODULE_CONFIG));
 
     data.viewShapes = VIEW_SHAPE_OPTIONS;
 
@@ -157,9 +158,7 @@ export default class TGSettingsConfig extends FormApplication {
     data.marker.border = new Color(data.marker.border).toString();
 
     data.fonts = [];
-    FontConfig._collectDefinitions().forEach(
-      (f) => (data.fonts = data.fonts.concat(Object.keys(f)))
-    );
+    FontConfig._collectDefinitions().forEach((f) => (data.fonts = data.fonts.concat(Object.keys(f))));
 
     data.units = canvas.scene?.grid.units || 'ft';
 
@@ -254,7 +253,7 @@ export function registerSettings() {
     onChange: async (val) => _onSettingChange(val),
   });
   const settings = game.settings.get(MODULE_ID, 'settings');
-  mergeObject(MODULE_CONFIG, settings);
+  foundry.utils.mergeObject(MODULE_CONFIG, settings);
 
   // Hidden setting used to add a static offset for distance measurements
   game.settings.register(MODULE_ID, 'distanceCalcOffset', {
@@ -305,10 +304,7 @@ export function registerSettings() {
       registerRulerLibWrapperMethods();
     },
   });
-  MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure = game.settings.get(
-    MODULE_ID,
-    'rulerActivatedDistanceMeasure'
-  );
+  MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure = game.settings.get(MODULE_ID, 'rulerActivatedDistanceMeasure');
 
   game.settings.register(MODULE_ID, 'tokenActivatedDistanceMeasure', {
     name: game.i18n.localize(`${MODULE_ID}.settings.displayDistancesOnTokenDrag.name`),
@@ -321,10 +317,7 @@ export function registerSettings() {
       MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = val;
     },
   });
-  MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = game.settings.get(
-    MODULE_ID,
-    'tokenActivatedDistanceMeasure'
-  );
+  MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = game.settings.get(MODULE_ID, 'tokenActivatedDistanceMeasure');
 
   game.settings.register(MODULE_ID, 'rulerDistanceMeasureGirdSpaces', {
     name: 'Ruler: Grid Spaces',
@@ -337,12 +330,20 @@ export function registerSettings() {
       MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces = val;
     },
   });
-  MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces = game.settings.get(
-    MODULE_ID,
-    'rulerDistanceMeasureGirdSpaces'
-  );
+  MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces = game.settings.get(MODULE_ID, 'rulerDistanceMeasureGirdSpaces');
 
-  game.i18n.localize(`${MODULE_ID}.keybindings.toggleGrid.name`);
+  game.settings.register(MODULE_ID, 'rangeHighlighter', {
+    name: 'Enable Range Highlighter',
+    hint: 'Turn on/off Token/Item range highlighting on hover.',
+    scope: 'client',
+    config: true,
+    type: Boolean,
+    default: MODULE_CLIENT_CONFIG.rangeHighlighter,
+    onChange: async (val) => {
+      MODULE_CLIENT_CONFIG.rangeHighlighter = val;
+    },
+  });
+  MODULE_CLIENT_CONFIG.rangeHighlighter = game.settings.get(MODULE_ID, 'rangeHighlighter');
 
   registerRulerLibWrapperMethods();
 
@@ -358,9 +359,7 @@ export function registerSettings() {
 
     let options = '<option value=""></option>';
     for (const opt of VIEW_SHAPE_OPTIONS) {
-      options += `<option value="${opt.value}" ${viewShape === opt.value ? 'selected' : ''}>${
-        opt.label
-      }</option>`;
+      options += `<option value="${opt.value}" ${viewShape === opt.value ? 'selected' : ''}>${opt.label}</option>`;
     }
 
     const control = $(`
@@ -386,9 +385,7 @@ export function registerSettings() {
         <label>Color</label>
         <div class="form-fields">
           <input class="color" type="text" name="flags.${MODULE_ID}.color" value="${shapeColor}">
-          <input type="color" value="${
-            shapeColor ?? gridColor
-          }" data-edit="flags.${MODULE_ID}.color">
+          <input type="color" value="${shapeColor ?? gridColor}" data-edit="flags.${MODULE_ID}.color">
         </div>
       </div>
   </fieldset>
@@ -445,8 +442,8 @@ export function registerSettings() {
 }
 
 function _onSettingChange(newSettings) {
-  const diff = diffObject(MODULE_CONFIG, newSettings);
-  mergeObject(MODULE_CONFIG, newSettings);
+  const diff = foundry.utils.diffObject(MODULE_CONFIG, newSettings);
+  foundry.utils.mergeObject(MODULE_CONFIG, newSettings);
   // perform operations if specific settings have changed
 
   if ('defaultViewDistance' in diff) {
@@ -458,21 +455,19 @@ function _onSettingChange(newSettings) {
     registerRulerLibWrapperMethods();
   }
 
-  if (
-    ['enableOnControl', 'enableOnHover', 'enableOnCombatOnly', 'layerEnabled'].some(
-      (s) => s in diff
-    )
-  ) {
+  if (['enableOnControl', 'enableOnHover', 'enableOnCombatOnly', 'layerEnabled'].some((s) => s in diff)) {
     GRID_MASK.container?.drawMask();
   }
 
   if ('measurement' in diff && TEXT_STYLE) {
-    mergeObject(TEXT_STYLE, diff.measurement);
+    foundry.utils.mergeObject(TEXT_STYLE, diff.measurement);
   }
 }
 
 export async function updateSettings(newSettings) {
-  const settings = mergeObject(deepClone(MODULE_CONFIG), newSettings, { insertKeys: false });
+  const settings = foundry.utils.mergeObject(foundry.utils.deepClone(MODULE_CONFIG), newSettings, {
+    insertKeys: false,
+  });
   await game.settings.set(MODULE_ID, 'settings', settings);
 }
 
