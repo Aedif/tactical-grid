@@ -1,3 +1,7 @@
+# 1.27.1
+
+- Typo fix
+
 # 1.27.0
 
 - Foundry v12 support

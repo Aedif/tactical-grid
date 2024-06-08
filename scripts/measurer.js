@@ -480,7 +480,7 @@ export class DistanceMeasurer {
       else if (target.z > origin.z && target.z < origin.z + origin.height) dz = 0;
       else {
         origin.z = getSnappedPosition({ x: 0, y: origin.z }).y;
-        target.z = getSnappedPosition({ x: 0, y: targey.z }).y;
+        target.z = getSnappedPosition({ x: 0, y: target.z }).y;
         dz =
           Math.abs(Math.min(origin.z + origin.height - target.z, target.z + target.height - origin.z)) +
           (canvas.grid.sizeX ?? canvas.grid.w);
