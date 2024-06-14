@@ -1,15 +1,6 @@
 import { GridMaskContainer } from './scripts/container.js';
-import {
-  MODULE_ID,
-  cleanLayerName,
-  registerGridWrappers,
-  unregisterGridWrappers,
-} from './scripts/utils.js';
-import {
-  MODULE_CONFIG,
-  registerRulerLibWrapperMethods,
-  registerSettings,
-} from './applications/settings.js';
+import { MODULE_ID, cleanLayerName, registerGridWrappers, unregisterGridWrappers } from './scripts/utils.js';
+import { MODULE_CONFIG, registerRulerLibWrapperMethods, registerSettings } from './applications/settings.js';
 import { registerKeybindings } from './scripts/keybindings.js';
 import { RangeHighlightAPI, registerRangeHighlightHooks } from './scripts/rangeHighlighter.js';
 
@@ -118,11 +109,13 @@ Hooks.on('highlightObjects', () => {
 });
 
 Hooks.on('canvasInit', (canvas) => {
-  let tacticalLineWidth = canvas.scene.getFlag(MODULE_ID, 'gridLineWidth');
-  if (tacticalLineWidth && tacticalLineWidth > 1) {
-    registerGridWrappers(tacticalLineWidth);
-  } else {
-    unregisterGridWrappers();
+  if (foundry.utils.isNewerVersion(12, game.version)) {
+    let tacticalLineWidth = canvas.scene.getFlag(MODULE_ID, 'gridLineWidth');
+    if (tacticalLineWidth && tacticalLineWidth > 1) {
+      registerGridWrappers(tacticalLineWidth);
+    } else {
+      unregisterGridWrappers();
+    }
   }
 });
 

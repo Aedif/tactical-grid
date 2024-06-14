@@ -25,10 +25,12 @@ export function getDispositionColor(token) {
 let registeredWrappers = [];
 
 /**
+ * Applicable to v11 & v12
  * OVERRIDING SquareGrid and HexagonalGrid draw line functions
  * Contains original implementation of the functions with just the line width adjusted
  */
 export function registerGridWrappers(lineWidth) {
+  if (foundry.utils.isNewerVersion(game.version, 12)) return;
   unregisterGridWrappers();
   if (typeof libWrapper === 'function') {
     let squareWrap;

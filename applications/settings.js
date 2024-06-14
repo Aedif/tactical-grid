@@ -414,14 +414,15 @@ export function registerSettings() {
       );
     });
 
-    /** =================================
-     *  Insert scene grid line width flag
-     *  =================================
-     */
-    Hooks.on('renderSceneConfig', (sceneConfig) => {
-      const lineWidth = sceneConfig.object.getFlag(MODULE_ID, 'gridLineWidth') ?? 1;
+    if (foundry.utils.isNewerVersion(12, game.version)) {
+      /** =================================
+       *  Insert scene grid line width flag
+       *  =================================
+       */
+      Hooks.on('renderSceneConfig', (sceneConfig) => {
+        const lineWidth = sceneConfig.object.getFlag(MODULE_ID, 'gridLineWidth') ?? 1;
 
-      const control = $(`
+        const control = $(`
 <fieldset>
   <legend>Tactical Grid</legend>
   <div class="form-group">
@@ -435,9 +436,10 @@ export function registerSettings() {
 </fieldset>
     `);
 
-      $(sceneConfig.form).find('[name="grid.alpha"]').closest('.form-group').after(control);
-      sceneConfig.setPosition({ height: 'auto' });
-    });
+        $(sceneConfig.form).find('[name="grid.alpha"]').closest('.form-group').after(control);
+        sceneConfig.setPosition({ height: 'auto' });
+      });
+    }
   }
 }
 

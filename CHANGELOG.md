@@ -1,3 +1,7 @@
+# 1.27.2
+
+- Remvoed `Grid Line Width` controls for Foundry v12 as it is now natively supported
+
 # 1.27.1
 
 - Typo fix
