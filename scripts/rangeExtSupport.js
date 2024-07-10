@@ -17,9 +17,7 @@ function _genericActorSheetHook(sheet, form, options) {
 
   $(form)
     .find('.item-name')
-    .on('mouseenter', (event) =>
-      _hoverItem(sheet, $(event.target).closest(`[data-item-id]`).attr('data-item-id'))
-    )
+    .on('mouseenter', (event) => _hoverItem(sheet, $(event.target).closest(`[data-item-id]`).attr('data-item-id')))
     .on('mouseleave', () => _hoverLeaveItem(sheet));
 }
 
@@ -30,9 +28,7 @@ function _crucibleActorSheetHook(sheet, form, options) {
 
   form
     .find('.line-item')
-    .on('mouseenter', (event) =>
-      _hoverItem(sheet, $(event.target).closest(`[data-item-id]`).attr('data-item-id'))
-    )
+    .on('mouseenter', (event) => _hoverItem(sheet, $(event.target).closest(`[data-item-id]`).attr('data-item-id')))
     .on('mouseleave', () => _hoverLeaveItem(sheet));
 
   form
@@ -88,6 +84,8 @@ export function getRangeCalculator() {
       return Pf2eRange;
     case 'crucible':
       return CrucibleRange;
+    case 'dc20rpg':
+      return DC20Range;
     default:
       return SystemRange;
   }
@@ -110,6 +108,41 @@ class SystemRange {
   }
 }
 
+class DC20Range extends SystemRange {
+  static getTokenRange(token) {
+    const actor = token.actor;
+    const allRanges = new Set([1]);
+
+    actor.items
+      .filter((item) => item.system.statuses?.equipped && item.system.weaponType === 'melee')
+      .forEach((item) => {
+        if (item.system.properties.reach.active) allRanges.add(2);
+      });
+
+    return Array.from(allRanges);
+  }
+
+  static getItemRange(item, token) {
+    const ranges = [];
+
+    let normalRange = 0;
+    let maxRange = 0;
+
+    if (item.system.weaponType === 'melee') {
+      if (item.system.properties.reach.active) normalRange = 2;
+      else normalRange = 1;
+    } else {
+      normalRange = item.system.range.normal;
+      maxRange = item.system.range.max;
+    }
+
+    if (normalRange) ranges.push(normalRange);
+    if (maxRange) ranges.push(maxRange);
+
+    return ranges;
+  }
+}
+
 class Dnd5eRange extends SystemRange {
   static _hasProperty(item, property) {
     const properties = item.system.properties;
@@ -123,9 +156,7 @@ class Dnd5eRange extends SystemRange {
   static _isMelee(item) {
     return (
       item.system.actionType === 'mwak' &&
-      ['martialM', 'simpleM', 'natural', 'improv'].includes(
-        item.system.weaponType ?? item.system.type?.value
-      )
+      ['martialM', 'simpleM', 'natural', 'improv'].includes(item.system.weaponType ?? item.system.type?.value)
     );
   }
 
@@ -158,12 +189,8 @@ class Dnd5eRange extends SystemRange {
       let thrMelee = 0;
       const actor = token.actor;
 
-      if (foundry.utils.getProperty(actor, 'flags.midi-qol.sharpShooter') && range < longRange)
-        range = longRange;
-      if (
-        item.system.actionType === 'rsak' &&
-        foundry.utils.getProperty(actor, 'flags.dnd5e.spellSniper')
-      ) {
+      if (foundry.utils.getProperty(actor, 'flags.midi-qol.sharpShooter') && range < longRange) range = longRange;
+      if (item.system.actionType === 'rsak' && foundry.utils.getProperty(actor, 'flags.dnd5e.spellSniper')) {
         range = 2 * range;
         longRange = 2 * longRange;
       }
@@ -227,8 +254,7 @@ class Pf2eRange extends SystemRange {
     const ray = new Ray(origin, target);
     const segments = [{ ray }];
 
-    if (!options.gridSpaces)
-      return BaseGrid.prototype.measureDistances.call(this, segments, options);
+    if (!options.gridSpaces) return BaseGrid.prototype.measureDistances.call(this, segments, options);
 
     let nDiagonal = 0;
     const d = canvas.dimensions;
@@ -279,13 +305,13 @@ export function registerExternalModuleHooks() {
   _argonHud();
   // Token Action HUD
   _tokenActionHud();
-  // DnD5e Macro Bar
+  // DnD5e/Pf2e/DC20 Macro Bar
   _macroBar();
 }
 
 // DnD5e/PF2e Macro Bar
 function _macroBar() {
-  if (!['dnd5e', 'pf2e'].includes(game.system.id)) return;
+  if (!['dnd5e', 'pf2e', 'dc20rpg'].includes(game.system.id)) return;
 
   $('#ui-middle')
     .on('mouseover', '.macro', (event) => {
@@ -299,6 +325,7 @@ function _macroBar() {
       let item;
       if (game.system.id === 'dnd5e') item = _getItemFromMacroDnd5e(macro, actor);
       else if (game.system.id === 'pf2e') item = _getItemFromMacroPf2e(macro, actor);
+      else if (game.system.id === 'dc20rpg') item = _getItemFromMacroDC20(macro, actor);
 
       if (item) {
         RangeHighlightAPI.rangeHighlight(token, { item });
@@ -336,9 +363,7 @@ function _getItemFromMacroPf2e(macro, actor) {
   if (!macro) return null;
   let match;
   if (macro.getFlag('pf2e', 'actionMacro')) {
-    match = macro.command.match(
-      /^game\.pf2e\.rollActionMacro\(.*itemId: *"(?<itemId>[A-Za-z0-9]+)"/
-    );
+    match = macro.command.match(/^game\.pf2e\.rollActionMacro\(.*itemId: *"(?<itemId>[A-Za-z0-9]+)"/);
   } else if (macro.getFlag('pf2e', 'itemMacro')) {
     match = macro.command.match(/^game\.pf2e\.rollItemMacro\(" *(?<itemId>[A-Za-z0-9]+)"/);
   }
@@ -346,6 +371,19 @@ function _getItemFromMacroPf2e(macro, actor) {
   if (match) {
     const itemId = match.groups?.itemId;
     const item = actor.items.get(itemId);
+    return item;
+  }
+
+  return null;
+}
+
+function _getItemFromMacroDC20(macro, actor) {
+  if (macro?.getFlag('dc20rpg', 'itemMacro')) {
+    const match = macro.command.match(/^game\.dc20rpg\.rollItemMacro\(\"(?<itemName>[A-Za-z0-9]+)\"\)/);
+    if (!match) return;
+    const itemName = match.groups?.itemName;
+
+    const item = actor.items.filter((item) => item.name === itemName)?.[0];
     return item;
   }
 
@@ -376,14 +414,10 @@ function _actionPack() {
       .find('.item-name')
       .on('mouseover', async (event) => {
         if (!itemRangeHighlightEnabled()) return;
-        RangeHighlightAPI.rangeHighlightItemUuid(
-          $(event.target).closest('.item').data('item-uuid')
-        );
+        RangeHighlightAPI.rangeHighlightItemUuid($(event.target).closest('.item').data('item-uuid'));
       })
       .on('mouseleave', async (event) => {
-        RangeHighlightAPI.clearRangeHighlightItemUuid(
-          $(event.target).closest('.item').data('item-uuid')
-        );
+        RangeHighlightAPI.clearRangeHighlightItemUuid($(event.target).closest('.item').data('item-uuid'));
       });
   });
 }

@@ -1,6 +1,10 @@
+# 1.28.0
+
+- DC20 system support
+
 # 1.27.2
 
-- Remvoed `Grid Line Width` controls for Foundry v12 as it is now natively supported
+- Removed `Grid Line Width` controls for Foundry v12 as it is now natively supported
 
 # 1.27.1
 
