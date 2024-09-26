@@ -2,12 +2,12 @@
   "id": "aedifs-tactical-grid",
   "title": "Tactical Grid",
   "description": "Only show the grid when needed.",
-  "version": "1.28.0",
-  "download": "https://github.com/Aedif/tactical-grid/releases/download/1.28.0/aedifs-tactical-grid.zip",
+  "version": "1.30.0",
+  "download": "https://github.com/Aedif/tactical-grid/releases/download/1.30.0/aedifs-tactical-grid.zip",
   "manifest": "https://raw.githubusercontent.com/Aedif/tactical-grid/main/module.json",
   "compatibility": {
-    "minimum": 11,
-    "verified": "12"
+    "minimum": 12,
+    "verified": 12
   },
   "authors": [
     {
@@ -32,7 +32,7 @@
       "path": "languages/ja.json"
     }
   ],
-  "socket": false,
+  "socket": true,
   "url": "https://github.com/Aedif/tactical-grid",
   "readme": "https://github.com/Aedif/tactical-grid/blob/master/README.md"
 }

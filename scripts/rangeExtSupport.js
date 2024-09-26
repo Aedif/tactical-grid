@@ -9,6 +9,7 @@ export function registerActorSheetHooks() {
     Hooks.on('renderActorSheet', _crucibleActorSheetHook);
   } else {
     Hooks.on('renderActorSheet', _genericActorSheetHook);
+    if (game.system.id === 'pf2e') Hooks.on('renderActorSheet', _pf2eActorSheetHook);
   }
 }
 
@@ -18,6 +19,18 @@ function _genericActorSheetHook(sheet, form, options) {
   $(form)
     .find('.item-name')
     .on('mouseenter', (event) => _hoverItem(sheet, $(event.target).closest(`[data-item-id]`).attr('data-item-id')))
+    .on('mouseleave', () => _hoverLeaveItem(sheet));
+}
+
+function _pf2eActorSheetHook(sheet, form, options) {
+  if (!itemRangeHighlightEnabled()) return;
+
+  $(form)
+    .find('.actions-list.strikes-list')
+    .find('.strike')
+    .on('mouseenter', (event) =>
+      _hoverPF2eStrikeAction(sheet, $(event.target).closest(`.strike`).attr('data-action-index'))
+    )
     .on('mouseleave', () => _hoverLeaveItem(sheet));
 }
 
@@ -43,9 +56,6 @@ function _crucibleActorSheetHook(sheet, form, options) {
 
 /**
  * Respond to mouse hovering over an item with itemId
- * @param {ActorSheet} sheet
- * @param {String} itemId
- * @returns {null}
  */
 function _hoverItem(sheet, itemId) {
   if (!itemRangeHighlightEnabled()) return;
@@ -55,6 +65,25 @@ function _hoverItem(sheet, itemId) {
   const actor = sheet.object;
   const item = actor.items.get(itemId);
 
+  if (!item) {
+    RangeHighlightAPI.clearRangeHighlight(token);
+    return;
+  }
+
+  RangeHighlightAPI.rangeHighlight(token, { item });
+}
+
+/**
+ * Respond to mouse hovering over PF2e strike action with a given index
+ */
+function _hoverPF2eStrikeAction(sheet, actionIndex) {
+  if (!itemRangeHighlightEnabled()) return;
+  const token = sheet.token?.object;
+  if (!token) return;
+
+  const actor = sheet.object;
+
+  const item = actor.system.actions[actionIndex]?.item;
   if (!item) {
     RangeHighlightAPI.clearRangeHighlight(token);
     return;
@@ -250,15 +279,14 @@ class Pf2eRange extends SystemRange {
 
   // PF2e has an exception for distance measurements for the 10ft reach.
   // This is a modified PF2e `measureDistances` function to account for this
-  static _reachMeasureDistance(origin, target, options) {
-    const ray = new Ray(origin, target);
+  static _reachMeasureDistance(path) {
+    const ray = new Ray(path[0], path[1]);
     const segments = [{ ray }];
-
-    if (!options.gridSpaces) return BaseGrid.prototype.measureDistances.call(this, segments, options);
 
     let nDiagonal = 0;
     const d = canvas.dimensions;
-    return segments.map((s) => {
+
+    const result = segments.map((s) => {
       const r = s.ray,
         nx = Math.abs(Math.ceil(r.dx / d.size)),
         ny = Math.abs(Math.ceil(r.dy / d.size)),
@@ -268,6 +296,8 @@ class Pf2eRange extends SystemRange {
       const nd10 = Math.floor(nDiagonal / 2) - Math.floor((nDiagonal - nd) / 2);
       return (nd10 + (nd - nd10) + ns) * d.distance;
     });
+
+    return { distance: result };
   }
 }
 

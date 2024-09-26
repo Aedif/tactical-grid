@@ -3,6 +3,7 @@ import { MODULE_ID, cleanLayerName, registerGridWrappers, unregisterGridWrappers
 import { MODULE_CONFIG, registerRulerLibWrapperMethods, registerSettings } from './applications/settings.js';
 import { registerKeybindings } from './scripts/keybindings.js';
 import { RangeHighlightAPI, registerRangeHighlightHooks } from './scripts/rangeHighlighter.js';
+import { registerBroadcasts } from './scripts/measurer.js';
 
 // Container used as Grid Mask
 export const GRID_MASK = {
@@ -17,6 +18,7 @@ Hooks.on('init', () => {
   registerSettings();
   registerKeybindings();
   registerRangeHighlightHooks();
+  registerBroadcasts();
 
   globalThis.TacticalGrid = {
     rangeHighlight: RangeHighlightAPI.rangeHighlight,

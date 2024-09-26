@@ -114,6 +114,7 @@ export const MODULE_CLIENT_CONFIG = {
   rulerDistanceMeasureGirdSpaces: true,
   disableTacticalGrid: false,
   rangeHighlighter: true,
+  broadcastMeasures: false,
 };
 
 const VIEW_SHAPE_OPTIONS = [
@@ -194,7 +195,7 @@ export default class TGSettingsConfig extends FormApplication {
    * @param {Object} formData
    */
   async _updateObject(event, formData) {
-    const settings = expandObject(formData);
+    const settings = foundry.utils.expandObject(formData);
 
     if (settings.range.colors) settings.range.colors = Object.values(settings.range.colors);
     else settings.range.colors = [];
@@ -280,6 +281,17 @@ export function registerSettings() {
     },
   });
   MODULE_CLIENT_CONFIG.disableTacticalGrid = game.settings.get(MODULE_ID, 'disableTacticalGrid');
+
+  game.settings.register(MODULE_ID, 'broadcastMeasures', {
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: false,
+    onChange: async (val) => {
+      MODULE_CLIENT_CONFIG.broadcastMeasures = val;
+    },
+  });
+  MODULE_CLIENT_CONFIG.broadcastMeasures = game.settings.get(MODULE_ID, 'broadcastMeasures');
 
   game.settings.registerMenu(MODULE_ID, 'settings', {
     name: 'Configure Settings',

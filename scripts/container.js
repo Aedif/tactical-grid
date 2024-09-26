@@ -165,7 +165,7 @@ export class GridMaskContainer extends CachedContainer {
   _getViewDistance(p) {
     let viewDistance = p.document?.getFlag(MODULE_ID, 'viewDistance');
     if (viewDistance == null && MODULE_CONFIG.usePropertyBasedDistance) {
-      viewDistance = getProperty(p.document ?? p, MODULE_CONFIG.propertyDistance);
+      viewDistance = foundry.utils.getProperty(p.document ?? p, MODULE_CONFIG.propertyDistance);
       if (viewDistance) viewDistance /= canvas.scene.grid.distance;
     }
     if (viewDistance == null) viewDistance = MODULE_CONFIG.defaultViewDistance;

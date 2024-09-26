@@ -1,5 +1,11 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import { computeCoverBonus, nearestPointToCircle, nearestPointToRectangle, tokenHasEffect } from './utils.js';
+import {
+  computeCoverBonus,
+  MODULE_ID,
+  nearestPointToCircle,
+  nearestPointToRectangle,
+  tokenHasEffect,
+} from './utils.js';
 
 export let TEXT_STYLE;
 
@@ -16,17 +22,53 @@ export class DistanceMeasurer {
   /**
    * Measure and display distances
    * @param {Boolean} options.gridSpaces should measurements be in grade space increments
-   * @param {Boolean} options.snap should origin snap to grid
+   * @param {object} options.force params to be forced on the showMeasures function instead of being determined automatically
    */
-  static showMeasures({ gridSpaces = true } = {}) {
+  static showMeasures({ gridSpaces = true, force = null } = {}) {
     // if (!game.combat?.started) return;
-    DistanceMeasurer.gridSpaces = gridSpaces;
-    DistanceMeasurer.snap =
-      canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
-      !game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT);
+
     if (!DistanceMeasurer.getHighlightLayer()) DistanceMeasurer.addHighlightLayer();
-    DistanceMeasurer.setOrigin();
+
+    if (force) {
+      DistanceMeasurer.gridSpaces = force.gridSpaces;
+      DistanceMeasurer.snap = force.snap;
+      DistanceMeasurer.origin = force.origin;
+      DistanceMeasurer.originToken = force.originToken;
+      // Since grid highlight is normally handled by setOrigin(...), we need to handle it here instead
+      if (force.highlight) {
+        if (force.originToken) DistanceMeasurer.highlightTokenGridPosition(force.originToken);
+        else if (force.origin) DistanceMeasurer.highlightPosition(getTopLeft(force.origin));
+      }
+    } else {
+      DistanceMeasurer.gridSpaces = gridSpaces;
+      DistanceMeasurer.snap =
+        canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
+        !game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT);
+      DistanceMeasurer.setOrigin();
+    }
+
     DistanceMeasurer.drawLabels();
+
+    DistanceMeasurer.broadCastShowMeasures();
+  }
+
+  static broadCastShowMeasures() {
+    if (MODULE_CLIENT_CONFIG.broadcastMeasures) {
+      const message = {
+        handlerName: 'measures',
+        args: {
+          userId: game.user.id,
+          sceneId: canvas.scene.id,
+          origin: DistanceMeasurer.origin,
+          tokenId: DistanceMeasurer.originToken?.id,
+          gridSpaces: DistanceMeasurer.gridSpaces,
+          snap: DistanceMeasurer.snap,
+          highlight: DistanceMeasurer.highlight,
+        },
+        type: 'show',
+      };
+      game.socket.emit(`module.${MODULE_ID}`, message);
+    }
   }
 
   static getHighlightLayer() {
@@ -48,6 +90,15 @@ export class DistanceMeasurer {
     if (foundry.utils.isNewerVersion(game.version, 12))
       canvas.interface.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
     else canvas.grid.destroyHighlightLayer(DistanceMeasurer.hlName);
+
+    if (MODULE_CLIENT_CONFIG.broadcastMeasures) {
+      const message = {
+        handlerName: 'measures',
+        args: { userId: game.user.id, sceneId: canvas.scene.id },
+        type: 'hide',
+      };
+      game.socket.emit(`module.${MODULE_ID}`, message);
+    }
   }
 
   static _tokenAtRulerOrigin(ruler) {
@@ -129,12 +180,13 @@ export class DistanceMeasurer {
         origin.y = y + canvas.grid.size / 2;
       }
       if (highlight) {
-        DistanceMeasurer.highlightPosition(x, y);
+        DistanceMeasurer.highlightPosition({ x, y });
       }
     }
 
     DistanceMeasurer.origin = origin;
     DistanceMeasurer.originToken = originToken;
+    DistanceMeasurer.highlight = highlight; // Needed for broadcasts
   }
 
   static clearHighlight() {
@@ -163,7 +215,7 @@ export class DistanceMeasurer {
     layer.drawShape(shape).endFill();
   }
 
-  static highlightPosition(x, y) {
+  static highlightPosition({ x, y } = {}) {
     DistanceMeasurer.clearHighlight();
     const layer = DistanceMeasurer.getHighlightLayer();
     if (!layer) return;
@@ -185,8 +237,7 @@ export class DistanceMeasurer {
   }
 
   static highlightGridPosition(layer, options) {
-    if (foundry.utils.isNewerVersion(game.version, 12)) canvas.interface.grid.highlightPosition(layer.name, options);
-    else canvas.grid.grid.highlightGridPosition(layer, options);
+    canvas.interface.grid.highlightPosition(layer.name, options);
   }
 
   static drawLabels() {
@@ -428,6 +479,7 @@ export class DistanceMeasurer {
     if (DistanceMeasurer.getHighlightLayer()) {
       DistanceMeasurer.setOrigin(pos);
       DistanceMeasurer.drawLabels();
+      DistanceMeasurer.broadCastShowMeasures();
     }
   }
 
@@ -834,4 +886,44 @@ export function getTopLeft(point) {
     const [x, y] = canvas.grid.grid.getTopLeft(point.x, point.y);
     return { x, y };
   }
+}
+
+export function registerBroadcasts() {
+  game.socket?.on(`module.${MODULE_ID}`, async (message) => {
+    const args = message.args;
+
+    if (message.handlerName === 'measures') {
+      if (args.sceneId !== canvas.scene.id || args.userId === game.user.id) return;
+
+      if (message.type === 'show') {
+        DistanceMeasurer.showMeasures({
+          force: {
+            gridSpaces: args.gridSpaces,
+            origin: args.origin,
+            originToken: canvas.tokens.get(args.tokenId),
+            snap: args.snap,
+            highlight: args.highlight,
+          },
+        });
+      } else if (message.type === 'hide') {
+        DistanceMeasurer.hideMeasures();
+      }
+    }
+  });
+
+  Hooks.on('getSceneControlButtons', (controls) => {
+    const tools = controls.find((c) => c.name === 'token').tools;
+    const insertIndex = tools.findIndex((t) => t.name === 'ruler') + 1;
+    tools.splice(insertIndex, 0, {
+      name: 'broadcastMeasures',
+      title: 'TacticalGrid: Broadcast Measurements',
+      icon: 'fa-solid fa-tower-broadcast',
+      visible: game.user.isGM,
+      active: MODULE_CLIENT_CONFIG.broadcastMeasures,
+      toggle: true,
+      onClick: () => {
+        game.settings.set(MODULE_ID, 'broadcastMeasures', !MODULE_CLIENT_CONFIG.broadcastMeasures);
+      },
+    });
+  });
 }

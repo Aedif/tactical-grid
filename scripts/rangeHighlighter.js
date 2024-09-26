@@ -1,10 +1,9 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
 import { DistanceMeasurer, getHexOffsets } from './measurer.js';
 import { getRangeCalculator, registerActorSheetHooks, registerExternalModuleHooks } from './rangeExtSupport.js';
-import { RangeHighlighterV12 } from './rangeHighlighterV12.js';
 import { MODULE_ID } from './utils.js';
 
-class RangeHighlighter {
+export class RangeHighlighter {
   constructor(token, ranges, { roundToken = false } = {}) {
     this.token = token;
     this.roundToken = roundToken;
@@ -24,7 +23,7 @@ class RangeHighlighter {
     this.token._tgRange = this;
     this.ranges = ranges.sort((r1, r2) => r1.range - r2.range);
 
-    canvas.grid.addHighlightLayer(this.highlightId);
+    canvas.interface.grid.addHighlightLayer(this.highlightId);
     this.highlight();
   }
 
@@ -44,7 +43,7 @@ class RangeHighlighter {
   }
 
   clear() {
-    const hl = canvas.grid.getHighlightLayer(this.highlightId);
+    const hl = canvas.interface.grid.getHighlightLayer(this.highlightId);
     hl.clear();
     clearTimeout(this._timer);
   }
@@ -69,7 +68,7 @@ class RangeHighlighter {
 
     // Clear the existing highlight layer
     const grid = canvas.grid;
-    const hl = grid.getHighlightLayer(this.highlightId);
+    const hl = canvas.interface.grid.getHighlightLayer(this.highlightId);
 
     if (!hl._tgCustomVisibility) {
       const token = this.token;
@@ -123,11 +122,10 @@ class RangeHighlighter {
   }
 
   _highlightGridPositions(hl) {
-    const grid = canvas.grid.grid;
+    const grid = canvas.grid;
     const d = canvas.dimensions;
-    let { x, y } = grid.getSnappedPosition(this.token.x, this.token.y, canvas.tokens.gridPrecision, {
-      token: this.token,
-    });
+
+    let { x, y } = canvas.tokens.getSnappedPoint({ x: this.token.x, y: this.token.y });
 
     const maxDistance = this.ranges[this.ranges.length - 1].range;
 
@@ -138,13 +136,18 @@ class RangeHighlighter {
     const distanceH = maxDistance + Math.max(0, (1 - tokenWidth) * canvas.dimensions.distance);
 
     // Get number of rows and columns
-    const [maxRow, maxCol] = grid.getGridPositionFromPixels(d.width, d.height);
-    let nRows = Math.ceil((distanceH * 1.5) / d.distance / (d.size / grid.h));
-    let nCols = Math.ceil((distanceV * 1.5) / d.distance / (d.size / grid.w));
+    const snappedPoint = canvas.grid.getOffset({ x: d.width, y: d.height });
+    const maxRow = snappedPoint.i;
+    const maxCol = snappedPoint.j;
+
+    let nRows = Math.ceil((distanceH * 1.5) / d.distance / (d.size / grid.sizeY));
+    let nCols = Math.ceil((distanceV * 1.5) / d.distance / (d.size / grid.sizeX));
     [nRows, nCols] = [Math.min(nRows, maxRow), Math.min(nCols, maxCol)];
 
     // Get the offset of the token origin relative to the top-left grid space
-    let [row0, col0] = grid.getGridPositionFromPixels(x, y);
+    const offset = grid.getOffset({ x, y });
+    let row0 = offset.i;
+    let col0 = offset.j;
 
     // Identify grid coordinates roughly covered by anticipated max range
     const hRows = row0 + nRows + tokenHeight;
@@ -167,9 +170,9 @@ class RangeHighlighter {
           let withinRange;
           for (let j = 0; j < this.ranges.length; j++) {
             const range = this.ranges[j];
-            const measureDistance = range.measureDistance ?? canvas.grid.measureDistance.bind(canvas.grid);
+            const measureDistance = range.measureDistance ?? canvas.grid.measurePath.bind(canvas.grid);
             for (let i = 0; i < tokenPositions.length; i++) {
-              let cd = measureDistance(tokenPositions[i], pos, { gridSpaces: true });
+              let cd = measureDistance([tokenPositions[i], pos], { gridSpaces: true }).distance;
 
               if (cd <= range.range) {
                 this._highlightGridPosition(hl, pos, range);
@@ -203,7 +206,7 @@ class RangeHighlighter {
           for (let j = 0; j < this.ranges.length; j++) {
             const range = this.ranges[j];
             for (let i = 0; i < tokenPositions.length; i++) {
-              let cd = canvas.grid.measureDistance(tokenPositions[i], pos, { gridSpaces: true });
+              let cd = canvas.grid.measurePath([tokenPositions[i], pos]).distance;
 
               if (cd <= range.range) {
                 this._highlightGridPosition(hl, pos, range);
@@ -234,22 +237,23 @@ class RangeHighlighter {
   ) {
     if (!layer.highlight(x, y)) return;
 
-    if (canvas.grid.grid.getPolygon) {
-      const offsetX = canvas.grid.w * (1.0 - shrink);
-      const offsetY = canvas.grid.h * (1.0 - shrink);
-      shape = new PIXI.Polygon(
-        canvas.grid.grid.getPolygon(
-          x + offsetX / 2,
-          y + offsetY / 2,
-          Math.ceil(canvas.grid.w) - offsetX,
-          Math.ceil(canvas.grid.h) - offsetY
-        )
-      );
-    } else {
-      const s = canvas.dimensions.size;
-      const offset = s * (1.0 - shrink);
-      shape = new PIXI.Rectangle(x + offset / 2, y + offset / 2, s - offset, s - offset);
-    }
+    const vertices = canvas.grid.getShape();
+    vertices.forEach((v) => {
+      v.x = v.x * shrink + x + canvas.grid.size / 2;
+      v.y = v.y * shrink + y + canvas.grid.size / 2;
+    });
+
+    shape = new PIXI.Polygon(vertices);
+
+    // shape = new PIXI.Polygon(
+    //   canvas.grid.grid.getPolygon(
+    //     x + offsetX / 2,
+    //     y + offsetY / 2,
+    //     Math.ceil(canvas.grid.sizeX) - offsetX,
+    //     Math.ceil(canvas.grid.sizeY) - offsetY
+    //   )
+    // );
+
     if (Number.isFinite(color)) layer.beginFill(color, alpha);
     if (Number.isFinite(lineColor)) layer.lineStyle(lineWidth, lineColor, lineAlpha);
     else layer.lineStyle(0);
@@ -439,8 +443,7 @@ export class RangeHighlightAPI {
         return r;
       });
 
-    if (foundry.utils.isNewerVersion(game.version, 12)) new RangeHighlighterV12(token, ranges, { roundToken });
-    else new RangeHighlighter(token, ranges, { roundToken });
+    new RangeHighlighter(token, ranges, { roundToken });
   }
 
   /**

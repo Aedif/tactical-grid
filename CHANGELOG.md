@@ -1,3 +1,15 @@
+# 1.30.0
+
+**PF2e**
+
+- Hovering over an item on the actor sheet strike action list will now properly trigger range highlighting if enabled
+- Fixed range highlighting for items with a 'reach' trait
+
+**Misc.**
+
+- New toggle added to Token Controls: `Broadcast Measurements`
+  - When active measurements made by the GM via TG will be broadcast to all other users
+
 # 1.28.0
 
 - DC20 system support

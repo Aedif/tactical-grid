@@ -22,7 +22,12 @@ export function registerKeybindings() {
   game.keybindings.register(MODULE_ID, 'toggleGrid', {
     name: game.i18n.localize(`${MODULE_ID}.keybindings.toggleGrid.name`),
     hint: game.i18n.localize(`${MODULE_ID}.keybindings.toggleGrid.hint`),
-    editable: [],
+    editable: [
+      {
+        key: 'KeyG',
+        modifiers: [],
+      },
+    ],
     onUp: async () => {
       if (lastPress) {
         const diff = new Date().getTime() - lastPress;
@@ -51,7 +56,12 @@ export function registerKeybindings() {
   game.keybindings.register(MODULE_ID, 'sceneToggleGrid', {
     name: game.i18n.localize(`${MODULE_ID}.keybindings.sceneToggleGrid.name`),
     hint: game.i18n.localize(`${MODULE_ID}.keybindings.sceneToggleGrid.hint`),
-    editable: [],
+    editable: [
+      {
+        key: 'KeyG',
+        modifiers: ['Shift'],
+      },
+    ],
     onDown: () => {
       toggleSceneGrid();
     },
@@ -62,7 +72,12 @@ export function registerKeybindings() {
   game.keybindings.register(MODULE_ID, 'displayDistanceGridSpacing', {
     name: 'Display Distances (Grid Spacing)',
     hint: '',
-    editable: [],
+    editable: [
+      {
+        key: 'KeyH',
+        modifiers: [],
+      },
+    ],
     onUp: () => {
       DistanceMeasurer.keyPressed = false;
       DistanceMeasurer.hideMeasures();
@@ -78,7 +93,12 @@ export function registerKeybindings() {
   game.keybindings.register(MODULE_ID, 'displayDistance', {
     name: 'Display Distances',
     hint: '',
-    editable: [],
+    editable: [
+      {
+        key: 'KeyH',
+        modifiers: ['Shift'],
+      },
+    ],
     onUp: () => {
       DistanceMeasurer.keyPressed = false;
       DistanceMeasurer.hideMeasures();
