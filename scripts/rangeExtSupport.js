@@ -262,9 +262,11 @@ class Pf2eRange extends SystemRange {
 
       if (increment && maxRange) {
         let range = 0;
-        while (range < maxRange) {
+        let maxIncrementCount = 6;
+        while (range < maxRange && maxIncrementCount > 0) {
           range += increment;
           if (range > maxRange) range = maxRange;
+          maxIncrementCount--;
           ranges.push(range);
         }
       } else if (increment) {
