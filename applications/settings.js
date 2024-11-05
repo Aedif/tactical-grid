@@ -106,6 +106,7 @@ export const MODULE_CONFIG = {
     },
   },
   distanceCalcOffset: 0,
+  displayBroadcastToggle: false,
 };
 
 export const MODULE_CLIENT_CONFIG = {
@@ -356,6 +357,21 @@ export function registerSettings() {
     },
   });
   MODULE_CLIENT_CONFIG.rangeHighlighter = game.settings.get(MODULE_ID, 'rangeHighlighter');
+
+  game.settings.register(MODULE_ID, 'displayBroadcastToggle', {
+    name: 'Display Broadcast Toggle Button',
+    hint: 'Scene control that allows broadcasting of measurements to all player clients.',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: MODULE_CONFIG.displayBroadcastToggle,
+    onChange: async (val) => {
+      MODULE_CONFIG.displayBroadcastToggle = val;
+      ui.controls.controls = ui.controls._getControlButtons();
+      ui.controls.render(true);
+    },
+  });
+  MODULE_CONFIG.displayBroadcastToggle = game.settings.get(MODULE_ID, 'displayBroadcastToggle');
 
   registerRulerLibWrapperMethods();
 

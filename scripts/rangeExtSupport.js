@@ -256,17 +256,29 @@ class Pf2eRange extends SystemRange {
   static getItemRange(item) {
     const ranges = [];
 
-    let range = item.range?.increment;
-    let longRange = item.range?.max;
+    if (item.range) {
+      let increment = item.range.increment;
+      let maxRange = item.range.max;
 
-    let rangeVal = item.system.range?.value;
-    if (rangeVal) {
-      rangeVal = parseInt(rangeVal);
-      if (Number.isFinite(rangeVal)) range = rangeVal;
+      if (increment && maxRange) {
+        let range = 0;
+        while (range < maxRange) {
+          range += increment;
+          if (range > maxRange) range = maxRange;
+          ranges.push(range);
+        }
+      } else if (increment) {
+        ranges.push(increment);
+      } else if (maxRange) {
+        ranges.push(maxRange);
+      }
     }
 
-    if (range) ranges.push(range);
-    if (longRange) ranges.push(longRange);
+    let range = item.system.range?.value;
+    if (range) {
+      range = parseInt(range);
+      if (Number.isFinite(range)) range = range;
+    }
 
     if (!ranges.length && item.isMelee) {
       if (item.system.traits.value?.includes('reach'))

@@ -1,3 +1,10 @@
+# 1.31.0
+
+- New setting: `Display Broadcast Toggle Button`
+  - Controls display of a scene control that allows broadcasting of GM measurements to players
+- Improved PF2e ranged weapon highlighting
+  - Each range increment will now be displayed instead of just the first and maximum
+
 # 1.30.0
 
 **PF2e**

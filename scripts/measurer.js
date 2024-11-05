@@ -912,18 +912,20 @@ export function registerBroadcasts() {
   });
 
   Hooks.on('getSceneControlButtons', (controls) => {
-    const tools = controls.find((c) => c.name === 'token').tools;
-    const insertIndex = tools.findIndex((t) => t.name === 'ruler') + 1;
-    tools.splice(insertIndex, 0, {
-      name: 'broadcastMeasures',
-      title: 'TacticalGrid: Broadcast Measurements',
-      icon: 'fa-solid fa-tower-broadcast',
-      visible: game.user.isGM,
-      active: MODULE_CLIENT_CONFIG.broadcastMeasures,
-      toggle: true,
-      onClick: () => {
-        game.settings.set(MODULE_ID, 'broadcastMeasures', !MODULE_CLIENT_CONFIG.broadcastMeasures);
-      },
-    });
+    if (MODULE_CONFIG.displayBroadcastToggle) {
+      const tools = controls.find((c) => c.name === 'token').tools;
+      const insertIndex = tools.findIndex((t) => t.name === 'ruler') + 1;
+      tools.splice(insertIndex, 0, {
+        name: 'broadcastMeasures',
+        title: 'TacticalGrid: Broadcast Measurements',
+        icon: 'fa-solid fa-tower-broadcast',
+        visible: game.user.isGM,
+        active: MODULE_CLIENT_CONFIG.broadcastMeasures,
+        toggle: true,
+        onClick: () => {
+          game.settings.set(MODULE_ID, 'broadcastMeasures', !MODULE_CLIENT_CONFIG.broadcastMeasures);
+        },
+      });
+    }
   });
 }
