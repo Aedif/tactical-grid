@@ -351,6 +351,8 @@ export function registerExternalModuleHooks() {
   _tokenActionHud();
   // DnD5e/Pf2e/DC20 Macro Bar
   _macroBar();
+  // pf2e HUD
+  _pf2eHud();
 }
 
 // DnD5e/PF2e Macro Bar
@@ -506,3 +508,61 @@ function _tokenActionHud() {
     if (token) RangeHighlightAPI.clearRangeHighlight(token);
   });
 }
+
+// PF2e HUD
+// https://foundryvtt.com/packages/pf2e-hud
+function _pf2eHud(){if (!game.modules.get('pf2e-hud')?.active) return;
+
+  let token;
+  let item;
+  
+  Hooks.on('renderPF2eHudSidebar', (hud, html, opts) => {
+    if (!itemRangeHighlightEnabled()) return;
+    hud.element.querySelectorAll('.item').forEach((div) => {
+      
+      $(div).on('mouseover', (event) => {
+        token = canvas.tokens?.ownedTokens.find((sceneToken) => sceneToken.actor == hud.actor);
+        item = hud.actor.items.get($(event.currentTarget).data('itemId'));
+        if (token && item) RangeHighlightAPI.rangeHighlight(token, { item });
+      });
+      
+      $(div).on('mouseleave', (event) => {
+        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      });
+
+    });
+  });
+
+  Hooks.on('renderPF2eHudPersistent', (hud, html, opts) => {
+    if (!itemRangeHighlightEnabled()) return;
+    
+    hud.element.querySelectorAll('.shortcut').forEach((div) => {
+      
+      $(div).on('mouseover', (event) => {
+        token = canvas.tokens?.ownedTokens.find((sceneToken) => sceneToken.actor == hud.actor);
+        item = hud.actor.items.find(embeddedItem => div.querySelector('.name')?.innerHTML.includes(embeddedItem.name));
+        if (token && item) RangeHighlightAPI.rangeHighlight(token, { item });
+      });
+
+      $(div).on('mouseleave', (event) => {
+        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      });
+
+    });
+    
+    hud.element.querySelectorAll('.macro').forEach((div) => {
+
+      $(div).on('mouseover', (event) => {
+        token = canvas.tokens?.ownedTokens.find((sceneToken) => sceneToken.actor == hud.actor);
+        item = _getItemFromMacroPf2e(game.macros.get($(div).data('macroId')), hud.actor);
+        if (token && item) RangeHighlightAPI.rangeHighlight(token, { item });
+      });
+
+      $(div).on('mouseleave', (event) => {
+        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      });
+      
+    });
+  }); 
+};
+
