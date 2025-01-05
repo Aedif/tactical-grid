@@ -203,9 +203,10 @@ class Dnd5eRange extends SystemRange {
   }
 
   static getItemRange(item, token) {
-    const ranges = [];
+    const ranges = new Set();
 
     if (item.system.range) {
+      let reach = item.system.range.reach || 0;
       let range = item.system.range.value || 0;
       let longRange = item.system.range.long || 0;
 
@@ -213,6 +214,7 @@ class Dnd5eRange extends SystemRange {
       if (item.system.range.units === 'ft' && canvas.scene.grid.units === 'm') {
         range *= 0.3;
         longRange *= 0.3;
+        reach *= 0.3;
       }
 
       let thrMelee = 0;
@@ -237,12 +239,13 @@ class Dnd5eRange extends SystemRange {
         }
       }
 
-      if (thrMelee) ranges.push(thrMelee);
-      if (range) ranges.push(range);
-      if (longRange) ranges.push(longRange);
+      if (reach) ranges.add(reach);
+      if (thrMelee) ranges.add(thrMelee);
+      if (range) ranges.add(range);
+      if (longRange) ranges.add(longRange);
     }
 
-    return ranges;
+    return Array.from(ranges);
   }
 }
 
@@ -274,6 +277,8 @@ class Pf2eRange extends SystemRange {
       } else if (maxRange) {
         ranges.push(maxRange);
       }
+    } else if (item.system.area?.type === 'emanation') {
+      if (Number.isFinite(item.system.area.value)) ranges.push(item.system.area.value);
     }
 
     let range = item.system.range?.value;
@@ -351,6 +356,8 @@ export function registerExternalModuleHooks() {
   _tokenActionHud();
   // DnD5e/Pf2e/DC20 Macro Bar
   _macroBar();
+  // PF2e HUD
+  _pf2eHud();
 }
 
 // DnD5e/PF2e Macro Bar
@@ -410,6 +417,9 @@ function _getItemFromMacroPf2e(macro, actor) {
     match = macro.command.match(/^game\.pf2e\.rollActionMacro\(.*itemId: *"(?<itemId>[A-Za-z0-9]+)"/);
   } else if (macro.getFlag('pf2e', 'itemMacro')) {
     match = macro.command.match(/^game\.pf2e\.rollItemMacro\(" *(?<itemId>[A-Za-z0-9]+)"/);
+    if (!match) {
+      match = macro.command.match(/^game\.pf2e\.rollItemMacro\("Actor\.([A-Za-z0-9]+)\.Item\.(?<itemId>[A-Za-z0-9]+)"/);
+    }
   }
 
   if (match) {
@@ -504,5 +514,67 @@ function _tokenActionHud() {
 
   Hooks.on('tokenActionHudSystemActionHoverOff', (event, item) => {
     if (token) RangeHighlightAPI.clearRangeHighlight(token);
+  });
+}
+
+// PF2e HUD
+// https://foundryvtt.com/packages/pf2e-hud
+function _pf2eHud() {
+  if (!game.modules.get('pf2e-hud')?.active) return;
+
+  const getPersistentToken = function () {
+    return game.hud.persistent.actor.getActiveTokens().filter((t) => t.controlled)[0];
+  };
+
+  Hooks.on('renderPF2eHudPersistent', (hud, html, opts) => {
+    if (!itemRangeHighlightEnabled()) return;
+
+    // Shortcuts
+    $(html)
+      .on('mouseenter', '.shortcut', (event) => {
+        const persistent = game.hud.persistent;
+
+        const shortcut = persistent.shortcuts.getShortcutFromElement(event.currentTarget);
+        const item = persistent.actor.items.get(shortcut.itemId);
+        const token = getPersistentToken();
+
+        if (item && token) RangeHighlightAPI.rangeHighlight(token, { item });
+      })
+      .on('mouseleave', '.shortcut', () => {
+        const token = getPersistentToken();
+        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      });
+
+    // Macros
+    $(html)
+      .on('mouseenter', '.macro', (event) => {
+        const item = _getItemFromMacroPf2e(
+          game.macros.get($(event.currentTarget).data('macroId')),
+          game.hud.persistent.actor
+        );
+        const token = getPersistentToken();
+        if (item && token) RangeHighlightAPI.rangeHighlight(token, { item });
+      })
+      .on('mouseleave', '.macro', () => {
+        const token = getPersistentToken();
+        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      });
+  });
+
+  // Sidebar
+  Hooks.on('renderPF2eHudSidebar', (sidebar, html) => {
+    if (!itemRangeHighlightEnabled()) return;
+
+    // Items
+    $(html)
+      .on('mouseenter', '.item', (event) => {
+        const item = game.hud.persistent.actor.items.get($(event.currentTarget).data('itemId'));
+        const token = getPersistentToken();
+        if (item && token) RangeHighlightAPI.rangeHighlight(token, { item });
+      })
+      .on('mouseleave', '.item', () => {
+        const token = getPersistentToken();
+        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      });
   });
 }
