@@ -1,3 +1,9 @@
+# 1.31.1
+
+- Fixed some DnD5e melee weapon ranges not being highlighted
+- Fixed Pf2e emanation range not being highlighted
+- Support for `PF2e HUD` module
+
 # 1.31.0
 
 - New setting: `Display Broadcast Toggle Button`
