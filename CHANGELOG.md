@@ -1,4 +1,4 @@
-# 1.31.1
+# 1.32.0
 
 - Fixed some DnD5e melee weapon ranges not being highlighted
 - Fixed Pf2e emanation range not being highlighted
