@@ -505,7 +505,7 @@ function _tokenActionHud() {
       token = null;
       return;
     }
-    token = hud.token;
+    token = hud.hudManager.token;
   });
 
   Hooks.on('tokenActionHudSystemActionHoverOn', (event, item) => {
