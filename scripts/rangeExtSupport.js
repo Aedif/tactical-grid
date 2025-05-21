@@ -10,6 +10,7 @@ export function registerActorSheetHooks() {
   } else {
     Hooks.on('renderActorSheet', _genericActorSheetHook);
     if (game.system.id === 'pf2e') Hooks.on('renderActorSheet', _pf2eActorSheetHook);
+    if (game.system.id === 'dnd5e') Hooks.on('renderActivityChoiceDialog', _dnd5eActivityChoiceDialogHook);
   }
 }
 
@@ -52,6 +53,28 @@ function _crucibleActorSheetHook(sheet, form, options) {
       if (weapon) _hoverItem(sheet, weapon.id);
     })
     .on('mouseleave', () => _hoverLeaveItem(sheet));
+}
+
+function _dnd5eActivityChoiceDialogHook(app, html) {
+  if (!itemRangeHighlightEnabled()) return;
+
+  $(html)
+    .find('[data-application-part="activities"] button[data-activity-id!=""]')
+    .on('mouseenter', (event) => {
+      const activityId = $(event.currentTarget).data('activityId');
+      const activity = app.item.system.activities.get(activityId);
+      if (!activity) return;
+      console.log(activity);
+
+      app.item.actor.getActiveTokens().forEach((token) => {
+        RangeHighlightAPI.rangeHighlight(token, { item: activity });
+      });
+    })
+    .on('mouseleave', () => {
+      app.item.actor.getActiveTokens().forEach((token) => {
+        RangeHighlightAPI.clearRangeHighlight(token);
+      });
+    });
 }
 
 /**
@@ -205,13 +228,33 @@ class Dnd5eRange extends SystemRange {
   static getItemRange(item, token) {
     const ranges = new Set();
 
-    if (item.system.range) {
-      let reach = item.system.range.reach || 0;
-      let range = item.system.range.value || 0;
-      let longRange = item.system.range.long || 0;
+    let itemRangeOverride;
+
+    // Handle activities
+    if (item.documentName === 'Activity') {
+      if (item.range.override) itemRangeOverride = item.range;
+
+      if (item.type === 'cast') {
+        item = fromUuidSync(item.spell.uuid);
+      } else if (item.type === 'attack') {
+        item = item.item;
+      } else {
+        console.log(item);
+        item = null;
+      }
+      if (!item) return [];
+    }
+
+    const itemRange = itemRangeOverride ?? item.system.range;
+
+    if (itemRange) {
+      let reach = itemRange.reach || 0;
+      let range = itemRange.value || 0;
+      let longRange = itemRange.long || 0;
+      let special = Number(itemRange.special);
 
       // If item range is measured in 'ft' but canvas is set to 'm', convert the range value
-      if (item.system.range.units === 'ft' && canvas.scene.grid.units === 'm') {
+      if (itemRange.units === 'ft' && canvas.scene.grid.units === 'm') {
         range *= 0.3;
         longRange *= 0.3;
         reach *= 0.3;
@@ -226,7 +269,7 @@ class Dnd5eRange extends SystemRange {
         longRange = 2 * longRange;
       }
 
-      if (item.system.range.units === 'touch') {
+      if (itemRange.units === 'touch') {
         range = this._getUnitAdjustedRange(this._hasProperty(item, 'rch') ? 2 : 1);
         longRange = 0;
       }
@@ -243,6 +286,7 @@ class Dnd5eRange extends SystemRange {
       if (thrMelee) ranges.add(thrMelee);
       if (range) ranges.add(range);
       if (longRange) ranges.add(longRange);
+      if (special) ranges.add(longRange);
     }
 
     return Array.from(ranges);
