@@ -330,11 +330,7 @@ export function registerRangeHighlightHooks() {
       token._tgRange.highlight();
     }
 
-    if (
-      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure &&
-      token._original &&
-      canvas.controls.ruler?._state === Ruler.STATES.INACTIVE
-    ) {
+    if (MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure && token._original && !canvas.controls.ruler?.active) {
       DistanceMeasurer.showMeasures();
     }
   });
@@ -350,11 +346,7 @@ export function registerRangeHighlightHooks() {
       RangeHighlightAPI.clearRangeHighlight(token, { force: true });
     }
 
-    if (
-      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure &&
-      token._original &&
-      canvas.controls.ruler?._state === Ruler.STATES.INACTIVE
-    ) {
+    if (MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure && token._original && !canvas.controls.ruler?.active) {
       DistanceMeasurer.hideMeasures();
     }
   });

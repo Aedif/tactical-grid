@@ -32,123 +32,88 @@ let registeredWrappers = [];
 export function registerGridWrappers(lineWidth) {
   if (foundry.utils.isNewerVersion(game.version, 12)) return;
   unregisterGridWrappers();
-  if (typeof libWrapper === 'function') {
-    let squareWrap;
 
-    if (isNewerVersion('11', game.version)) {
-      squareWrap = libWrapper.register(
-        MODULE_ID,
-        'SquareGrid.prototype._drawLine',
-        function (points, lineColor, lineAlpha) {
-          let line = new PIXI.Graphics();
-          line.lineStyle(lineWidth, lineColor, lineAlpha).moveTo(points[0], points[1]).lineTo(points[2], points[3]);
-          return line;
-        },
-        'OVERRIDE'
-      );
-    } else {
-      squareWrap = libWrapper.register(
-        MODULE_ID,
-        'SquareGrid.prototype.draw',
-        function (options = {}) {
-          Object.getPrototypeOf(SquareGrid).prototype.draw.call(this, options);
-          // SquareGrid.prototype.draw.call(this, options);
-          let { color, alpha, dimensions } = foundry.utils.mergeObject(this.options, options);
+  let squareWrap;
 
-          // Set dimensions
-          this.width = dimensions.width;
-          this.height = dimensions.height;
-
-          // Need to draw?
-          if (alpha === 0) return this;
-
-          // Vertical lines
-          let nx = Math.floor(dimensions.width / dimensions.size);
-          const grid = new PIXI.Graphics();
-          for (let i = 1; i < nx; i++) {
-            let x = i * dimensions.size;
-            grid.lineStyle(lineWidth, color, alpha).moveTo(x, 0).lineTo(x, dimensions.height);
-          }
-
-          // Horizontal lines
-          let ny = Math.ceil(dimensions.height / dimensions.size);
-          for (let i = 1; i < ny; i++) {
-            let y = i * dimensions.size;
-            grid.lineStyle(lineWidth, color, alpha).moveTo(0, y).lineTo(dimensions.width, y);
-          }
-          this.addChild(grid);
-          return this;
-        },
-        'OVERRIDE'
-      );
-    }
-
-    let hexWrap = libWrapper.register(
+  if (isNewerVersion('11', game.version)) {
+    squareWrap = libWrapper.register(
       MODULE_ID,
-      'HexagonalGrid.prototype._drawGrid',
-      function ({ color = null, alpha = null } = {}) {
-        color = color ?? this.options.color;
-        alpha = alpha ?? this.options.alpha;
-        const columnar = this.columnar;
-        const ncols = Math.ceil(canvas.dimensions.width / this.w);
-        const nrows = Math.ceil(canvas.dimensions.height / this.h);
-
-        // Draw Grid graphic
-        const grid = new PIXI.Graphics();
-        grid.lineStyle({ width: lineWidth, color, alpha });
-
-        // Draw hex rows
-        if (columnar) this._drawColumns(grid, nrows, ncols);
-        else this._drawRows(grid, nrows, ncols);
-        return grid;
+      'SquareGrid.prototype._drawLine',
+      function (points, lineColor, lineAlpha) {
+        let line = new PIXI.Graphics();
+        line.lineStyle(lineWidth, lineColor, lineAlpha).moveTo(points[0], points[1]).lineTo(points[2], points[3]);
+        return line;
       },
       'OVERRIDE'
     );
+  } else {
+    squareWrap = libWrapper.register(
+      MODULE_ID,
+      'SquareGrid.prototype.draw',
+      function (options = {}) {
+        Object.getPrototypeOf(SquareGrid).prototype.draw.call(this, options);
+        // SquareGrid.prototype.draw.call(this, options);
+        let { color, alpha, dimensions } = foundry.utils.mergeObject(this.options, options);
 
-    registeredWrappers.push(squareWrap);
-    registeredWrappers.push(hexWrap);
+        // Set dimensions
+        this.width = dimensions.width;
+        this.height = dimensions.height;
+
+        // Need to draw?
+        if (alpha === 0) return this;
+
+        // Vertical lines
+        let nx = Math.floor(dimensions.width / dimensions.size);
+        const grid = new PIXI.Graphics();
+        for (let i = 1; i < nx; i++) {
+          let x = i * dimensions.size;
+          grid.lineStyle(lineWidth, color, alpha).moveTo(x, 0).lineTo(x, dimensions.height);
+        }
+
+        // Horizontal lines
+        let ny = Math.ceil(dimensions.height / dimensions.size);
+        for (let i = 1; i < ny; i++) {
+          let y = i * dimensions.size;
+          grid.lineStyle(lineWidth, color, alpha).moveTo(0, y).lineTo(dimensions.width, y);
+        }
+        this.addChild(grid);
+        return this;
+      },
+      'OVERRIDE'
+    );
   }
+
+  let hexWrap = libWrapper.register(
+    MODULE_ID,
+    'HexagonalGrid.prototype._drawGrid',
+    function ({ color = null, alpha = null } = {}) {
+      color = color ?? this.options.color;
+      alpha = alpha ?? this.options.alpha;
+      const columnar = this.columnar;
+      const ncols = Math.ceil(canvas.dimensions.width / this.w);
+      const nrows = Math.ceil(canvas.dimensions.height / this.h);
+
+      // Draw Grid graphic
+      const grid = new PIXI.Graphics();
+      grid.lineStyle({ width: lineWidth, color, alpha });
+
+      // Draw hex rows
+      if (columnar) this._drawColumns(grid, nrows, ncols);
+      else this._drawRows(grid, nrows, ncols);
+      return grid;
+    },
+    'OVERRIDE'
+  );
+
+  registeredWrappers.push(squareWrap);
+  registeredWrappers.push(hexWrap);
 }
 
 export function unregisterGridWrappers() {
-  if (typeof libWrapper === 'function') {
-    for (const wrp of registeredWrappers) {
-      libWrapper.unregister(MODULE_ID, wrp, false);
-    }
-    registeredWrappers = [];
+  for (const wrp of registeredWrappers) {
+    libWrapper.unregister(MODULE_ID, wrp, false);
   }
-}
-
-/**
- * Find the nearest point on a rectangle given a point on the scene
- * @param {*} rect {minX, maxX, minY, maxY}
- * @param {*} p {x, y}
- * @returns nearest point {x, y}
- */
-export function nearestPointToRectangle(rect, p) {
-  const nearest = { x: p.x, y: p.y };
-  if (p.x < rect.minX) nearest.x = rect.minX;
-  else if (p.x > rect.maxX) nearest.x = rect.maxX;
-
-  if (p.y < rect.minY) nearest.y = rect.minY;
-  else if (p.y > rect.maxY) nearest.y = rect.maxY;
-  return nearest;
-}
-
-/**
- * Find the nearest point on a circle given a point on the scene
- * @param {*} c {x, y, r}
- * @param {*} p {x, y}
- * @returns nearest point {x, y}
- */
-export function nearestPointToCircle(c, p) {
-  // If c === p, return any edge
-  if (c.x === p.x && c.y === p.y) return { x: p.x, y: p.y };
-  let vX = p.x - c.x;
-  let vY = p.y - c.y;
-  let magV = Math.sqrt(vX * vX + vY * vY);
-  if (magV <= c.r) return { x: p.x, y: p.y };
-  return { x: c.x + (vX / magV) * c.r, y: c.y + (vY / magV) * c.r };
+  registeredWrappers = [];
 }
 
 // =======================================================

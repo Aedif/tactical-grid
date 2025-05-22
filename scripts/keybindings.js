@@ -1,5 +1,6 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG, updateSettings } from '../applications/settings.js';
 import { GRID_MASK } from '../tactical-grid.js';
+import { TacticalGridCalculator } from './calculator.js';
 import { DistanceMeasurer } from './measurer.js';
 import { MODULE_ID, cleanLayerName } from './utils.js';
 
@@ -79,12 +80,10 @@ export function registerKeybindings() {
       },
     ],
     onUp: () => {
-      DistanceMeasurer.keyPressed = false;
-      DistanceMeasurer.hideMeasures();
+      TacticalGrid.distanceCalculator.hideLabels();
     },
     onDown: (event) => {
-      DistanceMeasurer.keyPressed = true;
-      DistanceMeasurer.showMeasures();
+      TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(canvas.tokens.hover ?? canvas.tokens.controlled[0]);
     },
     restricted: false,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,

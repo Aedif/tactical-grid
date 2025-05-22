@@ -50,10 +50,9 @@ export class GridMaskContainer extends CachedContainer {
         (MODULE_CONFIG.enableOnHover && (layer.highlightObjects || p.hover || hasPreview(p)))
     );
 
-    if (MODULE_CONFIG.enableOnRuler && typeof libWrapper === 'function') {
+    if (MODULE_CONFIG.enableOnRuler) {
       let ruler = canvas.controls.ruler;
-      if (ruler && ruler._state !== Ruler.STATES.INACTIVE) {
-        ruler.id = 'RULER';
+      if (ruler?.active) {
         if (!ruler.center) {
           Object.defineProperty(ruler, 'center', {
             get: () => ruler.destination,

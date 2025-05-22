@@ -1,11 +1,6 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import {
-  computeCoverBonus,
-  MODULE_ID,
-  nearestPointToCircle,
-  nearestPointToRectangle,
-  tokenHasEffect,
-} from './utils.js';
+import { DistanceUtilities } from './calculator.js';
+import { computeCoverBonus, MODULE_ID, tokenHasEffect } from './utils.js';
 
 export let TEXT_STYLE;
 
@@ -43,7 +38,7 @@ export class DistanceMeasurer {
       DistanceMeasurer.gridSpaces = gridSpaces;
       DistanceMeasurer.snap =
         canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
-        !game.keyboard.isModifierActive(KeyboardManager.MODIFIER_KEYS.SHIFT);
+        !game.keyboard.isModifierActive(foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS.SHIFT);
       DistanceMeasurer.setOrigin();
     }
 
@@ -101,23 +96,6 @@ export class DistanceMeasurer {
     }
   }
 
-  static _tokenAtRulerOrigin(ruler) {
-    const rOrigin = ruler.waypoints[0];
-    const token = canvas.tokens.controlled.find(
-      (t) =>
-        Number.between(rOrigin.x, t.x, t.x + t.hitArea.width) && Number.between(rOrigin.y, t.y, t.y + t.hitArea.height)
-    );
-
-    if (token) {
-      const destination = { ...ruler.destination };
-      destination.x -= token.w / 2;
-      destination.y -= token.h / 2;
-      const clone = this.getClone(token, this.snap, destination);
-      return clone;
-    }
-    return null;
-  }
-
   static setOrigin(pos = null) {
     let origin;
     let originToken = null;
@@ -125,21 +103,20 @@ export class DistanceMeasurer {
 
     // If a ruler is active we will not use a token as origin
     // unless the token has a preview implying it is being dragged
-    // together with the ruler (e.g. `Drag Ruler` module)
+    // together with the ruler
     const ruler = canvas.controls.ruler;
     let rulerMeasurement = false;
 
-    // If there are no token previews and the ruler is active we may may pickup the token at ruler origin
+    // If there are no token previews and the ruler is active we may pickup the token at ruler origin
     if (
       !canvas.tokens.preview.children.length &&
-      ruler &&
-      ruler._state !== Ruler.STATES.INACTIVE &&
+      ruler?.active &&
       (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure ||
         MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure ||
         DistanceMeasurer.keyPressed)
     ) {
       rulerMeasurement = true;
-      originToken = DistanceMeasurer._tokenAtRulerOrigin(ruler);
+      originToken = canvas.tokens.preview.children[0];
 
       if (!originToken) {
         origin = foundry.utils.deepClone(ruler.destination);
@@ -153,20 +130,6 @@ export class DistanceMeasurer {
       } else if (canvas.tokens.controlled.length === 1) {
         originToken = canvas.tokens.controlled[0];
       }
-
-      if (originToken) {
-        if (originToken.hasPreview || pos) {
-          if (!pos) originToken = originToken._preview;
-          originToken = this.getClone(originToken, this.snap, pos);
-          highlight = Boolean(pos);
-        }
-      }
-    }
-
-    // 'Elevation Ruler' module support
-    // https://foundryvtt.com/packages/elevationruler
-    if (originToken && ruler?._state !== Ruler.STATES.INACTIVE && ruler.destination._userElevationIncrements != null) {
-      originToken.document.elevation += ruler.destination._userElevationIncrements * canvas.dimensions.distance;
     }
 
     if (pos) origin = pos;
@@ -275,9 +238,12 @@ export class DistanceMeasurer {
 
         const b = token.bounds;
         if (MODULE_CONFIG.measurement.gridlessCircle) {
-          target = nearestPointToCircle({ ...token.center, r: Math.min(b.width, b.height) / 2 }, fromPoint);
+          target = DistanceUtilities.nearestPointToCircle(
+            { ...token.center, r: Math.min(b.width, b.height) / 2 },
+            fromPoint
+          );
         } else {
-          target = nearestPointToRectangle(
+          target = DistanceUtilities.nearestPointToRectangle(
             {
               minX: b.x,
               minY: b.y,
@@ -379,32 +345,6 @@ export class DistanceMeasurer {
     }
   }
 
-  static getClone(token, snap = false, pos = null) {
-    if (this.clone && this.clone.id === token.id && this.clone.w === token.w && this.clone.h === token.h) {
-      //
-    } else {
-      // if (this.clone) this.clone.destroy();
-      const cloneDoc = token.document.clone({}, { keepId: true });
-      this.clone = new CONFIG.Token.objectClass(cloneDoc);
-      this.clone.eventMode = 'none';
-      cloneDoc._object = this.clone;
-    }
-
-    if (pos) pos = getTopLeft(pos);
-    if (!pos) pos = { x: token.x, y: token.y };
-    if (snap) pos = getSnappedPosition(pos);
-
-    // Set position to original
-    this.clone.document.x = pos.x;
-    this.clone.document.y = pos.y;
-    this.clone.x = pos.x;
-    this.clone.y = pos.y;
-    this.clone.document.elevation = token.document.elevation;
-    //this.clone.updateSource({ x: pos.x, y: pos.y, elevation: token.document.elevation });
-
-    return this.clone;
-  }
-
   static addUpdateLabel(token, x, y, text, cover) {
     if (cover != null) {
       const labels = MODULE_CONFIG.cover;
@@ -424,7 +364,7 @@ export class DistanceMeasurer {
     }
 
     if (!TEXT_STYLE) {
-      TEXT_STYLE = PreciseText.getTextStyle({
+      TEXT_STYLE = foundry.canvas.containers.PreciseText.getTextStyle({
         ...MODULE_CONFIG.measurement,
         fontFamily: [MODULE_CONFIG.measurement.fontFamily, 'fontAwesome'].join(','),
       });
@@ -442,7 +382,7 @@ export class DistanceMeasurer {
       TEXT_STYLE.fontSize = MODULE_CONFIG.measurement.fontSize;
     }
 
-    let pText = new PreciseText(text, TEXT_STYLE);
+    let pText = new foundry.canvas.containers.PreciseText(text, TEXT_STYLE);
     pText.anchor.set(0.5);
 
     // Apply to _impreciseMesh (Vision5e support) if it's visible
@@ -629,9 +569,9 @@ function nearestOriginPoint(oToken, tToken) {
   const center = oToken.center;
   if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
     if (MODULE_CONFIG.measurement.gridlessCircle) {
-      return nearestPointToCircle({ ...center, r: Math.min(oToken.w, oToken.h) / 2 }, tToken.center);
+      return DistanceUtilities.nearestPointToCircle({ ...center, r: Math.min(oToken.w, oToken.h) / 2 }, tToken.center);
     } else {
-      return nearestPointToRectangle(
+      return DistanceUtilities.nearestPointToRectangle(
         {
           minX: center.x - oToken.w / 2,
           minY: center.y - oToken.h / 2,

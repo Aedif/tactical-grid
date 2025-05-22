@@ -1,7 +1,6 @@
 import { DistanceMeasurer, TEXT_STYLE } from '../scripts/measurer.js';
 import { MODULE_ID, getGridColorString } from '../scripts/utils.js';
 import { GRID_MASK } from '../tactical-grid.js';
-import { readDeprecated } from './deprecatedSettings.js';
 
 export const MODULE_CONFIG = {
   defaultViewDistance: 4,
@@ -21,7 +20,7 @@ export const MODULE_CONFIG = {
     hostile: 0xff0000,
   },
   layerEnabled: {
-    TokenLayer: true,
+    TokenLayer: false,
     TemplateLayer: false,
     TilesLayer: false,
     DrawingsLayer: false,
@@ -242,11 +241,6 @@ export default class TGSettingsConfig extends FormApplication {
 }
 
 export function registerSettings() {
-  // 08/03/23 - Remove some point in the future once enough
-  // confidence is had that all previous version users had
-  // ran the module and saved the settings in a new format
-  readDeprecated(MODULE_CONFIG);
-
   game.settings.register(MODULE_ID, 'settings', {
     scope: 'world',
     config: false,
@@ -367,8 +361,7 @@ export function registerSettings() {
     default: MODULE_CONFIG.displayBroadcastToggle,
     onChange: async (val) => {
       MODULE_CONFIG.displayBroadcastToggle = val;
-      ui.controls.controls = ui.controls._getControlButtons();
-      ui.controls.render(true);
+      ui.controls.render({ reset: true });
     },
   });
   MODULE_CONFIG.displayBroadcastToggle = game.settings.get(MODULE_ID, 'displayBroadcastToggle');
@@ -380,9 +373,9 @@ export function registerSettings() {
    *  =======================================================
    */
   Hooks.on('renderTokenConfig', (tokenConfig) => {
-    const viewDistance = tokenConfig.object.getFlag(MODULE_ID, 'viewDistance') ?? '';
-    const viewShape = tokenConfig.object.getFlag(MODULE_ID, 'viewShape') ?? '';
-    const shapeColor = tokenConfig.object.getFlag(MODULE_ID, 'color') ?? '';
+    const viewDistance = tokenConfig.document.getFlag(MODULE_ID, 'viewDistance') ?? '';
+    const viewShape = tokenConfig.document.getFlag(MODULE_ID, 'viewShape') ?? '';
+    const shapeColor = tokenConfig.document.getFlag(MODULE_ID, 'color') ?? '';
     const gridColor = getGridColorString();
 
     let options = '<option value=""></option>';
@@ -419,38 +412,37 @@ export function registerSettings() {
   </fieldset>
     `);
 
-    $(tokenConfig.form).find('[name="sight.visionMode"]').closest('.form-group').after(control);
+    $(tokenConfig.element).find('[name="sight.visionMode"]').closest('.form-group').after(control);
     tokenConfig.setPosition({ height: 'auto' });
   });
 
-  if (typeof libWrapper === 'function') {
-    ['Token', 'TokenLayer'].forEach((clsName) => {
-      libWrapper.register(
-        MODULE_ID,
-        `${clsName}.prototype._onClickLeft`,
-        function (wrapped, ...args) {
-          let result = wrapped(...args);
-          try {
-            // v11 args[0].interactionData?.origin
-            DistanceMeasurer.clickLeft(args[0].interactionData?.origin ?? args[0].data?.origin);
-          } catch (e) {
-            console.log(e);
-          }
-          return result;
-        },
-        'WRAPPER'
-      );
-    });
+  ['Token', 'TokenLayer'].forEach((clsName) => {
+    libWrapper.register(
+      MODULE_ID,
+      `${clsName}.prototype._onClickLeft`,
+      function (wrapped, ...args) {
+        let result = wrapped(...args);
+        try {
+          // v11 args[0].interactionData?.origin
+          DistanceMeasurer.clickLeft(args[0].interactionData?.origin ?? args[0].data?.origin);
+        } catch (e) {
+          console.log(e);
+        }
+        return result;
+      },
+      'WRAPPER'
+    );
+  });
 
-    if (foundry.utils.isNewerVersion(12, game.version)) {
-      /** =================================
-       *  Insert scene grid line width flag
-       *  =================================
-       */
-      Hooks.on('renderSceneConfig', (sceneConfig) => {
-        const lineWidth = sceneConfig.object.getFlag(MODULE_ID, 'gridLineWidth') ?? 1;
+  if (foundry.utils.isNewerVersion(12, game.version)) {
+    /** =================================
+     *  Insert scene grid line width flag
+     *  =================================
+     */
+    Hooks.on('renderSceneConfig', (sceneConfig) => {
+      const lineWidth = sceneConfig.object.getFlag(MODULE_ID, 'gridLineWidth') ?? 1;
 
-        const control = $(`
+      const control = $(`
 <fieldset>
   <legend>Tactical Grid</legend>
   <div class="form-group">
@@ -464,10 +456,9 @@ export function registerSettings() {
 </fieldset>
     `);
 
-        $(sceneConfig.form).find('[name="grid.alpha"]').closest('.form-group').after(control);
-        sceneConfig.setPosition({ height: 'auto' });
-      });
-    }
+      $(sceneConfig.form).find('[name="grid.alpha"]').closest('.form-group').after(control);
+      sceneConfig.setPosition({ height: 'auto' });
+    });
   }
 }
 
@@ -508,79 +499,76 @@ export async function updateSettings(newSettings) {
 let rulerWrappers = [];
 
 export function registerRulerLibWrapperMethods() {
-  if (typeof libWrapper === 'function') {
-    unregisterRulerLibWrapperMethods();
-    let id;
-    if (MODULE_CONFIG.enableOnRuler) {
-      id = libWrapper.register(
-        MODULE_ID,
-        'CONFIG.Canvas.rulerClass.prototype._onDragStart',
-        function (wrapped, ...args) {
-          let result = wrapped(...args);
-          if (this.user.id === game.user.id) GRID_MASK.container.drawMask();
-          return result;
-        },
-        'WRAPPER'
-      );
-      rulerWrappers.push(id);
-      id = libWrapper.register(
-        MODULE_ID,
-        'CONFIG.Canvas.rulerClass.prototype._onMouseMove',
-        function (wrapped, ...args) {
-          let result = wrapped(...args);
-          if (this.user.id === game.user.id) GRID_MASK.container.setMaskPosition(this);
-          return result;
-        },
-        'WRAPPER'
-      );
-      rulerWrappers.push(id);
-    }
-
+  unregisterRulerLibWrapperMethods();
+  let id;
+  if (MODULE_CONFIG.enableOnRuler) {
     id = libWrapper.register(
       MODULE_ID,
-      'CONFIG.Canvas.rulerClass.prototype.measure',
+      'CONFIG.Canvas.rulerClass.prototype._onDragStart',
       function (wrapped, ...args) {
         let result = wrapped(...args);
-        if (this.user.id === game.user.id) {
-          const tokenPreviews = canvas.tokens.preview.children;
-          if (
-            (!tokenPreviews.length && MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) ||
-            (tokenPreviews.length && MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) ||
-            DistanceMeasurer.keyPressed
-          ) {
-            DistanceMeasurer.showMeasures({
-              gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
-            });
-          }
-        }
+        if (this.user.id === game.user.id) GRID_MASK.container.drawMask();
         return result;
       },
       'WRAPPER'
     );
     rulerWrappers.push(id);
-
-    id = libWrapper.register(
-      MODULE_ID,
-      'CONFIG.Canvas.rulerClass.prototype._endMeasurement',
-      function (wrapped, ...args) {
-        let result = wrapped(...args);
-        if (this.user.id === game.user.id) {
-          if (MODULE_CONFIG.enableOnRuler) GRID_MASK.container.drawMask();
-          DistanceMeasurer.hideMeasures();
-        }
-        return result;
-      },
-      'WRAPPER'
-    );
-    rulerWrappers.push(id);
+    // id = libWrapper.register(
+    //   MODULE_ID,
+    //   'CONFIG.Canvas.rulerClass.prototype._onMouseMove',
+    //   function (wrapped, ...args) {
+    //     let result = wrapped(...args);
+    //     if (this.user.id === game.user.id) GRID_MASK.container.setMaskPosition(this);
+    //     return result;
+    //   },
+    //   'WRAPPER'
+    // );
+    // rulerWrappers.push(id);
   }
+
+  id = libWrapper.register(
+    MODULE_ID,
+    'CONFIG.Canvas.rulerClass.prototype._onPathChange',
+    function (wrapped, ...args) {
+      let result = wrapped(...args);
+      if (this.user.id === game.user.id) {
+        GRID_MASK.container.setMaskPosition({ id: 'RULER', center: this.destination });
+        const tokenPreviews = canvas.tokens.preview.children;
+        if (
+          (!tokenPreviews.length && MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) ||
+          (tokenPreviews.length && MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) ||
+          DistanceMeasurer.keyPressed
+        ) {
+          DistanceMeasurer.showMeasures({
+            gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
+          });
+        }
+      }
+      return result;
+    },
+    'WRAPPER'
+  );
+  rulerWrappers.push(id);
+
+  id = libWrapper.register(
+    MODULE_ID,
+    'CONFIG.Canvas.rulerClass.prototype._onDragCancel',
+    function (wrapped, ...args) {
+      let result = wrapped(...args);
+      if (this.user.id === game.user.id) {
+        if (MODULE_CONFIG.enableOnRuler) GRID_MASK.container.drawMask();
+        DistanceMeasurer.hideMeasures();
+      }
+      return result;
+    },
+    'WRAPPER'
+  );
+  rulerWrappers.push(id);
 }
 
 function unregisterRulerLibWrapperMethods() {
-  if (typeof libWrapper === 'function') {
-    for (const id of rulerWrappers) {
-      libWrapper.unregister(MODULE_ID, id);
-    }
-    rulerWrappers = [];
+  for (const id of rulerWrappers) {
+    libWrapper.unregister(MODULE_ID, id);
   }
+  rulerWrappers = [];
 }
