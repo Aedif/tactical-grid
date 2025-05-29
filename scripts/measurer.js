@@ -1,6 +1,6 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
 import { DistanceUtilities } from './calculator.js';
-import { computeCoverBonus, MODULE_ID, tokenHasEffect } from './utils.js';
+import { MODULE_ID, tokenHasEffect } from './utils.js';
 
 export let TEXT_STYLE;
 

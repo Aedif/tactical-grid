@@ -1,8 +1,7 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
+import { computeCoverBonus } from './cover.js';
 import { getHexOffsets } from './measurer.js';
 import { tokenHasEffect } from './utils.js';
-
-// TODO: implement click-left
 
 export let TEXT_STYLE;
 
@@ -197,12 +196,8 @@ export class TacticalGridCalculator {
       /// Calculate Cover
       if (MODULE_CONFIG.cover.calculator !== 'none' && (!MODULE_CONFIG.cover.combatOnly || game.combat?.started)) {
         if (originToken.id !== token.id) {
-          try {
-            cover = computeCoverBonus(originToken, token);
-            if (cover) toPoints.forEach((p) => (p.cover = cover));
-          } catch (e) {
-            console.error(e);
-          }
+          let cover = computeCoverBonus(originToken, token);
+          if (cover) toPoints.forEach((p) => (p.cover = cover));
         }
       }
 
