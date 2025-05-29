@@ -1,12 +1,11 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import { DistanceMeasurer, getHexOffsets } from './measurer.js';
+import { getHexOffsets } from './measurer.js';
 import { getRangeCalculator, registerActorSheetHooks, registerExternalModuleHooks } from './rangeExtSupport.js';
 import { MODULE_ID } from './utils.js';
 
 export class RangeHighlighter {
-  constructor(token, ranges, { roundToken = false } = {}) {
+  constructor(token, ranges) {
     this.token = token;
-    this.roundToken = roundToken;
 
     if (ranges instanceof Array) this.ranges = ranges;
     else this.ranges = [ranges];
@@ -91,22 +90,29 @@ export class RangeHighlighter {
       for (const r of this.ranges) {
         let shape;
 
-        if (this.roundToken) {
-          shape = new PIXI.Ellipse(
-            this.token.center.x,
-            this.token.center.y,
-            r.range * canvas.dimensions.distancePixels + this.token.w / 2,
-            r.range * canvas.dimensions.distancePixels + this.token.h / 2
-          );
+        const tShape = this.token.document.shape;
+        const { width, height } = this.token.document.getSize();
+        const { x, y } = this.token.center;
+
+        if (tShape === CONST.TOKEN_SHAPES.ELLIPSE_1 || tShape === CONST.TOKEN_SHAPES.ELLIPSE_2) {
+          if (width === height) {
+            const radius = r.range * canvas.dimensions.distancePixels + width / 2;
+            shape = new PIXI.Circle(x, y, radius, radius);
+          } else {
+            const radiusX = r.range * canvas.dimensions.distancePixels + width / 2;
+            const radiusY = r.range * canvas.dimensions.distancePixels + height / 2;
+
+            shape = new PIXI.Ellipse(x, y, radiusX, radiusY);
+          }
         } else {
-          const width = this.token.w + r.range * 2 * canvas.dimensions.distancePixels;
-          const height = this.token.h + r.range * 2 * canvas.dimensions.distancePixels;
+          const rwidth = width + r.range * 2 * canvas.dimensions.distancePixels;
+          const rheight = height + r.range * 2 * canvas.dimensions.distancePixels;
 
           shape = new PIXI.RoundedRectangle(
-            this.token.center.x - width / 2,
-            this.token.center.y - height / 2,
-            width,
-            height,
+            x - rwidth / 2,
+            y - rheight / 2,
+            rwidth,
+            rheight,
             r.range * canvas.dimensions.distancePixels
           );
         }
@@ -329,10 +335,6 @@ export function registerRangeHighlightHooks() {
       token._tgRange.token = token;
       token._tgRange.highlight();
     }
-
-    if (MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure && token._original && !canvas.controls.ruler?.active) {
-      DistanceMeasurer.showMeasures();
-    }
   });
 
   // Remove highlights
@@ -346,9 +348,7 @@ export function registerRangeHighlightHooks() {
       RangeHighlightAPI.clearRangeHighlight(token, { force: true });
     }
 
-    if (MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure && token._original && !canvas.controls.ruler?.active) {
-      DistanceMeasurer.hideMeasures();
-    }
+    TacticalGrid.distanceCalculator.hideLabels();
   });
 
   Hooks.on('hoverToken', (token, hoverIn) => {
@@ -400,10 +400,9 @@ export class RangeHighlightAPI {
    *                                                        e.g. [5, 30, 60]
    *                                                        e.g. [ {range: 30, color: '#00ff00', alpha: 0.1, lineColor: '#00ff00', lineWidth: 2, lineAlpha: 0.4, shrink: 0.8, }]
    * @param {Item} opts.item                               Item to be evaluated by the system specific range calculator to determine `ranges` automatically
-   * @param {Boolean} opts.roundToken                      If `true` the token will be treated as a circle instead of a rectangle on gridless scenes
    * @returns {null}
    */
-  static rangeHighlight(token, { ranges, roundToken = MODULE_CONFIG.range.roundToken, item } = {}) {
+  static rangeHighlight(token, { ranges, item } = {}) {
     if (!ranges) {
       const rangeCalculator = getRangeCalculator();
       if (item) ranges = rangeCalculator.getItemRange(item, token);
@@ -435,17 +434,16 @@ export class RangeHighlightAPI {
         return r;
       });
 
-    new RangeHighlighter(token, ranges, { roundToken });
+    new RangeHighlighter(token, ranges);
   }
 
   /**
    * Parses Item uuid and attempts to highlight ranges for any associated tokens
    * @param {String} uuid            Item uuid
-   * @param {Object} opts.roundToken If `true` tokens will be treated as a circles instead of a rectangles on gridless scenes
    */
-  static async rangeHighlightItemUuid(uuid, { roundToken = MODULE_CONFIG.range.roundToken } = {}) {
+  static async rangeHighlightItemUuid(uuid) {
     const { tokens, item } = await _tokensAndItemFromItemUuid(uuid);
-    tokens?.forEach((t) => this.rangeHighlight(t, { item, roundToken }));
+    tokens?.forEach((t) => this.rangeHighlight(t, { item }));
   }
 
   /**

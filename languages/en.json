@@ -50,17 +50,13 @@
       "rulerColor": {
         "hint": "Set a color for the ruler grid. If no color is set then it will use the grid color of the scene."
       },
-      "includeElevation": {
-        "name": "Include Elevation",
-        "hint": "Should elevation be included in distance measurements?"
+      "volumetricTokens": {
+        "name": "Three-dimensional Tokens",
+        "hint": "When enabled token height will be taken into account when calculating distances for elevated tokens."
       },
       "shortestDistance": {
         "name": "Shortest Distance Only",
         "hint": "Only the shortest distance to the token will be shown."
-      },
-      "gridlessCircle": {
-        "name": "Gridless: Circle Border",
-        "hint": "If enabled, on gridless scenes the module will calculate shortest distance assuming the Token border is a circle."
       },
       "scaleFontSize": "Scale Font Size to Canvas Grid",
       "baseGridSize": {
@@ -94,14 +90,6 @@
         "ranges": "Ranges",
         "grid-shape-shrink": "Grid Shape Shrink",
         "dispositions": "Dispositions Highlighted for Players"
-      },
-      "diagonalMultiplier": {
-        "name": "Diagonal Multiplier",
-        "hint": "Adjust distance scaling for grid-space moves that travel in both X and Y direction at the same time. 1.5x multiplier is equivalent to 5/10/5 rule. 1.0x is equivalent to 5/5/5."
-      },
-      "doubleDiagonalMultiplier": {
-        "name": "Double-Diagonal Multiplier",
-        "hint": "Adjust distance scaling for grid-space moves that travel in X, Y and Z direction at the same time."
       }
     },
     "keybindings": {

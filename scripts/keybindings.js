@@ -1,7 +1,5 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG, updateSettings } from '../applications/settings.js';
 import { GRID_MASK } from '../tactical-grid.js';
-import { TacticalGridCalculator } from './calculator.js';
-import { DistanceMeasurer } from './measurer.js';
 import { MODULE_ID, cleanLayerName } from './utils.js';
 
 export function registerKeybindings() {
@@ -80,10 +78,14 @@ export function registerKeybindings() {
       },
     ],
     onUp: () => {
+      TacticalGrid.distanceCalculator._measureKeyDown = false;
       TacticalGrid.distanceCalculator.hideLabels();
     },
     onDown: (event) => {
-      TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(canvas.tokens.hover ?? canvas.tokens.controlled[0]);
+      TacticalGrid.distanceCalculator._measureKeyDown = true;
+      TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(canvas.tokens.hover ?? canvas.tokens.controlled[0], {
+        gridSpaces: true,
+      });
     },
     restricted: false,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
@@ -99,12 +101,14 @@ export function registerKeybindings() {
       },
     ],
     onUp: () => {
-      DistanceMeasurer.keyPressed = false;
-      DistanceMeasurer.hideMeasures();
+      TacticalGrid.distanceCalculator._measureKeyDown = false;
+      TacticalGrid.distanceCalculator.hideLabels();
     },
     onDown: () => {
-      DistanceMeasurer.keyPressed = true;
-      DistanceMeasurer.showMeasures({ gridSpaces: false });
+      TacticalGrid.distanceCalculator._measureKeyDown = true;
+      TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(canvas.tokens.hover ?? canvas.tokens.controlled[0], {
+        gridSpaces: true,
+      });
     },
     restricted: false,
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,

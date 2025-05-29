@@ -1,4 +1,4 @@
-import { DistanceMeasurer, TEXT_STYLE } from '../scripts/measurer.js';
+import { TEXT_STYLE } from '../scripts/measurer.js';
 import { MODULE_ID, getGridColorString } from '../scripts/utils.js';
 import { GRID_MASK } from '../tactical-grid.js';
 
@@ -33,7 +33,7 @@ export const MODULE_CONFIG = {
   rulerViewShape: 'circle-soft',
   rulerColor: '',
   measurement: {
-    includeElevation: true,
+    volumetricTokens: false,
     shortestDistance: true,
     precision: 0,
     fontSize: CONFIG.canvasTextStyle.fontSize,
@@ -42,8 +42,6 @@ export const MODULE_CONFIG = {
     enableFontScaling: true,
     baseGridSize: 100,
     ignoreEffect: '',
-    diagonalMultiplier: 1.5,
-    doubleDiagonalMultiplier: 1.75,
   },
   marker: {
     color: 0xff0000,
@@ -94,7 +92,6 @@ export const MODULE_CONFIG = {
         shrink: 0.8,
       },
     ],
-    roundToken: false,
     defaultColor: {
       color: '#ffffff',
       alpha: 0.1,
@@ -416,15 +413,18 @@ export function registerSettings() {
     tokenConfig.setPosition({ height: 'auto' });
   });
 
-  ['Token', 'TokenLayer'].forEach((clsName) => {
+  ['TokenLayer'].forEach((clsName) => {
     libWrapper.register(
       MODULE_ID,
       `${clsName}.prototype._onClickLeft`,
       function (wrapped, ...args) {
         let result = wrapped(...args);
         try {
-          // v11 args[0].interactionData?.origin
-          DistanceMeasurer.clickLeft(args[0].interactionData?.origin ?? args[0].data?.origin);
+          TacticalGrid.distanceCalculator.canvasLeftClick(args[0].interactionData.origin, {
+            gridSpaces:
+              canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
+              !game.keyboard.isModifierActive(foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS.SHIFT),
+          });
         } catch (e) {
           console.log(e);
         }
@@ -513,17 +513,17 @@ export function registerRulerLibWrapperMethods() {
       'WRAPPER'
     );
     rulerWrappers.push(id);
-    // id = libWrapper.register(
-    //   MODULE_ID,
-    //   'CONFIG.Canvas.rulerClass.prototype._onMouseMove',
-    //   function (wrapped, ...args) {
-    //     let result = wrapped(...args);
-    //     if (this.user.id === game.user.id) GRID_MASK.container.setMaskPosition(this);
-    //     return result;
-    //   },
-    //   'WRAPPER'
-    // );
-    // rulerWrappers.push(id);
+    id = libWrapper.register(
+      MODULE_ID,
+      'CONFIG.Canvas.rulerClass.prototype._onMouseMove',
+      function (wrapped, ...args) {
+        let result = wrapped(...args);
+        if (this.user.id === game.user.id) GRID_MASK.container.setMaskPosition(this);
+        return result;
+      },
+      'WRAPPER'
+    );
+    rulerWrappers.push(id);
   }
 
   id = libWrapper.register(
@@ -533,17 +533,31 @@ export function registerRulerLibWrapperMethods() {
       let result = wrapped(...args);
       if (this.user.id === game.user.id) {
         GRID_MASK.container.setMaskPosition({ id: 'RULER', center: this.destination });
-        const tokenPreviews = canvas.tokens.preview.children;
-        if (
-          (!tokenPreviews.length && MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) ||
-          (tokenPreviews.length && MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) ||
-          DistanceMeasurer.keyPressed
-        ) {
-          DistanceMeasurer.showMeasures({
+
+        if (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) {
+          TacticalGrid.distanceCalculator.showDistanceLabelsFromPoint(this.destination, {
             gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
           });
         }
       }
+      return result;
+    },
+    'WRAPPER'
+  );
+  rulerWrappers.push(id);
+
+  id = libWrapper.register(
+    MODULE_ID,
+    'CONFIG.Token.rulerClass.prototype.refresh',
+    function (wrapped, ...args) {
+      let result = wrapped(...args);
+
+      GRID_MASK.container.setMaskPosition({ id: 'RULER', center: this.destination });
+
+      if (MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) {
+        TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(this.token._preview);
+      }
+
       return result;
     },
     'WRAPPER'
@@ -557,7 +571,7 @@ export function registerRulerLibWrapperMethods() {
       let result = wrapped(...args);
       if (this.user.id === game.user.id) {
         if (MODULE_CONFIG.enableOnRuler) GRID_MASK.container.drawMask();
-        DistanceMeasurer.hideMeasures();
+        TacticalGrid.distanceCalculator.hideLabels();
       }
       return result;
     },

@@ -408,42 +408,40 @@ export function registerExternalModuleHooks() {
 function _macroBar() {
   if (!['dnd5e', 'pf2e', 'dc20rpg'].includes(game.system.id)) return;
 
-  $('#ui-middle')
-    .on('mouseover', '.macro', (event) => {
-      if (!itemRangeHighlightEnabled()) return;
+  Hooks.on('renderHotbar', (hotbar, element, data, options) => {
+    $(element)
+      .find('.slot')
+      .on('mouseover', (event) => {
+        const macro = ui.hotbar.slots[Number(event.target.dataset.slot) - 1]?.macro;
+        if (!macro) return;
 
-      let [actor, token] = getActorAndToken();
-      if (!token || !actor) return;
+        let [actor, token] = getActorAndToken();
+        if (!token || !actor) return;
 
-      const macro = game.macros.get($(event.target).closest('.macro').data('macro-id'));
+        let item;
+        if (game.system.id === 'dnd5e') item = _getItemFromMacroDnd5e(macro, actor);
+        else if (game.system.id === 'pf2e') item = _getItemFromMacroPf2e(macro, actor);
+        else if (game.system.id === 'dc20rpg') item = _getItemFromMacroDC20(macro, actor);
 
-      let item;
-      if (game.system.id === 'dnd5e') item = _getItemFromMacroDnd5e(macro, actor);
-      else if (game.system.id === 'pf2e') item = _getItemFromMacroPf2e(macro, actor);
-      else if (game.system.id === 'dc20rpg') item = _getItemFromMacroDC20(macro, actor);
+        if (item) {
+          RangeHighlightAPI.rangeHighlight(token, { item });
+        } else {
+          RangeHighlightAPI.clearRangeHighlight(token);
+        }
+      })
+      .on('mouseleave', (event) => {
+        const macro = ui.hotbar.slots[Number(event.target.dataset.slot)];
+        if (!macro) return;
 
-      if (item) {
-        RangeHighlightAPI.rangeHighlight(token, { item });
-      } else {
-        RangeHighlightAPI.clearRangeHighlight(token);
-      }
-    })
-    .on('mouseleave', '.macro', (event) => {
-      const macro = game.macros.get($(event.target).closest('.macro').data('macro-id'));
-      if (!macro) return;
-
-      let [actor, token] = getActorAndToken();
-      if (token) RangeHighlightAPI.clearRangeHighlight(token);
-    });
+        let [actor, token] = getActorAndToken();
+        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      });
+  });
 }
 
 function _getItemFromMacroDnd5e(macro, actor) {
   if (macro?.getFlag('dnd5e', 'itemMacro')) {
-    // RegEx courtesy of Illandril
-    // https://github.com/illandril/FoundryVTT-hotbar-uses
-    const match = macro.command.match(
-      /^\s*dnd5e\s*\.\s*documents\s*\.\s*macro\s*\.\s*rollItem\s*\(\s*(?<q>["'`])(?<itemName>.+?)\k<q>\s*\)\s*;?\s*$/
-    );
+    const match = macro.command.match(/.*rollItem\("(?<itemName>.+)"/);
     if (!match) return;
     const itemName = match.groups?.itemName;
 

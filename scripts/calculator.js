@@ -10,28 +10,6 @@ export class TacticalGridCalculator {
   _highlightLayerName = 'TGC';
 
   /**
-   * Handles a generic request to display distances to tokens.
-   * The function will guess the origin of the measurements based on the current canvas state such as an active Ruler or Token previews
-   * @param {*} param0
-   */
-  showDistances({ gridSpaces = true, useControlledToken = false, position } = {}) {
-    const token = useControlledToken ? canvas.tokens.controlled[0] : canvas.tokens.preview.children[0];
-    if (token) return this.showDistanceLabelsFromToken(token);
-
-    this.position = position;
-    this.snap =
-      canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
-      !game.keyboard.isModifierActive(foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS.SHIFT);
-  }
-
-  /**
-   * Clears highlights created by TacticalGridCalculator
-   */
-  clearHighlightLayer() {
-    canvas.interface.grid.clearHighlightLayer(this._highlightLayerName);
-  }
-
-  /**
    * Returns highlight layer used by TacticalGridCalculator
    * @returns {GridHighlight}
    */
@@ -43,29 +21,10 @@ export class TacticalGridCalculator {
   }
 
   /**
-   * Highlights grid bellow the provided token
-   * @param {Token} token
-   * @returns
+   * Clears highlights created by TacticalGridCalculator
    */
-  highlightTokenGridPosition(token) {
-    this.clearHighlightLayer();
-    const layer = this.getHighlightLayer();
-    if (!layer) return;
-
-    let shape;
-    if (MODULE_CONFIG.measurement.gridlessCircle && canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
-      shape = new PIXI.Ellipse(token.center.x, token.center.y, token.w / 2, token.h / 2);
-    } else {
-      shape = new PIXI.Rectangle(token.x, token.y, token.w, token.h);
-    }
-
-    if (Number.isFinite(MODULE_CONFIG.marker.color))
-      layer.beginFill(MODULE_CONFIG.marker.color, MODULE_CONFIG.marker.alpha);
-    if (Number.isFinite(MODULE_CONFIG.marker.border))
-      layer.lineStyle(2, MODULE_CONFIG.marker.color, MODULE_CONFIG.marker.alpha);
-    else layer.lineStyle(0);
-
-    layer.drawShape(shape).endFill();
+  clearHighlightLayer() {
+    canvas.interface.grid.clearHighlightLayer(this._highlightLayerName);
   }
 
   /**
@@ -86,30 +45,118 @@ export class TacticalGridCalculator {
   }
 
   /**
+   * Handles canvas left-clicks.
+   * @param {*} originPoint
+   */
+  canvasLeftClick(originPoint, { gridSpaces = canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS }) {
+    if (!this._measureKeyDown) return;
+
+    if (canvas.tokens.controlled.length === 1) {
+      let token = this.createTokenPreview(canvas.tokens.controlled[0], originPoint, gridSpaces);
+      this.showDistanceLabelsFromToken(token, { gridSpaces });
+    } else {
+      this.drawCrossHighlight(originPoint);
+      this.showDistanceLabelsFromPoint(originPoint, { gridSpaces });
+    }
+  }
+
+  createTokenPreview(token, position, snap = true) {
+    if (this._tokenClone && this._tokenClone.document.id !== token.document.id) {
+      const c = this._tokenClone;
+      this._tokenClone = null;
+      c.destroy();
+    }
+
+    const clone = this._tokenClone ?? token.clone();
+
+    let center = { x: position.x - token.w / 2, y: position.y - token.h / 2 };
+    if (snap) center = clone.getSnappedPosition(center);
+
+    clone.document.x = center.x;
+    clone.document.y = center.y;
+
+    clone.document.alpha = 0.4;
+
+    clone.draw().then((c) => (c.visible = true));
+
+    this._tokenClone = clone;
+
+    return clone;
+  }
+
+  drawCrossHighlight({ x, y } = {}) {
+    this.clearHighlightLayer();
+
+    let r = 20;
+    let points = [];
+
+    const CROSS_HAIR = [
+      [0.0, 0.2],
+      [0.5, 0.7],
+      [0.7, 0.5],
+      [0.2, 0.0],
+      [0.7, -0.5],
+      [0.5, -0.7],
+      [0.0, -0.2],
+      [-0.5, -0.7],
+      [-0.7, -0.5],
+      [-0.2, 0.0],
+      [-0.7, 0.5],
+      [-0.5, 0.7],
+    ];
+
+    CROSS_HAIR.forEach((p) => points.push(x + p[0] * r, y + p[1] * r));
+    const shape = new PIXI.Polygon(points);
+
+    const layer = this.getHighlightLayer();
+    layer.beginFill(MODULE_CONFIG.marker.color, MODULE_CONFIG.marker.alpha);
+    if (MODULE_CONFIG.marker.border)
+      layer.lineStyle(
+        canvas.grid.thickness,
+        MODULE_CONFIG.marker.border,
+        Math.min(MODULE_CONFIG.marker.alpha * 1.5, 1.0)
+      );
+
+    layer.drawShape(shape).endFill();
+  }
+
+  /**
    * Displays distance from origin point to all visible tokens.
    * @param {object} originPoint
    */
-  showDistanceLabelsFromPoint(originPoint) {
-    this.deleteLabels();
+  showDistanceLabelsFromPoint(originPoint, { gridSpaces = canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS } = {}) {
+    if (!originPoint) return;
+    originPoint = { ...originPoint };
+
+    if (gridSpaces == null) {
+      gridSpaces =
+        canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
+        !game.keyboard.isModifierActive(foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS.SHIFT);
+    }
 
     const visibleTokens = this.getVisibleTokens();
     for (const token of visibleTokens) {
+      const fromPoint = { ...originPoint };
       const toPoints = DistanceUtilities.targetPoints(originPoint, token);
 
-      const distances = toPoints.map((p) => {
-        return {
-          distance: DistanceCalculator.calculateDistance(originPoint, p, token, {
-            originToken,
-          }),
-        };
+      if (MODULE_CONFIG.measurement.volumetricTokens) {
+        fromPoint.elevation = DistanceUtilities.determineVolumetricPointElevation(fromPoint, token);
+      }
+
+      // Calculate distances
+      toPoints.forEach((p) => {
+        p.distance = DistanceCalculator.calculateDistance(fromPoint, p, token, {
+          gridSpaces,
+        });
       });
 
-      if (distances.length) {
+      // Display distances as labels
+      if (toPoints.length) {
         if (MODULE_CONFIG.measurement.shortestDistance) {
-          const smallest = distances.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
+          const smallest = toPoints.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
           this.addUpdateLabel(token, token.w / 2, token.h / 2, this.genLabel(smallest.distance));
         } else {
-          distances.forEach((d) => {
+          toPoints.forEach((d) => {
             this.addUpdateLabel(token, d.offsetX, d.offsetY, this.genLabel(d.distance));
           });
         }
@@ -121,15 +168,31 @@ export class TacticalGridCalculator {
    * Displays distance from origin token to all other visible tokens.
    * @param {Token} originToken
    */
-  showDistanceLabelsFromToken(originToken) {
+  showDistanceLabelsFromToken(originToken, { gridSpaces } = {}) {
     if (!originToken) return;
 
-    this.deleteLabels();
+    if (gridSpaces == null) {
+      gridSpaces =
+        canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
+        !game.keyboard.isModifierActive(foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS.SHIFT);
+    }
 
     const visibleTokens = this.getVisibleTokens();
     for (const token of visibleTokens) {
+      if (token.id === originToken.id) continue;
+
       const fromPoint = DistanceUtilities.nearestOriginPoint(originToken, token);
       const toPoints = DistanceUtilities.targetPoints(fromPoint, token);
+
+      if (MODULE_CONFIG.measurement.volumetricTokens) {
+        const { originElevation, targetElevation } = DistanceUtilities.determineVolumetricTokenElevation(
+          originToken,
+          token
+        );
+
+        fromPoint.elevation = originElevation;
+        toPoints.forEach((p) => (p.elevation = targetElevation));
+      }
 
       /// Calculate Cover
       if (MODULE_CONFIG.cover.calculator !== 'none' && (!MODULE_CONFIG.cover.combatOnly || game.combat?.started)) {
@@ -143,21 +206,21 @@ export class TacticalGridCalculator {
         }
       }
 
-      const distances = toPoints.map((p) => {
-        return {
-          distance: DistanceCalculator.calculateDistance(fromPoint, p, token, {
-            originToken,
-          }),
-          cover: p.cover,
-        };
+      // Calculate distances
+      toPoints.forEach((p) => {
+        p.distance = DistanceCalculator.calculateDistance(fromPoint, p, token, {
+          originToken,
+          gridSpaces,
+        });
       });
 
-      if (distances.length) {
+      // Display distances as labels
+      if (toPoints.length) {
         if (MODULE_CONFIG.measurement.shortestDistance) {
-          const smallest = distances.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
+          const smallest = toPoints.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
           this.addUpdateLabel(token, token.w / 2, token.h / 2, this.genLabel(smallest.distance), smallest.cover);
         } else {
-          distances.forEach((d) => {
+          toPoints.forEach((d) => {
             this.addUpdateLabel(token, d.offsetX, d.offsetY, this.genLabel(d.distance), d.cover);
           });
         }
@@ -269,10 +332,58 @@ export class TacticalGridCalculator {
     if (CONFIG.debug.atg) {
       canvas.controls.debug.clear();
     }
+
+    if (this._tokenClone) {
+      const c = this._tokenClone;
+      this._tokenClone = null;
+      c.destroy();
+    }
   }
 }
 
 export class DistanceUtilities {
+  /**
+   * Instead of treating a token as a 2d platform, treat it as a volume, changing the originPoint
+   * elevation in a manner that compensates for token height
+   * @param {*} originPoint
+   * @param {*} token
+   */
+  static determineVolumetricTokenElevation(originToken, targetToken) {
+    const originTop = Math.ceil(originToken.document.height) * canvas.grid.distance + originToken.document.elevation;
+    const originBottom = originToken.document.elevation;
+    const targetTop = Math.ceil(targetToken.document.height) * canvas.grid.distance + targetToken.document.elevation;
+    const targetBottom = targetToken.document.elevation;
+
+    let originElevation;
+    let targetElevation;
+
+    if (originTop <= targetBottom) {
+      originElevation = originTop - canvas.grid.distance;
+      targetElevation = targetBottom;
+    } else if (originBottom >= targetTop) {
+      originElevation = originBottom;
+      targetElevation = targetTop - canvas.grid.distance;
+    } else {
+      originElevation = originBottom;
+      targetElevation = originBottom;
+    }
+
+    return { originElevation, targetElevation };
+  }
+
+  static determineVolumetricPointElevation(originPoint, targetToken) {
+    const targetTop = Math.ceil(targetToken.document.height) * canvas.grid.distance + targetToken.document.elevation;
+    const targetBottom = targetToken.document.elevation;
+
+    if (originPoint.elevation < targetTop && originPoint.elevation > targetBottom) {
+      return targetBottom;
+    } else if (originPoint.elevation >= targetTop) {
+      return originPoint.elevation - (targetTop - canvas.grid.distance - targetBottom);
+    }
+
+    return originPoint.elevation;
+  }
+
   /**
    * Calculates squared euclidean distance between two points
    * @param {object} p1
@@ -290,15 +401,17 @@ export class DistanceUtilities {
    * @returns {x, y} closest grid space or border edge (gridless)
    */
   static nearestOriginPoint(oToken, tToken) {
+    let point;
+
     const center = oToken.center;
     if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
       if (MODULE_CONFIG.measurement.gridlessCircle) {
-        return DistanceUtilities.nearestPointToCircle(
+        point = DistanceUtilities.nearestPointToCircle(
           { ...center, r: Math.min(oToken.w, oToken.h) / 2 },
           tToken.center
         );
       } else {
-        return DistanceUtilities.nearestPointToRectangle(
+        point = DistanceUtilities.nearestPointToRectangle(
           {
             minX: center.x - oToken.w / 2,
             minY: center.y - oToken.h / 2,
@@ -309,6 +422,7 @@ export class DistanceUtilities {
         );
       }
     }
+    if (point) return { ...point, elevation: oToken.document.elevation };
 
     let gridPoints = [];
     if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE && oToken.document.width == oToken.document.height) {
@@ -335,7 +449,7 @@ export class DistanceUtilities {
     }
 
     // Find the grid point with the shortest distance to tToken
-    if (!gridPoints.length) return center;
+    if (!gridPoints.length) return { ...center, elevation: oToken.document.elevation };
 
     const tCenter = tToken.center;
     let closest = gridPoints[0];
@@ -347,7 +461,7 @@ export class DistanceUtilities {
         cDistance = d;
       }
     }
-    return closest;
+    return { ...closest, elevation: oToken.document.elevation };
   }
 
   /**
@@ -381,7 +495,7 @@ export class DistanceUtilities {
         );
       }
 
-      points.push({ ...target, offsetX: token.w / 2, offsetY: token.h / 2 });
+      points.push({ ...target, offsetX: token.w / 2, offsetY: token.h / 2, elevation: token.document.elevation });
     } else if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE && token.document.width == token.document.height) {
       // Hexagonal Grid
       const offsets = getHexOffsets(token);
@@ -389,7 +503,13 @@ export class DistanceUtilities {
         for (const offset of offsets) {
           const offsetX = token.w * offset[0];
           const offsetY = token.h * offset[1];
-          points.push({ x: token.x + offsetX, y: token.y + offsetY, offsetX, offsetY });
+          points.push({
+            x: token.x + offsetX,
+            y: token.y + offsetY,
+            offsetX,
+            offsetY,
+            elevation: token.document.elevation,
+          });
         }
       }
     }
@@ -400,7 +520,13 @@ export class DistanceUtilities {
         for (let w = 0; w < token.w / canvas.grid.size; w++) {
           const offsetY = canvas.grid.size * h + canvas.grid.size / 2;
           const offsetX = canvas.grid.size * w + canvas.grid.size / 2;
-          points.push({ x: token.x + offsetX, y: token.y + offsetY, offsetX, offsetY });
+          points.push({
+            x: token.x + offsetX,
+            y: token.y + offsetY,
+            offsetX,
+            offsetY,
+            elevation: token.document.elevation,
+          });
         }
       }
     }
@@ -442,93 +568,14 @@ export class DistanceUtilities {
 }
 
 class DistanceCalculator {
-  /**
-   * Calculate distance between coordinate points and/or tokens
-   * @param {*} originPoint
-   * @param {*} targetPoint
-   * @param {*} targetToken
-   * @param {*} param3
-   * @returns
-   */
   static calculateDistance(originPoint, targetPoint, targetToken, { originToken, gridSpaces = true } = {}) {
     // Delegate distance measurements to PF2e's `distanceTo` util
     if (game.system.id === 'pf2e' && targetToken && originToken) {
       return this._applyPrecision(originToken.distanceTo(targetToken));
     }
 
-    targetToken = targetToken?.document;
-    originToken = originToken?.document;
-
-    if (MODULE_CONFIG.measurement.includeElevation) {
-      const sdr = canvas.grid.size / canvas.dimensions.distance;
-
-      if (originPoint.z == null) originPoint.z = Math.floor((originToken ? originToken.elevation : 0) * sdr);
-      if (originPoint.height == null) originPoint.height = Math.floor((originToken?.width || 0) * canvas.grid.size);
-      if (targetPoint.z == null) targetPoint.z = Math.floor((targetToken ? targetToken.elevation : 0) * sdr);
-      if (targetPoint.height == null) targetPoint.height = Math.floor((targetToken?.width || 0) * canvas.grid.size);
-    } else {
-      originPoint.z = 0;
-      originPoint.height = 0;
-      targetPoint.z = 0;
-      targetPoint.height = 0;
-    }
-
-    let dx = originPoint.x - targetPoint.x,
-      dy = originPoint.y - targetPoint.y;
-
-    let distance;
-    const d = canvas.dimensions;
-    if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS || !gridSpaces) {
-      let dz = Math.abs(originPoint.z - targetPoint.z);
-      // Take into account token z-axis heights by subtracting the lower token
-      if (originPoint.z < targetPoint.z) {
-        if (originToken) dz -= originToken.width * canvas.grid.size;
-      } else if (targetPoint.z < originPoint.z) {
-        if (targetToken) dz -= targetToken.width * canvas.grid.size;
-      }
-      if (dz < 0) dz = 0;
-
-      distance = (Math.sqrt(dx * dx + dy * dy + dz * dz) / d.size) * d.distance;
-    } else if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE) {
-      distance = this.getHexDistance(origin, targetPoint, { gridSpaces });
-    } else {
-      let dz;
-      // If originPoint and target are on the same plane we ignore z component
-      if (originPoint.z === targetPoint.z) dz = 0;
-      else if (originPoint.z > targetPoint.z && originPoint.z < targetPoint.z + targetPoint.height) dz = 0;
-      else if (targetPoint.z > originPoint.z && targetPoint.z < originPoint.z + originPoint.height) dz = 0;
-      else {
-        originPoint.z = canvas.tokens.getSnappedPoint({ x: 0, y: originPoint.z }).y;
-        targetPoint.z = canvas.tokens.getSnappedPoint({ x: 0, y: targetPoint.z }).y;
-        dz =
-          Math.abs(
-            Math.min(
-              originPoint.z + originPoint.height - targetPoint.z,
-              targetPoint.z + targetPoint.height - originPoint.z
-            )
-          ) + (canvas.grid.sizeX ?? canvas.grid.w);
-      }
-
-      let nx = Math.abs(Math.ceil(dx / d.size)),
-        ny = Math.abs(Math.ceil(dy / d.size)),
-        nd = Math.min(nx, ny),
-        nz = Math.ceil(dz / d.size),
-        sorted = [nx, ny, nz].sort((a, b) => a - b),
-        moves = {
-          doubleDiagonal: sorted[0],
-          diagonal: sorted[1] - sorted[0],
-          straight: sorted[2] - sorted[1],
-        };
-
-      distance =
-        Math.floor(
-          moves.doubleDiagonal * MODULE_CONFIG.measurement.doubleDiagonalMultiplier +
-            moves.diagonal * MODULE_CONFIG.measurement.diagonalMultiplier +
-            moves.straight
-        ) * d.distance;
-    }
-
-    return this._applyPrecision(distance);
+    const result = canvas.grid.measurePath([originPoint, targetPoint]);
+    return this._applyPrecision(gridSpaces ? result.distance : result.euclidean);
   }
 
   static _applyPrecision(distance) {
@@ -537,34 +584,5 @@ class DistanceCalculator {
       (Math.round(distance * precision) / precision).toFixed(MODULE_CONFIG.measurement.precision)
     );
     return number + MODULE_CONFIG.distanceCalcOffset;
-  }
-
-  static getHexDistance(origin, target, options) {
-    let dz;
-    // If origin and target are on the same plane we ignore z component
-    if (origin.z === target.z) dz = 0;
-    else if (origin.z > target.z && origin.z < target.z + target.height) dz = 0;
-    else if (target.z > origin.z && target.z < origin.z + origin.height) dz = 0;
-    else {
-      origin.z = canvas.tokens.getSnappedPoint({ x: 0, y: origin.z }).y;
-      target.z = canvas.tokens.getSnappedPoint({ x: 0, y: target.z }).y;
-      dz =
-        Math.abs(Math.min(origin.z + origin.height - target.z, target.z + target.height - origin.z)) +
-        (canvas.grid.sizeX ?? canvas.grid.w);
-    }
-
-    if (dz != 0) {
-      let dx = target.x - origin.x;
-      let dy = target.y - origin.y;
-      let mag = Math.max(Math.sqrt(dx * dx + dy * dy), 0.0000001);
-      let angle = Math.atan(dz / mag);
-      let length = mag / Math.cos(angle);
-
-      let ray = Ray.fromAngle(0, 0, angle, length);
-      const segments = [{ ray }];
-      return canvas.grid.grid.measureDistances(segments, options)[0];
-    } else {
-      return canvas.grid.measureDistance(origin, target, options);
-    }
   }
 }
