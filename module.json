@@ -16,7 +16,7 @@
       "discord": "Aedif#7268"
     }
   ],
-  "esmodules": ["tactical-grid.js"],
+  "esmodules": ["bundle/tactical-grid.js"],
   "scripts": [],
   "styles": ["styles/style.css"],
   "packs": [],
