@@ -1,5 +1,4 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import { getHexOffsets } from './measurer.js';
 import { getRangeCalculator, registerActorSheetHooks, registerExternalModuleHooks } from './rangeExtSupport.js';
 import { MODULE_ID } from './utils.js';
 
@@ -205,8 +204,7 @@ export class RangeHighlighter {
     } else {
       for (let r = row0 - nRows; r < hRows; r++) {
         for (let c = col0 - nCols; c < hCols; c++) {
-          const [x, y] = grid.getPixelsFromGridPosition(r, c);
-          const pos = { x, y };
+          const pos = grid.getTopLeftPoint({ i: r, j: c });
 
           let withinRange;
           for (let j = 0; j < this.ranges.length; j++) {
@@ -267,60 +265,42 @@ export class RangeHighlighter {
   }
 
   _getTokenGridPositions(tx, ty) {
-    const positions = [];
+    if (!canvas.grid.isSquare) {
+      const offsets = this.token.document.getOccupiedGridSpaceOffsets();
+      return offsets.map((offset) => canvas.grid.getTopLeftPoint(offset));
+    } else {
+      // For squares we want to optimize by only returning the outer grid squares to measure from
 
-    if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE && this.token.document.width == this.token.document.height) {
-      // Hexagonal Grid
-      const offsets = getHexOffsets(this.token);
-      if (offsets) {
-        for (const offset of offsets) {
-          const offsetX = this.token.w * offset[0];
-          const offsetY = this.token.h * offset[1];
-          positions.push({
-            x: tx + offsetX,
-            y: ty + offsetY,
-          });
-        }
+      // Get the top-left grid offset
+      const { i: i0, j: j0 } = this.token.document._positionToGridOffset();
+
+      // Round width and height to nearest multiple of 0.5
+      const width = Math.round(this.token.document.width * 2) / 2;
+      const height = Math.round(this.token.document.height * 2) / 2;
+
+      const i1 = i0 + Math.ceil(height);
+      const j1 = j0 + Math.ceil(width);
+
+      const offsets = [];
+
+      // Top
+      for (let i = i0; i < i1; i++) {
+        offsets.push({ i, j: j0 });
       }
+
+      // Bottom
+      for (let i = i0; i < i1; i++) {
+        offsets.push({ i, j: j1 - 1 });
+      }
+
+      // Left/Right
+      for (let j = j0 + 1; j < j1 - 1; j++) {
+        offsets.push({ i: i0, j });
+        offsets.push({ i: i1 - 1, j });
+      }
+
+      return offsets.map((offset) => canvas.grid.getTopLeftPoint(offset));
     }
-
-    // Fallback on square if hex is not in use or token width does not match height
-    if (!positions.length) {
-      // For optimization only return the outer edge of the square
-      const tokenGridWidth = this.token.w / canvas.grid.size;
-      const tokenGridHeight = this.token.h / canvas.grid.size;
-      for (let i = 0; i < tokenGridWidth; i++) {
-        positions.push({ x: tx + canvas.grid.size * i, y: ty });
-      }
-      for (let i = 0; i < tokenGridWidth; i++) {
-        positions.push({
-          x: tx + canvas.grid.size * i,
-          y: ty + canvas.grid.size * (tokenGridHeight - 1),
-        });
-      }
-      for (let i = 1; i < tokenGridHeight; i++) {
-        positions.push({
-          x: tx + canvas.grid.size * (tokenGridWidth - 1),
-          y: ty + canvas.grid.size * i,
-        });
-      }
-
-      for (let i = 1; i < tokenGridHeight; i++) {
-        positions.push({ x: tx, y: ty + canvas.grid.size * i });
-      }
-
-      // Returns all squares
-      // for (let h = 0; h < this.token.h / canvas.grid.size; h++) {
-      //   for (let w = 0; w < this.token.w / canvas.grid.size; w++) {
-      //     const offsetY = canvas.grid.size * h;
-      //     const offsetX = canvas.grid.size * w;
-
-      //     //let [x, y] = canvas.grid.grid.getTopLeft(tx + offsetX, ty + offsetY);
-      //     positions.push({ x: tx + offsetX, y: ty + offsetY });
-      //   }
-      // }
-    }
-    return positions;
   }
 }
 

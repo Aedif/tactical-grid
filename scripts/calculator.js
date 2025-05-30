@@ -1,12 +1,23 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
 import { computeCoverBonus } from './cover.js';
-import { getHexOffsets } from './measurer.js';
 import { tokenHasEffect } from './utils.js';
-
-export let TEXT_STYLE;
 
 export class TacticalGridCalculator {
   _highlightLayerName = 'TGC';
+
+  constructor() {
+    this.refreshTextStyle();
+  }
+
+  /**
+   * Called on setting change to refresh the text style used on labels applied by TacticalGridCalculator
+   */
+  refreshTextStyle() {
+    this._textStyle = foundry.canvas.containers.PreciseText.getTextStyle({
+      ...MODULE_CONFIG.measurement,
+      fontFamily: [MODULE_CONFIG.measurement.fontFamily, 'fontAwesome'].join(','),
+    });
+  }
 
   /**
    * Returns highlight layer used by TacticalGridCalculator
@@ -83,8 +94,8 @@ export class TacticalGridCalculator {
     return clone;
   }
 
-  drawCrossHighlight({ x, y } = {}) {
-    this.clearHighlightLayer();
+  drawCrossHighlight({ x, y } = {}, skipClear = false) {
+    if (!skipClear) this.clearHighlightLayer();
 
     let r = 20;
     let points = [];
@@ -136,7 +147,9 @@ export class TacticalGridCalculator {
     const visibleTokens = this.getVisibleTokens();
     for (const token of visibleTokens) {
       const fromPoint = { ...originPoint };
+      this.drawCrossHighlight(fromPoint, true); // test
       const toPoints = DistanceUtilities.targetPoints(originPoint, token);
+      this.drawCrossHighlight(toPoints[0], true); // test
 
       if (MODULE_CONFIG.measurement.volumetricTokens) {
         fromPoint.elevation = DistanceUtilities.determineVolumetricPointElevation(fromPoint, token);
@@ -153,10 +166,10 @@ export class TacticalGridCalculator {
       if (toPoints.length) {
         if (MODULE_CONFIG.measurement.shortestDistance) {
           const smallest = toPoints.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
-          this.addUpdateLabel(token, token.w / 2, token.h / 2, this.genLabel(smallest.distance));
+          this.addUpdateLabel(token, token.center, this.genLabel(smallest.distance));
         } else {
           toPoints.forEach((d) => {
-            this.addUpdateLabel(token, d.offsetX, d.offsetY, this.genLabel(d.distance));
+            this.addUpdateLabel(token, d.center, this.genLabel(d.distance));
           });
         }
       }
@@ -176,12 +189,16 @@ export class TacticalGridCalculator {
         !game.keyboard.isModifierActive(foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS.SHIFT);
     }
 
+    this.clearHighlightLayer(); // test
+
     const visibleTokens = this.getVisibleTokens();
     for (const token of visibleTokens) {
       if (token.id === originToken.id) continue;
 
       const fromPoint = DistanceUtilities.nearestOriginPoint(originToken, token);
+      this.drawCrossHighlight(fromPoint, true); // test
       const toPoints = DistanceUtilities.targetPoints(fromPoint, token);
+      this.drawCrossHighlight(toPoints[0], true); // test
 
       if (MODULE_CONFIG.measurement.volumetricTokens) {
         const { originElevation, targetElevation } = DistanceUtilities.determineVolumetricTokenElevation(
@@ -195,10 +212,8 @@ export class TacticalGridCalculator {
 
       /// Calculate Cover
       if (MODULE_CONFIG.cover.calculator !== 'none' && (!MODULE_CONFIG.cover.combatOnly || game.combat?.started)) {
-        if (originToken.id !== token.id) {
-          let cover = computeCoverBonus(originToken, token);
-          if (cover) toPoints.forEach((p) => (p.cover = cover));
-        }
+        let cover = computeCoverBonus(originToken, token);
+        if (cover) toPoints.forEach((p) => (p.cover = cover));
       }
 
       // Calculate distances
@@ -213,10 +228,10 @@ export class TacticalGridCalculator {
       if (toPoints.length) {
         if (MODULE_CONFIG.measurement.shortestDistance) {
           const smallest = toPoints.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
-          this.addUpdateLabel(token, token.w / 2, token.h / 2, this.genLabel(smallest.distance), smallest.cover);
+          this.addUpdateLabel(token, token.center, this.genLabel(smallest.distance), smallest.cover);
         } else {
           toPoints.forEach((d) => {
-            this.addUpdateLabel(token, d.offsetX, d.offsetY, this.genLabel(d.distance), d.cover);
+            this.addUpdateLabel(token, d.center, this.genLabel(d.distance), d.cover);
           });
         }
       }
@@ -241,13 +256,13 @@ export class TacticalGridCalculator {
    * @param {Number} cover
    * @returns
    */
-  addUpdateLabel(token, x, y, text, cover) {
+  addUpdateLabel(token, { x, y } = {}, text, cover) {
     if (cover != null) {
       const labels = MODULE_CONFIG.cover;
       if (cover <= 0 && labels.noCover) text += `\n${labels.noCover}`;
-      if (cover === 2 && labels.halfCover) text += `\n${labels.halfCover}`;
-      if (cover === 5 && labels.threeQuartersCover) text += `\n${labels.threeQuartersCover}`;
-      if (cover > 5 && labels.totalCover) text += `\n${labels.totalCover}`;
+      else if (cover === 2 && labels.halfCover) text += `\n${labels.halfCover}`;
+      else if (cover === 5 && labels.threeQuartersCover) text += `\n${labels.threeQuartersCover}`;
+      else if (cover > 5 && labels.totalCover) text += `\n${labels.totalCover}`;
     }
 
     if (token._atgLabels) {
@@ -259,37 +274,30 @@ export class TacticalGridCalculator {
       }
     }
 
-    if (!TEXT_STYLE) {
-      TEXT_STYLE = foundry.canvas.containers.PreciseText.getTextStyle({
-        ...MODULE_CONFIG.measurement,
-        fontFamily: [MODULE_CONFIG.measurement.fontFamily, 'fontAwesome'].join(','),
-      });
-    }
-
     // Scale Font Size to Grid Size if needed
     if (
       MODULE_CONFIG.measurement.enableFontScaling &&
       MODULE_CONFIG.measurement.baseGridSize &&
       MODULE_CONFIG.measurement.baseGridSize !== canvas.dimensions.size
     ) {
-      TEXT_STYLE.fontSize =
+      this._textStyle.fontSize =
         MODULE_CONFIG.measurement.fontSize * (canvas.dimensions.size / MODULE_CONFIG.measurement.baseGridSize);
     } else {
-      TEXT_STYLE.fontSize = MODULE_CONFIG.measurement.fontSize;
+      this._textStyle.fontSize = MODULE_CONFIG.measurement.fontSize;
     }
 
-    let pText = new foundry.canvas.containers.PreciseText(text, TEXT_STYLE);
+    let pText = new foundry.canvas.containers.PreciseText(text, this._textStyle);
     pText.anchor.set(0.5);
 
     // Apply to _impreciseMesh (Vision5e support) if it's visible
     if (token.impreciseVisible) {
       pText = canvas.tokens.addChild(pText);
-      pText.x = token.x + x;
-      pText.y = token.y + y;
-    } else {
-      pText = token.addChild(pText);
       pText.x = x;
       pText.y = y;
+    } else {
+      pText = token.addChild(pText);
+      pText.x = x - token.x;
+      pText.y = y - token.y;
     }
     pText.atgX = x;
     pText.atgY = y;
@@ -400,48 +408,11 @@ export class DistanceUtilities {
 
     const center = oToken.center;
     if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
-      if (MODULE_CONFIG.measurement.gridlessCircle) {
-        point = DistanceUtilities.nearestPointToCircle(
-          { ...center, r: Math.min(oToken.w, oToken.h) / 2 },
-          tToken.center
-        );
-      } else {
-        point = DistanceUtilities.nearestPointToRectangle(
-          {
-            minX: center.x - oToken.w / 2,
-            minY: center.y - oToken.h / 2,
-            maxX: center.x + oToken.w / 2,
-            maxY: center.y + oToken.h / 2,
-          },
-          tToken.center
-        );
-      }
+      point = DistanceUtilities.nearestPointToToken(tToken.center, oToken);
     }
     if (point) return { ...point, elevation: oToken.document.elevation };
 
-    let gridPoints = [];
-    if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE && oToken.document.width == oToken.document.height) {
-      const offsets = getHexOffsets(oToken);
-      if (offsets) {
-        for (const offset of offsets) {
-          gridPoints.push({
-            x: center.x - oToken.w / 2 + oToken.w * offset[0],
-            y: center.y - oToken.h / 2 + oToken.h * offset[1],
-          });
-        }
-      }
-    }
-
-    if (!gridPoints.length) {
-      for (let h = 0; h < oToken.h / canvas.grid.size; h++) {
-        for (let w = 0; w < oToken.w / canvas.grid.size; w++) {
-          gridPoints.push({
-            x: center.x - oToken.w / 2 + canvas.grid.size * w + canvas.grid.size / 2,
-            y: center.y - oToken.h / 2 + canvas.grid.size * h + canvas.grid.size / 2,
-          });
-        }
-      }
-    }
+    let gridPoints = DistanceUtilities.getOccupiedGridPoints(oToken);
 
     // Find the grid point with the shortest distance to tToken
     if (!gridPoints.length) return { ...center, elevation: oToken.document.elevation };
@@ -466,67 +437,69 @@ export class DistanceUtilities {
    * @returns {Array[]}
    */
   static targetPoints(originPoint, token) {
-    const points = [];
-
     // Gridless
     if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
-      let target = {};
-
-      const b = token.bounds;
-      if (MODULE_CONFIG.measurement.gridlessCircle) {
-        target = DistanceUtilities.nearestPointToCircle(
-          { ...token.center, r: Math.min(b.width, b.height) / 2 },
-          originPoint
-        );
-      } else {
-        target = DistanceUtilities.nearestPointToRectangle(
-          {
-            minX: b.x,
-            minY: b.y,
-            maxX: b.x + b.width,
-            maxY: b.y + b.height,
-          },
-          originPoint
-        );
-      }
-
-      points.push({ ...target, offsetX: token.w / 2, offsetY: token.h / 2, elevation: token.document.elevation });
-    } else if (canvas.grid.type !== CONST.GRID_TYPES.SQUARE && token.document.width == token.document.height) {
-      // Hexagonal Grid
-      const offsets = getHexOffsets(token);
-      if (offsets) {
-        for (const offset of offsets) {
-          const offsetX = token.w * offset[0];
-          const offsetY = token.h * offset[1];
-          points.push({
-            x: token.x + offsetX,
-            y: token.y + offsetY,
-            offsetX,
-            offsetY,
-            elevation: token.document.elevation,
-          });
-        }
-      }
+      let target = DistanceUtilities.nearestPointToToken(originPoint, token);
+      return [{ ...target, center: { x: token.w / 2, y: token.h / 2 }, elevation: token.document.elevation }];
+    } else {
+      return DistanceUtilities.getOccupiedGridPoints(token);
     }
+  }
 
-    // Square Grid or fallback
-    if (!points.length) {
-      for (let h = 0; h < token.h / canvas.grid.size; h++) {
-        for (let w = 0; w < token.w / canvas.grid.size; w++) {
-          const offsetY = canvas.grid.size * h + canvas.grid.size / 2;
-          const offsetX = canvas.grid.size * w + canvas.grid.size / 2;
-          points.push({
-            x: token.x + offsetX,
-            y: token.y + offsetY,
-            offsetX,
-            offsetY,
-            elevation: token.document.elevation,
-          });
-        }
-      }
+  /**
+   * Returns coordinates of grid spaces occupied by the token
+   * @param {Token} token
+   */
+  static getOccupiedGridPoints(token) {
+    const offsets = token.document.getOccupiedGridSpaceOffsets();
+    const elevation = token.document.elevation;
+
+    return offsets.map((offset) => {
+      return {
+        ...canvas.grid.getTopLeftPoint(offset),
+        center: canvas.grid.getCenterPoint(offset),
+        elevation,
+      };
+    });
+  }
+
+  static nearestPointToToken(point, token) {
+    const shape = token.document.shape;
+    const { width, height } = token.document.getSize();
+    if (shape === CONST.TOKEN_SHAPES.ELLIPSE_1 || shape === CONST.TOKEN_SHAPES.ELLIPSE_2) {
+      if (width === height) return this.nearestPointToCircle({ ...token.center, r: width / 2 }, point);
+      else return this.nearestPointToEllipse({ ...token.center, h: width / 2, v: height / 2 }, point);
+    } else {
+      const { x, y } = token.document;
+      return this.nearestPointToRectangle({ minX: x, minY: y, maxX: x + width, maxY: y + height }, point);
     }
+  }
 
-    return points;
+  /**
+   * Find the nearest point on an ellipse given a point on the scene
+   * @param {object} c {x, y, h, v}
+   * @param {object} p {x, y}
+   * @returns nearest point {x, y}
+   */
+  static nearestPointToEllipse(c, p) {
+    // If p is the center of the ellipse, return any point on the ellipse boundary
+    if (c.x === p.x && c.y === p.y) return { x: c.x + c.h, y: c.y };
+
+    // Translate p to origin-relative coordinates
+    let dx = p.x - c.x;
+    let dy = p.y - c.y;
+
+    // Scale vector by ellipse radii
+    let scale = Math.sqrt((dx * dx) / (c.h * c.h) + (dy * dy) / (c.v * c.v));
+
+    // If point is inside the ellipse, return it directly
+    if (scale <= 1) return { x: p.x, y: p.y };
+
+    // Scale down the vector to lie on the ellipse
+    return {
+      x: c.x + dx / scale,
+      y: c.y + dy / scale,
+    };
   }
 
   /**

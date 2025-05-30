@@ -4,6 +4,12 @@ const FULL_COVER = 999;
 const THREE_QUARTERS_COVER = 5;
 const HALF_COVER = 2;
 
+/**
+ * Calculates cover bonus between 2 tokens using 3rd-party modules selected in the module settings
+ * @param {Token} attacker
+ * @param {Token} target
+ * @returns
+ */
 export function computeCoverBonus(attacker, target) {
   let coverBonus = null;
 

@@ -1,4 +1,3 @@
-import { TEXT_STYLE } from '../scripts/measurer.js';
 import { MODULE_ID, getGridColorString } from '../scripts/utils.js';
 import { GRID_MASK } from '../tactical-grid.js';
 
@@ -480,8 +479,8 @@ function _onSettingChange(newSettings) {
     GRID_MASK.container?.drawMask();
   }
 
-  if ('measurement' in diff && TEXT_STYLE) {
-    foundry.utils.mergeObject(TEXT_STYLE, diff.measurement);
+  if ('measurement' in diff) {
+    TacticalGrid.distanceCalculator?.refreshTextStyle();
   }
 }
 
