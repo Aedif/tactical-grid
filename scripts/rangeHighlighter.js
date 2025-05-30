@@ -1,5 +1,6 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import { getRangeCalculator, registerActorSheetHooks, registerExternalModuleHooks } from './rangeExtSupport.js';
+import { getGameSystem } from './externalSupport.js';
+import { registerExternalModuleHooks } from './rangeExtSupport.js';
 import { MODULE_ID } from './utils.js';
 
 export class RangeHighlighter {
@@ -368,7 +369,9 @@ export function registerRangeHighlightHooks() {
     }
   });
 
-  registerActorSheetHooks();
+  const gameSystem = getGameSystem();
+  gameSystem.onInit();
+
   registerExternalModuleHooks();
 }
 
@@ -384,7 +387,7 @@ export class RangeHighlightAPI {
    */
   static rangeHighlight(token, { ranges, item } = {}) {
     if (!ranges) {
-      const rangeCalculator = getRangeCalculator();
+      const rangeCalculator = getGameSystem();
       if (item) ranges = rangeCalculator.getItemRange(item, token);
       else ranges = rangeCalculator.getTokenRange(token);
     }
@@ -428,29 +431,33 @@ export class RangeHighlightAPI {
 
   /**
    * Clears highlights applied using TacticalGrid.rangeHighlight(...)
-   * @param {Token} token Token to remove the highlights from
+   * @param {Token|Array[Token]} tokens Tokens to remove the highlights from
    */
-  static clearRangeHighlight(token, { force = false, id } = {}) {
-    if (token._tgRange) {
-      if (force) {
-        token._tgRange.clear();
-        token._tgRange = null;
-        return;
-      }
-      const ranges = token._tgRange.ranges;
-      let nRanges = [];
-      for (const range of ranges) {
-        if (range.id && range.id !== id) {
-          nRanges.push(range);
-        }
-      }
+  static clearRangeHighlight(tokens, { force = false, id } = {}) {
+    if (!(tokens instanceof Array)) tokens = [tokens];
 
-      if (nRanges.length === 0) {
-        token._tgRange.clear();
-        token._tgRange = null;
-      } else if (nRanges.length !== ranges.length) {
-        token._tgRange.ranges = nRanges;
-        token._tgRange.highlight();
+    for (const token of tokens) {
+      if (token._tgRange) {
+        if (force) {
+          token._tgRange.clear();
+          token._tgRange = null;
+          return;
+        }
+        const ranges = token._tgRange.ranges;
+        let nRanges = [];
+        for (const range of ranges) {
+          if (range.id && range.id !== id) {
+            nRanges.push(range);
+          }
+        }
+
+        if (nRanges.length === 0) {
+          token._tgRange.clear();
+          token._tgRange = null;
+        } else if (nRanges.length !== ranges.length) {
+          token._tgRange.ranges = nRanges;
+          token._tgRange.highlight();
+        }
       }
     }
   }

@@ -2,7 +2,7 @@ import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js
 import { CustomSpriteMaskFilter } from '../filters/CustomSpriteMaskFilter.js';
 import { MODULE_ID, cleanLayerName, getDispositionColor, getGridColorString } from './utils.js';
 
-export class GridMaskContainer extends CachedContainer {
+export class GridMaskContainer extends foundry.canvas.containers.CachedContainer {
   /** @override */
   clearColor = [0, 0, 0, 0];
 

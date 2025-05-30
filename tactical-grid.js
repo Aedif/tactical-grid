@@ -16,15 +16,15 @@ export const GRID_MASK = {
  *  =================================
  */
 Hooks.on('init', () => {
-  registerSettings();
-  registerKeybindings();
-  registerRangeHighlightHooks();
-
   globalThis.TacticalGrid = {
     rangeHighlight: RangeHighlightAPI.rangeHighlight,
     clearRangeHighlight: RangeHighlightAPI.clearRangeHighlight,
     distanceCalculator: new TacticalGridCalculator(),
   };
+
+  registerSettings();
+  registerKeybindings();
+  registerRangeHighlightHooks();
 
   game.modules.get(MODULE_ID).api = globalThis.TacticalGrid;
   CONFIG.debug.atg = false;
