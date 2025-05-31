@@ -7,12 +7,12 @@ import { RangeHighlightAPI } from '../rangeHighlighter.js';
 
 export function register() {
   let token;
-  Hooks.on('renderTokenActionHud', (hud, html, opts) => {
-    if (!RangeHighlightAPI.itemEnabled) {
+  Hooks.on('renderTokenActionHud', (hud, html, data, options) => {
+    if (!RangeHighlightAPI.itemHighlightEnabled) {
       token = null;
       return;
     }
-    token = hud.token;
+    token = canvas.tokens.get(data.hud.tokenId);
   });
 
   Hooks.on('tokenActionHudSystemActionHoverOn', (event, item) => {

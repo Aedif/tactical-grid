@@ -412,7 +412,7 @@ export function registerSettings() {
     tokenConfig.setPosition({ height: 'auto' });
   });
 
-  ['TokenLayer'].forEach((clsName) => {
+  ['foundry.canvas.layers.TokenLayer'].forEach((clsName) => {
     libWrapper.register(
       MODULE_ID,
       `${clsName}.prototype._onClickLeft`,

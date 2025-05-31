@@ -35,6 +35,56 @@ export class GenericSystem {
   }
 
   /**
+   * Respond to mouse hovering over an item with itemId
+   */
+  static hoverItem({ item, itemId, actorSheet, actor, token } = {}) {
+    if (!RangeHighlightAPI.itemHighlightEnabled) return;
+
+    actor = actor ?? actorSheet?.document ?? token?.actor;
+    if (!actor) return;
+
+    token = token ?? actorSheet?.token?.object ?? actor?.getActiveTokens()[0];
+    if (!token) return;
+
+    item = item ?? actor.items.get(itemId);
+
+    if (!item) {
+      RangeHighlightAPI.clearRangeHighlight(token);
+      return;
+    }
+
+    RangeHighlightAPI.rangeHighlight(token, { item });
+  }
+
+  /**
+   * Respond to mouse ending hover over an item
+   */
+  static hoverLeaveItem({ actorSheet, actor, token }) {
+    actor = actor ?? actorSheet?.document ?? token?.actor;
+    token = token ?? actorSheet?.token?.object ?? actor?.getActiveTokens()[0];
+
+    if (token) RangeHighlightAPI.clearRangeHighlight(token);
+  }
+
+  /**
+   * Infers and returns the currently controlled Token and Actor
+   * @returns
+   */
+  static getInferredActorAndToken() {
+    let actor;
+    const speaker = ChatMessage.getSpeaker();
+
+    if (speaker.token) actor = game.actors.tokens[speaker.token];
+    actor ??= game.actors.get(speaker.actor);
+    if (!actor) return [];
+
+    const token = canvas.tokens?.get(speaker.token ?? '');
+    if (!token) return [];
+
+    return { actor, token };
+  }
+
+  /**
    * Registers 'mouseover' and 'mouseleave' listeners for the hotbar if 'getItemFromMacro' function
    * has been implemented by the derived class.
    * @returns
@@ -80,55 +130,5 @@ export class GenericSystem {
     if (units === 'ft') return 5 * gridSpaces;
     else if (units === 'm') return 1.5 * gridSpaces;
     return 0;
-  }
-
-  /**
-   * Respond to mouse hovering over an item with itemId
-   */
-  static hoverItem({ item, itemId, actorSheet, actor, token } = {}) {
-    if (!RangeHighlightAPI.itemEnabled) return;
-
-    actor = actor ?? actorSheet?.document ?? token?.actor;
-    if (!actor) return;
-
-    token = token ?? actorSheet?.token?.object ?? actor?.getActiveTokens()[0];
-    if (!token) return;
-
-    item = item ?? actor.items.get(itemId);
-
-    if (!item) {
-      RangeHighlightAPI.clearRangeHighlight(token);
-      return;
-    }
-
-    RangeHighlightAPI.rangeHighlight(token, { item });
-  }
-
-  /**
-   * Respond to mouse ending hover over an item
-   */
-  static hoverLeaveItem({ actorSheet, actor, token }) {
-    actor = actor ?? actorSheet?.document ?? token?.actor;
-    token = token ?? actorSheet?.token?.object ?? actor?.getActiveTokens()[0];
-
-    if (token) RangeHighlightAPI.clearRangeHighlight(token);
-  }
-
-  /**
-   * Infers and returns the currently controlled Token and Actor
-   * @returns
-   */
-  static getInferredActorAndToken() {
-    let actor;
-    const speaker = ChatMessage.getSpeaker();
-
-    if (speaker.token) actor = game.actors.tokens[speaker.token];
-    actor ??= game.actors.get(speaker.actor);
-    if (!actor) return [];
-
-    const token = canvas.tokens?.get(speaker.token ?? '');
-    if (!token) return [];
-
-    return { actor, token };
   }
 }

@@ -376,15 +376,11 @@ export class RangeHighlightAPI {
   /**
    *  Returns true if Item range highlighting is enabled
    */
-  static get itemEnabled() {
+  static get itemHighlightEnabled() {
     if (!MODULE_CONFIG.range.item.enabled) return false;
     if (!MODULE_CLIENT_CONFIG.rangeHighlighter) return false;
     if (MODULE_CONFIG.range.item.combatOnly && !game.combat?.started) return false;
     return true;
-  }
-
-  static getRangeCalculator() {
-    return this._rangeCalculator;
   }
 
   /**

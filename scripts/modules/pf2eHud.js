@@ -1,6 +1,7 @@
 /**
  * PF2e HUD
  * https://foundryvtt.com/packages/pf2e-hud
+ * TODO: check for v13 implementation
  */
 
 import { RangeHighlightAPI } from '../rangeHighlighter.js';
@@ -12,7 +13,7 @@ function getPersistentToken() {
 
 export function register() {
   Hooks.on('renderPF2eHudPersistent', (hud, html, opts) => {
-    if (!RangeHighlightAPI.itemEnabled) return;
+    if (!RangeHighlightAPI.itemHighlightEnabled) return;
 
     // Shortcuts
     $(html)
@@ -48,7 +49,7 @@ export function register() {
 
   // Sidebar
   Hooks.on('renderPF2eHudSidebar', (sidebar, html) => {
-    if (!RangeHighlightAPI.itemEnabled) return;
+    if (!RangeHighlightAPI.itemHighlightEnabled) return;
 
     // Items
     $(html)

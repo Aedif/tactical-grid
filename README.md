@@ -8,15 +8,14 @@ Provides settings to limit the display of the grid to a specific distance within
 
 https://user-images.githubusercontent.com/7693704/229789408-4da2e230-2791-437f-8f89-176b0bdaa9fd.mp4
 
-
 ## Settings
 
 ### World Settings
+
 ![settings1](https://user-images.githubusercontent.com/7693704/227632252-25ff2634-e65c-49eb-ac87-7e4515024c4e.png)
 ![settings2](https://user-images.githubusercontent.com/7693704/227632292-05986ed7-254a-48e0-a986-dc335521b8be.png)
 ![settings3](https://user-images.githubusercontent.com/7693704/227632324-0764188a-3d07-47ca-801a-111ecd70b715.png)
 ![settings4](https://user-images.githubusercontent.com/7693704/227632358-ffe77b68-dec9-4dd4-ba77-1a19638a2f5c.png)
-
 
 ### Client Settings
 
@@ -48,3 +47,7 @@ Global `Default Grid View Distance`, `Default Grid View Shape`, and `Color` can 
 Module allows for the core Foundry's default grid width to be adjusted:
 
 ![image](https://user-images.githubusercontent.com/7693704/222383155-24f6a9ac-bb2c-4658-bbe9-9d3bea6ed32f.png)
+
+## @DEVs
+
+Refer to [Wiki](https://github.com/Aedif/tactical-grid/wiki) about running the module and adding system/module support.

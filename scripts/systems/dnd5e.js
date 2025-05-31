@@ -131,7 +131,7 @@ export default class DnD5e extends GenericSystem {
 // Hooks.on('renderActivityChoiceDialog', _dnd5eActivityChoiceDialogHook);
 
 // function _dnd5eActivityChoiceDialogHook(app, html) {
-//   if (!RangeHighlightAPI.itemEnabled) return;
+//   if (!RangeHighlightAPI.itemHighlightEnabled) return;
 
 //   $(html)
 //     .find('[data-application-part="activities"] button[data-activity-id!=""]')
