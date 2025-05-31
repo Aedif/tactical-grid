@@ -1,6 +1,5 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import { getGameSystem, registerModules } from './externalSupport.js';
-import { registerExternalModuleHooks } from './rangeExtSupport.js';
+import { registerGameSystem, registerModules } from './externalSupport.js';
 import { MODULE_ID } from './utils.js';
 
 export class RangeHighlighter {
@@ -369,15 +368,7 @@ export function registerRangeHighlightHooks() {
     }
   });
 
-  // TODO: a bit messy
-  // Want to load the game system compatibility code only once, and keep re-using it
-  getGameSystem().then((system) => {
-    system = system.default;
-    system.onInit();
-    RangeHighlightAPI._rangeCalculator = system;
-  });
-
-  registerExternalModuleHooks();
+  registerGameSystem();
   registerModules();
 }
 
@@ -393,7 +384,6 @@ export class RangeHighlightAPI {
   }
 
   static getRangeCalculator() {
-    console.log('atg', this._rangeCalculator);
     return this._rangeCalculator;
   }
 
@@ -408,9 +398,10 @@ export class RangeHighlightAPI {
    */
   static rangeHighlight(token, { ranges, item } = {}) {
     if (!ranges) {
-      const rangeCalculator = RangeHighlightAPI.getRangeCalculator();
-      if (item) ranges = rangeCalculator.getItemRange(item, token);
-      else ranges = rangeCalculator.getTokenRange(token);
+      if (!this._rangeCalculator) return;
+
+      if (item) ranges = this._rangeCalculator.getItemRange(item, token);
+      else ranges = this._rangeCalculator.getTokenRange(token);
     }
 
     if (ranges.length === 0) {

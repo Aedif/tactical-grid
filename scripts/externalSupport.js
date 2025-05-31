@@ -1,18 +1,28 @@
+import { RangeHighlightAPI } from './rangeHighlighter.js';
 import { GenericSystem } from './systems/generic.js';
 
-export function getGameSystem() {
+export async function registerGameSystem() {
+  let gameSystem;
+
   switch (game.system.id) {
     case 'dnd5e':
-      return import('./systems/dnd5e.js');
+      gameSystem = (await import('./systems/dnd5e.js')).default;
+      break;
     case 'pf2e':
-      return import('./systems/pf2e.js');
+      gameSystem = (await import('./systems/pf2e.js')).default;
+      break;
     case 'crucible':
-      return import('./systems/crucible.js');
+      gameSystem = (await import('./systems/crucible.js')).default;
+      break;
     case 'dc20rpg':
-      return import('./systems/dc20.js');
+      gameSystem = (await import('./systems/dc20.js')).default;
+      break;
     default:
-      return GenericSystem;
+      gameSystem = GenericSystem;
   }
+
+  gameSystem.onInit();
+  RangeHighlightAPI._rangeCalculator = gameSystem;
 }
 
 /**
@@ -22,4 +32,7 @@ export function registerModules() {
   if (game.modules.get('action-pack')?.active) import('./modules/actionPack.js').then((module) => module.register());
   if (game.modules.get('enhancedcombathud')?.active)
     import('./modules/argonHud.js').then((module) => module.register());
+  if (game.modules.get('token-action-hud-core')?.active)
+    import('./modules/tokenActionHud.js').then((module) => module.register());
+  if (game.modules.get('pf2e-hud')?.active) import('./modules/pf2eHud.js').then((module) => module.register());
 }

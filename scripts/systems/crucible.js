@@ -4,6 +4,7 @@ import { GenericSystem } from './generic.js';
 export default class Crucible extends GenericSystem {
   /** @override */
   static onInit() {
+    super.onInit();
     this._registerActorSheetListeners();
   }
 

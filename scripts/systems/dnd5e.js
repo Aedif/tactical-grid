@@ -96,6 +96,7 @@ export default class DnD5e extends GenericSystem {
 
   /** @override */
   static onInit() {
+    super.onInit();
     this._registerActorSheetListeners();
   }
 
@@ -108,6 +109,20 @@ export default class DnD5e extends GenericSystem {
         })
         .on('mouseleave', selector, () => this.hoverLeaveItem({ actorSheet }));
     });
+  }
+
+  /** @override */
+  static getItemFromMacro(macro, actor) {
+    if (macro?.getFlag('dnd5e', 'itemMacro')) {
+      const match = macro.command.match(/.*rollItem\("(?<itemName>.+)"/);
+      if (!match) return;
+      const itemName = match.groups?.itemName;
+
+      const item = actor.items.filter((item) => item.name === itemName)?.[0];
+      return item;
+    }
+
+    return null;
   }
 }
 

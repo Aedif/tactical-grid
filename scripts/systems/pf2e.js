@@ -4,7 +4,32 @@ import { GenericSystem } from './generic.js';
 export default class PF2e extends GenericSystem {
   /** @override */
   static onInit() {
+    super.onInit();
     this._registerActorSheetListeners();
+  }
+
+  /** @override */
+  static getItemFromMacro(macro, actor) {
+    if (!macro) return null;
+    let match;
+    if (macro.getFlag('pf2e', 'actionMacro')) {
+      match = macro.command.match(/^game\.pf2e\.rollActionMacro\(.*itemId: *"(?<itemId>[A-Za-z0-9]+)"/);
+    } else if (macro.getFlag('pf2e', 'itemMacro')) {
+      match = macro.command.match(/^game\.pf2e\.rollItemMacro\(" *(?<itemId>[A-Za-z0-9]+)"/);
+      if (!match) {
+        match = macro.command.match(
+          /^game\.pf2e\.rollItemMacro\("Actor\.([A-Za-z0-9]+)\.Item\.(?<itemId>[A-Za-z0-9]+)"/
+        );
+      }
+    }
+
+    if (match) {
+      const itemId = match.groups?.itemId;
+      const item = actor.items.get(itemId);
+      return item;
+    }
+
+    return null;
   }
 
   /** @override */

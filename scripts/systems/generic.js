@@ -30,7 +30,45 @@ export class GenericSystem {
   /**
    * Called on game 'init'. This is where any system specific hooks and wrappers should be registered
    */
-  static onInit() {}
+  static onInit() {
+    this._registerHotbarListeners();
+  }
+
+  /**
+   * Registers 'mouseover' and 'mouseleave' listeners for the hotbar if 'getItemFromMacro' function
+   * has been implemented by the derived class.
+   * @returns
+   */
+  static _registerHotbarListeners() {
+    if (this.getItemFromMacro === undefined) return;
+
+    Hooks.on('renderHotbar', (hotbar, element, data, options) => {
+      $(element)
+        .find('.slot')
+        .on('mouseover', (event) => {
+          const macro = ui.hotbar.slots[Number(event.target.dataset.slot) - 1]?.macro;
+          if (!macro) return;
+
+          const { actor, token } = this.getInferredActorAndToken();
+          if (!token || !actor) return;
+
+          const item = this.getItemFromMacro(macro, actor);
+
+          if (item) {
+            RangeHighlightAPI.rangeHighlight(token, { item });
+          } else {
+            RangeHighlightAPI.clearRangeHighlight(token);
+          }
+        })
+        .on('mouseleave', (event) => {
+          const macro = ui.hotbar.slots[Number(event.target.dataset.slot)];
+          if (!macro) return;
+
+          let { actor, token } = this.getInferredActorAndToken();
+          if (token) RangeHighlightAPI.clearRangeHighlight(token);
+        });
+    });
+  }
 
   /**
    * Utility that converts grid spaces to range in grid units
@@ -74,5 +112,23 @@ export class GenericSystem {
     token = token ?? actorSheet?.token?.object ?? actor?.getActiveTokens()[0];
 
     if (token) RangeHighlightAPI.clearRangeHighlight(token);
+  }
+
+  /**
+   * Infers and returns the currently controlled Token and Actor
+   * @returns
+   */
+  static getInferredActorAndToken() {
+    let actor;
+    const speaker = ChatMessage.getSpeaker();
+
+    if (speaker.token) actor = game.actors.tokens[speaker.token];
+    actor ??= game.actors.get(speaker.actor);
+    if (!actor) return [];
+
+    const token = canvas.tokens?.get(speaker.token ?? '');
+    if (!token) return [];
+
+    return { actor, token };
   }
 }

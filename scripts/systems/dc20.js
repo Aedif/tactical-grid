@@ -35,4 +35,18 @@ export default class DC20 extends GenericSystem {
 
     return ranges;
   }
+
+  /** @override */
+  static getItemFromMacro(macro, actor) {
+    if (macro?.getFlag('dc20rpg', 'itemMacro')) {
+      const match = macro.command.match(/^game\.dc20rpg\.rollItemMacro\(\"(?<itemName>[A-Za-z0-9]+)\"\)/);
+      if (!match) return;
+      const itemName = match.groups?.itemName;
+
+      const item = actor.items.filter((item) => item.name === itemName)?.[0];
+      return item;
+    }
+
+    return null;
+  }
 }
