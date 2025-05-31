@@ -1,5 +1,5 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
-import { getGameSystem } from './externalSupport.js';
+import { getGameSystem, registerModules } from './externalSupport.js';
 import { registerExternalModuleHooks } from './rangeExtSupport.js';
 import { MODULE_ID } from './utils.js';
 
@@ -369,13 +369,34 @@ export function registerRangeHighlightHooks() {
     }
   });
 
-  const gameSystem = getGameSystem();
-  gameSystem.onInit();
+  // TODO: a bit messy
+  // Want to load the game system compatibility code only once, and keep re-using it
+  getGameSystem().then((system) => {
+    system = system.default;
+    system.onInit();
+    RangeHighlightAPI._rangeCalculator = system;
+  });
 
   registerExternalModuleHooks();
+  registerModules();
 }
 
 export class RangeHighlightAPI {
+  /**
+   *  Returns true if Item range highlighting is enabled
+   */
+  static get itemEnabled() {
+    if (!MODULE_CONFIG.range.item.enabled) return false;
+    if (!MODULE_CLIENT_CONFIG.rangeHighlighter) return false;
+    if (MODULE_CONFIG.range.item.combatOnly && !game.combat?.started) return false;
+    return true;
+  }
+
+  static getRangeCalculator() {
+    console.log('atg', this._rangeCalculator);
+    return this._rangeCalculator;
+  }
+
   /**
    * Highlights ranges around the token using either the supplied range values or automatically calculated system specific ranges if only a token or a token and an item are provided.
    * @param {Token} token                                  Token to highlight the ranges around
@@ -387,7 +408,7 @@ export class RangeHighlightAPI {
    */
   static rangeHighlight(token, { ranges, item } = {}) {
     if (!ranges) {
-      const rangeCalculator = getGameSystem();
+      const rangeCalculator = RangeHighlightAPI.getRangeCalculator();
       if (item) ranges = rangeCalculator.getItemRange(item, token);
       else ranges = rangeCalculator.getTokenRange(token);
     }
@@ -484,30 +505,4 @@ async function _tokensAndItemFromItemUuid(uuid) {
   else tokens = item.actor?.getActiveTokens(true) || [];
 
   return { tokens, item };
-}
-
-export function itemRangeHighlightEnabled() {
-  if (!MODULE_CONFIG.range.item.enabled) return false;
-  if (!MODULE_CLIENT_CONFIG.rangeHighlighter) return false;
-  if (MODULE_CONFIG.range.item.combatOnly && !game.combat?.started) return false;
-  return true;
-}
-
-function _getShiftedPosition(dx, dy, token, origin) {
-  let { x, y, width, height } = token.document;
-  const s = canvas.dimensions.size;
-
-  // Identify the coordinate of the starting grid space
-  let x0 = x;
-  let y0 = y;
-  if (canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS) {
-    const c = token.center;
-    x0 = width <= 1 ? c.x : x + s / 2;
-    y0 = height <= 1 ? c.y : y + s / 2;
-  }
-
-  // Shift the position and test collision
-  const [x1, y1] = canvas.grid.grid.shiftPosition(x0, y0, dx, dy, { token });
-  let collide = token.checkCollision(token.getCenter(x1, y1), { origin });
-  return collide ? { x, y } : { x: x1, y: y1 };
 }

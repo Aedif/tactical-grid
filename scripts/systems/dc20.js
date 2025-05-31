@@ -1,6 +1,6 @@
 import { GenericSystem } from './generic.js';
 
-export class DC20 extends GenericSystem {
+export default class DC20 extends GenericSystem {
   /** @override */
   static getTokenRange(token) {
     const actor = token.actor;

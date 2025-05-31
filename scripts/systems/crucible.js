@@ -1,7 +1,7 @@
-import { itemRangeHighlightEnabled } from '../rangeHighlighter.js';
+import { RangeHighlightAPI } from '../rangeHighlighter.js';
 import { GenericSystem } from './generic.js';
 
-export class Crucible extends GenericSystem {
+export default class Crucible extends GenericSystem {
   /** @override */
   static onInit() {
     this._registerActorSheetListeners();
@@ -32,7 +32,7 @@ export class Crucible extends GenericSystem {
 
   static _registerActorSheetListeners() {
     Hooks.on('renderActorSheet', (actorSheet, html, options) => {
-      if (!itemRangeHighlightEnabled()) return;
+      if (!RangeHighlightAPI.itemEnabled) return;
 
       html
         .find('.line-item')

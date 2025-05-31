@@ -1,4 +1,4 @@
-import { itemRangeHighlightEnabled, RangeHighlightAPI } from '../rangeHighlighter.js';
+import { RangeHighlightAPI } from '../rangeHighlighter.js';
 
 /**
  * GenericSystem to be extended to provide additional game system support.
@@ -48,7 +48,7 @@ export class GenericSystem {
    * Respond to mouse hovering over an item with itemId
    */
   static hoverItem({ item, itemId, actorSheet, actor, token } = {}) {
-    if (!itemRangeHighlightEnabled()) return;
+    if (!RangeHighlightAPI.itemEnabled) return;
 
     actor = actor ?? actorSheet?.document ?? token?.actor;
     if (!actor) return;

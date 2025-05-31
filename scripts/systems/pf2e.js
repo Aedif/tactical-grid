@@ -1,7 +1,7 @@
-import { itemRangeHighlightEnabled } from '../rangeHighlighter.js';
+import { RangeHighlightAPI } from '../rangeHighlighter.js';
 import { GenericSystem } from './generic.js';
 
-export class PF2e extends GenericSystem {
+export default class PF2e extends GenericSystem {
   /** @override */
   static onInit() {
     this._registerActorSheetListeners();
@@ -81,7 +81,7 @@ export class PF2e extends GenericSystem {
 
   static _registerActorSheetListeners() {
     Hooks.on('renderActorSheet', (actorSheet, html, options) => {
-      if (!itemRangeHighlightEnabled()) return;
+      if (!RangeHighlightAPI.itemEnabled) return;
 
       // Strike Actions
       const strikeSelector = '.actions-list.strikes-list > .strike';

@@ -1,14 +1,10 @@
-import { RangeHighlightAPI, itemRangeHighlightEnabled } from './rangeHighlighter.js';
+import { RangeHighlightAPI } from './rangeHighlighter.js';
 
 // =================================
 // ==== External Module Support ====
 // =================================
 
 export function registerExternalModuleHooks() {
-  // Action Pack
-  _actionPack();
-  // Argon - Combat HUD
-  _argonHud();
   // Token Action HUD
   _tokenActionHud();
   // DnD5e/Pf2e/DC20 Macro Bar
@@ -122,30 +118,12 @@ function _actionPack() {
     html
       .find('.item-name')
       .on('mouseover', async (event) => {
-        if (!itemRangeHighlightEnabled()) return;
+        if (!RangeHighlightAPI.itemEnabled) return;
         RangeHighlightAPI.rangeHighlightItemUuid($(event.target).closest('.item').data('item-uuid'));
       })
       .on('mouseleave', async (event) => {
         RangeHighlightAPI.clearRangeHighlightItemUuid($(event.target).closest('.item').data('item-uuid'));
       });
-  });
-}
-
-// Argon - Combat HUD
-// https://foundryvtt.com/packages/enhancedcombathud
-function _argonHud() {
-  if (!game.modules.get('enhancedcombathud')?.active) return;
-  Hooks.on('renderCoreHUD', (hud, html, opts) => {
-    if (!itemRangeHighlightEnabled()) return;
-    hud.itemButtons.forEach((button) => {
-      $(button.element)
-        .on('mouseover', (event) => {
-          RangeHighlightAPI.rangeHighlight(button.token, { item: button.item });
-        })
-        .on('mouseleave', (event) => {
-          RangeHighlightAPI.clearRangeHighlight(button.token);
-        });
-    });
   });
 }
 
@@ -156,7 +134,7 @@ function _tokenActionHud() {
 
   let token;
   Hooks.on('renderTokenActionHud', (hud, html, opts) => {
-    if (!itemRangeHighlightEnabled()) {
+    if (!RangeHighlightAPI.itemEnabled) {
       token = null;
       return;
     }
@@ -182,7 +160,7 @@ function _pf2eHud() {
   };
 
   Hooks.on('renderPF2eHudPersistent', (hud, html, opts) => {
-    if (!itemRangeHighlightEnabled()) return;
+    if (!RangeHighlightAPI.itemEnabled) return;
 
     // Shortcuts
     $(html)
@@ -218,7 +196,7 @@ function _pf2eHud() {
 
   // Sidebar
   Hooks.on('renderPF2eHudSidebar', (sidebar, html) => {
-    if (!itemRangeHighlightEnabled()) return;
+    if (!RangeHighlightAPI.itemEnabled) return;
 
     // Items
     $(html)
