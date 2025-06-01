@@ -33,7 +33,6 @@ export const MODULE_CONFIG = {
   rulerColor: '',
   measurement: {
     volumetricTokens: false,
-    shortestDistance: true,
     precision: 0,
     fontSize: CONFIG.canvasTextStyle.fontSize,
     fontFamily: CONFIG.canvasTextStyle.fontFamily,

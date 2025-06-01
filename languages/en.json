@@ -54,10 +54,6 @@
         "name": "Three-dimensional Tokens",
         "hint": "When enabled token height will be taken into account when calculating distances for elevated tokens."
       },
-      "shortestDistance": {
-        "name": "Shortest Distance Only",
-        "hint": "Only the shortest distance to the token will be shown."
-      },
       "scaleFontSize": "Scale Font Size to Canvas Grid",
       "baseGridSize": {
         "name": "Base Grid Size",

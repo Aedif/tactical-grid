@@ -148,31 +148,20 @@ export class TacticalGridCalculator {
     for (const token of visibleTokens) {
       const fromPoint = { ...originPoint };
       this.drawCrossHighlight(fromPoint, true); // test
-      const toPoints = DistanceUtilities.targetPoints(originPoint, token);
-      this.drawCrossHighlight(toPoints[0], true); // test
+      const toPoint = DistanceUtilities.targetPoint(originPoint, token);
+      this.drawCrossHighlight(toPoint, true); // test
 
       if (MODULE_CONFIG.measurement.volumetricTokens) {
         fromPoint.elevation = DistanceUtilities.determineVolumetricPointElevation(fromPoint, token);
       }
 
-      // Calculate distances
-      toPoints.forEach((p) => {
-        p.distance = DistanceCalculator.calculateDistance(fromPoint, p, token, {
-          gridSpaces,
-        });
+      // Calculate distance
+      const distance = DistanceCalculator.calculateDistance(fromPoint, toPoint, token, {
+        gridSpaces,
       });
 
-      // Display distances as labels
-      if (toPoints.length) {
-        if (MODULE_CONFIG.measurement.shortestDistance) {
-          const smallest = toPoints.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
-          this.addUpdateLabel(token, token.center, this.genLabel(smallest.distance));
-        } else {
-          toPoints.forEach((d) => {
-            this.addUpdateLabel(token, d.center, this.genLabel(d.distance));
-          });
-        }
-      }
+      // Display distance
+      this.addUpdateLabel(token, token.center, this.genLabel(distance));
     }
   }
 
@@ -197,8 +186,8 @@ export class TacticalGridCalculator {
 
       const fromPoint = DistanceUtilities.nearestOriginPoint(originToken, token);
       this.drawCrossHighlight(fromPoint, true); // test
-      const toPoints = DistanceUtilities.targetPoints(fromPoint, token);
-      this.drawCrossHighlight(toPoints[0], true); // test
+      const toPoint = DistanceUtilities.targetPoint(fromPoint, token);
+      this.drawCrossHighlight(toPoint, true); // test
 
       if (MODULE_CONFIG.measurement.volumetricTokens) {
         const { originElevation, targetElevation } = DistanceUtilities.determineVolumetricTokenElevation(
@@ -207,34 +196,23 @@ export class TacticalGridCalculator {
         );
 
         fromPoint.elevation = originElevation;
-        toPoints.forEach((p) => (p.elevation = targetElevation));
+        toPoint.elevation = targetElevation;
       }
 
       /// Calculate Cover
+      let cover;
       if (MODULE_CONFIG.cover.calculator !== 'none' && (!MODULE_CONFIG.cover.combatOnly || game.combat?.started)) {
-        let cover = computeCoverBonus(originToken, token);
-        if (cover) toPoints.forEach((p) => (p.cover = cover));
+        cover = computeCoverBonus(originToken, token);
       }
 
-      // Calculate distances
-      toPoints.forEach((p) => {
-        p.distance = DistanceCalculator.calculateDistance(fromPoint, p, token, {
-          originToken,
-          gridSpaces,
-        });
+      // Calculate distance
+      const distance = DistanceCalculator.calculateDistance(fromPoint, toPoint, token, {
+        originToken,
+        gridSpaces,
       });
 
-      // Display distances as labels
-      if (toPoints.length) {
-        if (MODULE_CONFIG.measurement.shortestDistance) {
-          const smallest = toPoints.reduce((d1, d2) => (d1.distance < d2.distance ? d1 : d2));
-          this.addUpdateLabel(token, token.center, this.genLabel(smallest.distance), smallest.cover);
-        } else {
-          toPoints.forEach((d) => {
-            this.addUpdateLabel(token, d.center, this.genLabel(d.distance), d.cover);
-          });
-        }
-      }
+      // Display distance and cover label
+      this.addUpdateLabel(token, token.center, this.genLabel(distance), cover);
     }
   }
 
@@ -404,46 +382,55 @@ export class DistanceUtilities {
    * @returns {x, y} closest grid space or border edge (gridless)
    */
   static nearestOriginPoint(oToken, tToken) {
-    let point;
-
-    const center = oToken.center;
     if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
-      point = DistanceUtilities.nearestPointToToken(tToken.center, oToken);
+      return { ...DistanceUtilities.nearestPointToToken(tToken.center, oToken), elevation: oToken.document.elevation };
     }
-    if (point) return { ...point, elevation: oToken.document.elevation };
 
-    let gridPoints = DistanceUtilities.getOccupiedGridPoints(oToken);
+    return this.nearestGridPoint(
+      tToken.center,
+      DistanceUtilities.getOccupiedGridPoints(oToken),
+      oToken.document.elevation
+    );
+  }
 
-    // Find the grid point with the shortest distance to tToken
-    if (!gridPoints.length) return { ...center, elevation: oToken.document.elevation };
+  /**
+   * Calculates coordinates on the token to be used in distance calculations
+   * @param {PIXI.Point} originPoint point from which distances are to be calculated
+   * @param {Token} token token to which distances are to be calculated
+   * @returns {Array[]}
+   */
+  static targetPoint(originPoint, token) {
+    if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
+      let target = DistanceUtilities.nearestPointToToken(originPoint, token);
+      return { ...target, center: { x: token.w / 2, y: token.h / 2 }, elevation: token.document.elevation };
+    } else {
+      return this.nearestGridPoint(
+        originPoint,
+        DistanceUtilities.getOccupiedGridPoints(token),
+        token.document.elevation
+      );
+    }
+  }
 
-    const tCenter = tToken.center;
+  /**
+   * Returns the grid point nearest to 'point'
+   * @param {*} point
+   * @param {*} gridPoints
+   * @param {*} elevation
+   * @returns
+   */
+  static nearestGridPoint(point, gridPoints, elevation) {
     let closest = gridPoints[0];
-    let cDistance = DistanceUtilities.squaredEuclidean(closest, tCenter);
+    let cDistance = DistanceUtilities.squaredEuclidean(closest, point);
     for (let i = 1; i < gridPoints.length; i++) {
-      const d = DistanceUtilities.squaredEuclidean(gridPoints[i], tCenter);
+      const d = DistanceUtilities.squaredEuclidean(gridPoints[i], point);
       if (d < cDistance) {
         closest = gridPoints[i];
         cDistance = d;
       }
     }
-    return { ...closest, elevation: oToken.document.elevation };
-  }
 
-  /**
-   * Calculates coordinates on the token to be used in distance calculations along with offsets for where the distance label is to be shown
-   * @param {PIXI.Point} originPoint point from which distances are to be calculated
-   * @param {Token} token token to which distances are to be calculated
-   * @returns {Array[]}
-   */
-  static targetPoints(originPoint, token) {
-    // Gridless
-    if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
-      let target = DistanceUtilities.nearestPointToToken(originPoint, token);
-      return [{ ...target, center: { x: token.w / 2, y: token.h / 2 }, elevation: token.document.elevation }];
-    } else {
-      return DistanceUtilities.getOccupiedGridPoints(token);
-    }
+    return { ...closest, elevation };
   }
 
   /**
