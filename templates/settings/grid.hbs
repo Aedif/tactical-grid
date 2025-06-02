@@ -1,0 +1,87 @@
+<div class="tab{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <div class="form-group slim">
+        <label>{{localize "aedifs-tactical-grid.settings.defaultViewDistance.name"}} <span class="units">({{localize "aedifs-tactical-grid.common.gridSpaces"}})</span></label>
+        <div class="form-fields">
+            <input type="number" value="{{defaultViewDistance}}" step="any" name="defaultViewDistance">
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.defaultViewDistance.hint"}}</p>
+    </div>
+
+    <hr>
+
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.usePropertyBasedDistance.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="usePropertyBasedDistance" {{checked usePropertyBasedDistance}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.usePropertyBasedDistance.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.propertyDistance.name"}} <span class="units">({{units}})</span></label>
+        <div class="form-fields">
+            <input type="text" value="{{propertyDistance}}" name="propertyDistance">
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.propertyDistance.hint"}}</p>
+    </div>
+
+    <hr>
+
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.defaultViewShape.name"}}</label>
+        <div class="form-fields">
+            <select name="defaultViewShape">
+                {{selectOptions viewShapes selected=defaultViewShape}}
+            </select>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.defaultViewShape.hint"}}</p>
+    </div>
+
+    <hr>
+
+    <div class="form-group">
+    <label>{{localize "aedifs-tactical-grid.settings.assignDispositionBasedColor.name"}}</label>
+    <div class="form-fields">
+        <input type="checkbox" name="assignDispositionBasedColor" value="{{assignDispositionBasedColor}}" {{#if assignDispositionBasedColor}}checked{{/if}}>
+    </div>
+    <p class="hint">{{localize "aedifs-tactical-grid.settings.assignDispositionBasedColor.hint"}}</p>
+    </div>
+
+    <fieldset>
+        <div class="form-group">
+            <label>{{localize "TYPES.Actor.character"}}</label>
+            <div class="form-fields">
+                <color-picker name="dispositionColors.playerOwner" value="{{dispositionColors.playerOwner}}"></color-picker>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "TOKEN.DISPOSITION.FRIENDLY"}}</label>
+            <div class="form-fields">
+                <color-picker name="dispositionColors.friendly" value="{{dispositionColors.friendly}}"></color-picker>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "TOKEN.DISPOSITION.NEUTRAL"}}</label>
+            <div class="form-fields">
+                <color-picker name="dispositionColors.neutral" value="{{dispositionColors.neutral}}"></color-picker>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "TOKEN.DISPOSITION.HOSTILE"}}</label>
+            <div class="form-fields">
+                <color-picker name="dispositionColors.hostile" value="{{dispositionColors.hostile}}"></color-picker>
+            </div>
+        </div>
+    </fieldset>
+
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.mixColors.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="mixColors" value="{{mixColors}}" {{#if mixColors}}checked{{/if}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.mixColors.hint"}}</p>
+    </div>
+</div>

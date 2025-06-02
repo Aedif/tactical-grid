@@ -1,0 +1,32 @@
+<div class="tab{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.enableOnRuler.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="enableOnRuler" value="{{enableOnRuler}}" {{#if enableOnRuler}}checked{{/if}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.enableOnRuler.hint"}}</p>
+    </div>
+    <div class="form-group slim">
+        <label>View Distance <span class="units">({{localize "aedifs-tactical-grid.common.gridSpaces"}})</span></label>
+        <div class="form-fields">
+        <input type="number" value="{{rulerViewDistance}}" step="any" name="rulerViewDistance">
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.defaultViewDistance.hint"}}</p>
+    </div>
+    <div class="form-group">
+        <label>View Shape</label>
+        <div class="form-fields">
+            <select name="rulerViewShape">
+            {{selectOptions viewShapes selected=rulerViewShape}}
+            </select>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.defaultViewShape.hint"}}</p>
+    </div>
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.common.color"}}</label>
+        <div class="form-fields">
+            <color-picker name="rulerColor" value="{{rulerColor}}"></color-picker>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.rulerColor.hint"}}</p>
+    </div>
+</div>

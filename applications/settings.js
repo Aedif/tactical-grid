@@ -1,5 +1,6 @@
 import { MODULE_ID, getGridColorString } from '../scripts/utils.js';
 import { GRID_MASK } from '../tactical-grid.js';
+import SettingConfigApp from './settingApp.js';
 
 export const MODULE_CONFIG = {
   defaultViewDistance: 4,
@@ -112,7 +113,7 @@ export const MODULE_CLIENT_CONFIG = {
   broadcastMeasures: false,
 };
 
-const VIEW_SHAPE_OPTIONS = [
+export const VIEW_SHAPE_OPTIONS = [
   { label: 'Circle', value: 'circle' },
   { label: 'Square', value: 'square' },
   { label: 'Circle (Soft)', value: 'circle-soft' },
@@ -120,120 +121,6 @@ const VIEW_SHAPE_OPTIONS = [
   { label: 'Hexagon (Column)', value: 'hexagonCol' },
   { label: 'Hexagon (Row)', value: 'hexagonRow' },
 ];
-
-export default class TGSettingsConfig extends FormApplication {
-  constructor() {
-    super({}, {});
-  }
-
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: `${MODULE_ID}-settings`,
-      classes: ['sheet'],
-      template: `modules/${MODULE_ID}/templates/settings.html`,
-      resizable: false,
-      minimizable: false,
-      title: 'Tactical Grid Settings',
-      width: 600,
-      height: 'auto',
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.content', initial: 'enable' }],
-    });
-  }
-
-  async getData(options) {
-    const data = super.getData(options);
-    foundry.utils.mergeObject(data, foundry.utils.deepClone(MODULE_CONFIG));
-
-    data.viewShapes = VIEW_SHAPE_OPTIONS;
-
-    for (const [k, v] of Object.entries(data.dispositionColors)) {
-      data.dispositionColors[k] = new Color(v).toString();
-    }
-
-    data.marker.color = new Color(data.marker.color).toString();
-    data.marker.border = new Color(data.marker.border).toString();
-
-    data.fonts = [];
-    FontConfig._collectDefinitions().forEach((f) => (data.fonts = data.fonts.concat(Object.keys(f))));
-
-    data.units = canvas.scene?.grid.units || 'ft';
-
-    data.calculators = [
-      { name: 'None', value: 'none' },
-      { name: "Simbul's Cover Calculator", value: 'simbuls-cover-calculator' },
-      { name: 'Levels Auto Cover', value: 'levelsautocover' },
-      { name: 'MidiQOL (mirror `Calculate Cover` setting)', value: 'midi-qol' },
-      { name: 'PF2e Perception', value: 'pf2e-perception' },
-      { name: 'Alternative Token Cover', value: 'tokencover' },
-    ];
-
-    for (const calculator of data.calculators) {
-      if (calculator.value !== 'none') {
-        calculator.disabled = !game.modules.get(calculator.value)?.active;
-      }
-    }
-
-    data.dispositions = [];
-    for (const [k, v] of Object.entries(CONST.TOKEN_DISPOSITIONS)) {
-      data.dispositions.push({
-        value: v,
-        label: game.i18n.localize(`TOKEN.DISPOSITION.${k}`),
-        enabled: MODULE_CONFIG.range.token.dispositions[v],
-      });
-    }
-
-    return data;
-  }
-
-  /**
-   * @param {Event} event
-   * @param {Object} formData
-   */
-  async _updateObject(event, formData) {
-    const settings = foundry.utils.expandObject(formData);
-
-    if (settings.range.colors) settings.range.colors = Object.values(settings.range.colors);
-    else settings.range.colors = [];
-
-    for (const [k, v] of Object.entries(settings.dispositionColors)) {
-      settings.dispositionColors[k] = Number(Color.fromString(v));
-    }
-    settings.marker.color = Number(Color.fromString(settings.marker.color));
-    settings.marker.border = Number(Color.fromString(settings.marker.border));
-
-    await updateSettings(settings);
-  }
-
-  activateListeners(html) {
-    super.activateListeners(html);
-    html
-      .find('[name="usePropertyBasedDistance"]')
-      .on('change', (event) => {
-        html.find('[name="propertyDistance"]').prop('disabled', !event.target.checked);
-        html.find('[name="defaultViewDistance"]').prop('disabled', event.target.checked);
-      })
-      .trigger('change');
-    html.find('.addRangeColor').on('click', this._onAddRangeColor.bind(this));
-    html.find('.deleteRangeColor').on('click', this._onDeleteRangeColor.bind(this));
-  }
-
-  async _onAddRangeColor(event) {
-    const formData = this._getSubmitData({});
-    await this._updateObject(event, formData);
-
-    MODULE_CONFIG.range.colors.push(foundry.utils.deepClone(MODULE_CONFIG.range.defaultColor));
-    this.render(true);
-  }
-
-  async _onDeleteRangeColor(event) {
-    const formData = foundry.utils.expandObject(this._getSubmitData({}));
-    const index = $(event.target).closest('.deleteRangeColor').data('index');
-    delete formData.range.colors[index];
-
-    await this._updateObject(event, formData);
-    this.render(true);
-  }
-}
 
 export function registerSettings() {
   game.settings.register(MODULE_ID, 'settings', {
@@ -284,12 +171,12 @@ export function registerSettings() {
   MODULE_CLIENT_CONFIG.broadcastMeasures = game.settings.get(MODULE_ID, 'broadcastMeasures');
 
   game.settings.registerMenu(MODULE_ID, 'settings', {
-    name: 'Configure Settings',
+    name: 'Configure Settings V2',
     hint: '',
     label: 'Settings',
     scope: 'world',
     icon: 'fas fa-cog',
-    type: TGSettingsConfig,
+    type: SettingConfigApp,
     restricted: true,
   });
 

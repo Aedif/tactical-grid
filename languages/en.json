@@ -1,6 +1,14 @@
 {
   "aedifs-tactical-grid": {
     "settings": {
+      "tabs": {
+        "enable": "Enable Grid",
+        "grid": "Grid",
+        "ruler": "Ruler",
+        "measurement": "Measurement",
+        "cover": "Cover",
+        "range": "Range"
+      },
       "defaultViewDistance": {
         "name": "Default Grid View Distance",
         "hint": "Number of grid spaces to be displayed."

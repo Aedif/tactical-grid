@@ -1,0 +1,51 @@
+<div class="tab{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.range.combat-only"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="cover.combatOnly" data-dtype="Boolean" value="{{cover.combatOnly}}" {{#if cover.combatOnly}}checked{{/if}}>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.cover.name"}}</label>
+        <div class="form-fields">
+            <select name="cover.calculator">
+            {{#each calculators as |calculator|}}
+            <option value="{{calculator.value}}" {{#if (eq ../cover.calculator calculator.value)}}selected="selected"{{/if}} {{#if calculator.disabled}}disabled{{/if}}>{{calculator.name}}</option>
+            {{/each}}
+            </select>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.cover.hint"}}</p>
+    </div>
+
+    <fieldset>
+        <legend>{{localize "aedifs-tactical-grid.common.labels"}}</legend>
+        <div class="form-group">
+            <label>{{localize "aedifs-tactical-grid.settings.cover.none"}}</label>
+            <div class="form-fields">
+                <input class="atg-fa" type="text" value="{{cover.noCover}}" name="cover.noCover">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "aedifs-tactical-grid.settings.cover.half"}}</label>
+            <div class="form-fields">
+                <input class="atg-fa" type="text" value="{{cover.halfCover}}" name="cover.halfCover">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "aedifs-tactical-grid.settings.cover.threeQuarters"}}</label>
+            <div class="form-fields">
+                <input class="atg-fa" type="text" value="{{cover.threeQuartersCover}}" name="cover.threeQuartersCover">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "aedifs-tactical-grid.settings.cover.total"}}</label>
+            <div class="form-fields">
+                <input class="atg-fa" type="text" value="{{cover.totalCover}}" name="cover.totalCover">
+            </div>
+        </div>
+    </fieldset>
+</div>

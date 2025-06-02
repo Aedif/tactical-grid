@@ -1,0 +1,25 @@
+<div class="tab{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.enableOnControl.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="enableOnControl" {{checked enableOnControl}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.enableOnControl.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.enableOnHover.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="enableOnHover" {{checked enableOnHover}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.enableOnHover.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.enableOnCombatOnly.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="enableOnCombatOnly" {{checked enableOnCombatOnly}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.enableOnCombatOnly.hint"}}</p>
+    </div>
+</div>
