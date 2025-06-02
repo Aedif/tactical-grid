@@ -363,7 +363,8 @@ export function registerRulerLibWrapperMethods() {
         GRID_MASK.container.setMaskPosition({ id: 'RULER', center: this.destination });
 
         if (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) {
-          TacticalGrid.distanceCalculator.showDistanceLabelsFromPoint(this.destination);
+          if (this.destination) TacticalGrid.distanceCalculator.showDistanceLabelsFromPoint(this.destination);
+          else TacticalGrid.distanceCalculator.hideLabels();
         }
       }
       return result;

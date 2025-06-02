@@ -1,4 +1,5 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
+import { ClosestPointUtilities } from './closestPointUtilities.js';
 import { computeCoverBonus } from './cover.js';
 import { tokenHasEffect } from './utils.js';
 
@@ -138,15 +139,18 @@ export class TacticalGridCalculator {
   showDistanceLabelsFromPoint(originPoint) {
     if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
 
+    const elevation = originPoint.elevation;
     originPoint = canvas.grid.getTopLeftPoint(originPoint);
 
     const visibleTokens = this.getVisibleTokens();
     for (const token of visibleTokens) {
-      const fromPoint = { ...originPoint };
-      const toPoint = DistanceUtilities.targetPoint(originPoint, token);
+      const fromPoint = { ...originPoint, elevation };
+      const toPoint = ClosestPointUtilities.pointToToken(fromPoint, token);
+      toPoint.elevation = token.document.elevation;
+      //this.drawCrossHighlight(toPoint, true);
 
       if (MODULE_CONFIG.measurement.volumetricTokens) {
-        fromPoint.elevation = DistanceUtilities.determineVolumetricPointElevation(fromPoint, token);
+        fromPoint.elevation = VolumetricUtilities.determineVolumetricPointElevation(fromPoint, token);
       }
 
       // Calculate distance
@@ -170,11 +174,15 @@ export class TacticalGridCalculator {
     for (const token of visibleTokens) {
       if (token.id === originToken.id) continue;
 
-      const fromPoint = DistanceUtilities.nearestOriginPoint(originToken, token);
-      const toPoint = DistanceUtilities.targetPoint(fromPoint, token);
+      const { pointA: fromPoint, pointB: toPoint } = ClosestPointUtilities.tokenToToken(originToken, token);
+      fromPoint.elevation = originToken.document.elevation;
+      toPoint.elevation = token.document.elevation;
+
+      this.drawCrossHighlight(fromPoint, true);
+      this.drawCrossHighlight(toPoint, true);
 
       if (MODULE_CONFIG.measurement.volumetricTokens) {
-        const { originElevation, targetElevation } = DistanceUtilities.determineVolumetricTokenElevation(
+        const { originElevation, targetElevation } = VolumetricUtilities.determineVolumetricTokenElevation(
           originToken,
           token
         );
@@ -295,7 +303,7 @@ export class TacticalGridCalculator {
   }
 }
 
-export class DistanceUtilities {
+export class VolumetricUtilities {
   /**
    * Instead of treating a token as a 2d platform, treat it as a volume, changing the originPoint
    * elevation in a manner that compensates for token height
@@ -336,162 +344,6 @@ export class DistanceUtilities {
     }
 
     return originPoint.elevation;
-  }
-
-  /**
-   * Calculates squared euclidean distance between two points
-   * @param {object} p1
-   * @param {object} p2
-   * @returns
-   */
-  static squaredEuclidean(p1, p2) {
-    return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
-  }
-
-  /**
-   * Find the closest point on the origin token, to the target token
-   * @param {Token} oToken origin token
-   * @param {Token} tToken target token
-   * @returns {x, y} closest grid space or border edge (gridless)
-   */
-  static nearestOriginPoint(oToken, tToken) {
-    if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
-      return { ...DistanceUtilities.nearestPointToToken(tToken.center, oToken), elevation: oToken.document.elevation };
-    }
-
-    return this.nearestGridPoint(
-      tToken.center,
-      DistanceUtilities.getOccupiedGridPoints(oToken),
-      oToken.document.elevation
-    );
-  }
-
-  /**
-   * Calculates coordinates on the token to be used in distance calculations
-   * @param {PIXI.Point} originPoint point from which distances are to be calculated
-   * @param {Token} token token to which distances are to be calculated
-   * @returns {Array[]}
-   */
-  static targetPoint(originPoint, token) {
-    if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) {
-      let target = DistanceUtilities.nearestPointToToken(originPoint, token);
-      return { ...target, center: { x: token.w / 2, y: token.h / 2 }, elevation: token.document.elevation };
-    } else {
-      return this.nearestGridPoint(
-        originPoint,
-        DistanceUtilities.getOccupiedGridPoints(token),
-        token.document.elevation
-      );
-    }
-  }
-
-  /**
-   * Returns the grid point nearest to 'point'
-   * @param {*} point
-   * @param {*} gridPoints
-   * @param {*} elevation
-   * @returns
-   */
-  static nearestGridPoint(point, gridPoints, elevation) {
-    let closest = gridPoints[0];
-    let cDistance = DistanceUtilities.squaredEuclidean(closest, point);
-    for (let i = 1; i < gridPoints.length; i++) {
-      const d = DistanceUtilities.squaredEuclidean(gridPoints[i], point);
-      if (d < cDistance) {
-        closest = gridPoints[i];
-        cDistance = d;
-      }
-    }
-
-    return { ...closest, elevation };
-  }
-
-  /**
-   * Returns coordinates of grid spaces occupied by the token
-   * @param {Token} token
-   */
-  static getOccupiedGridPoints(token) {
-    const offsets = token.document.getOccupiedGridSpaceOffsets();
-    const elevation = token.document.elevation;
-
-    return offsets.map((offset) => {
-      return {
-        ...canvas.grid.getTopLeftPoint(offset),
-        center: canvas.grid.getCenterPoint(offset),
-        elevation,
-      };
-    });
-  }
-
-  static nearestPointToToken(point, token) {
-    const shape = token.document.shape;
-    const { width, height } = token.document.getSize();
-    if (shape === CONST.TOKEN_SHAPES.ELLIPSE_1 || shape === CONST.TOKEN_SHAPES.ELLIPSE_2) {
-      if (width === height) return this.nearestPointToCircle({ ...token.center, r: width / 2 }, point);
-      else return this.nearestPointToEllipse({ ...token.center, h: width / 2, v: height / 2 }, point);
-    } else {
-      const { x, y } = token.document;
-      return this.nearestPointToRectangle({ minX: x, minY: y, maxX: x + width, maxY: y + height }, point);
-    }
-  }
-
-  /**
-   * Find the nearest point on an ellipse given a point on the scene
-   * @param {object} c {x, y, h, v}
-   * @param {object} p {x, y}
-   * @returns nearest point {x, y}
-   */
-  static nearestPointToEllipse(c, p) {
-    // If p is the center of the ellipse, return any point on the ellipse boundary
-    if (c.x === p.x && c.y === p.y) return { x: c.x + c.h, y: c.y };
-
-    // Translate p to origin-relative coordinates
-    let dx = p.x - c.x;
-    let dy = p.y - c.y;
-
-    // Scale vector by ellipse radii
-    let scale = Math.sqrt((dx * dx) / (c.h * c.h) + (dy * dy) / (c.v * c.v));
-
-    // If point is inside the ellipse, return it directly
-    if (scale <= 1) return { x: p.x, y: p.y };
-
-    // Scale down the vector to lie on the ellipse
-    return {
-      x: c.x + dx / scale,
-      y: c.y + dy / scale,
-    };
-  }
-
-  /**
-   * Find the nearest point on a circle given a point on the scene
-   * @param {object} c {x, y, r}
-   * @param {object} p {x, y}
-   * @returns nearest point {x, y}
-   */
-  static nearestPointToCircle(c, p) {
-    // If c === p, return any edge
-    if (c.x === p.x && c.y === p.y) return { x: p.x, y: p.y };
-    let vX = p.x - c.x;
-    let vY = p.y - c.y;
-    let magV = Math.sqrt(vX * vX + vY * vY);
-    if (magV <= c.r) return { x: p.x, y: p.y };
-    return { x: c.x + (vX / magV) * c.r, y: c.y + (vY / magV) * c.r };
-  }
-
-  /**
-   * Find the nearest point on a rectangle given a point on the scene
-   * @param {object} rect {minX, maxX, minY, maxY}
-   * @param {object} p {x, y}
-   * @returns nearest point {x, y}
-   */
-  static nearestPointToRectangle(rect, p) {
-    const nearest = { x: p.x, y: p.y };
-    if (p.x < rect.minX) nearest.x = rect.minX;
-    else if (p.x > rect.maxX) nearest.x = rect.maxX;
-
-    if (p.y < rect.minY) nearest.y = rect.minY;
-    else if (p.y > rect.maxY) nearest.y = rect.maxY;
-    return nearest;
   }
 }
 
