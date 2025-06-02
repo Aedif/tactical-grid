@@ -178,8 +178,8 @@ export class TacticalGridCalculator {
       fromPoint.elevation = originToken.document.elevation;
       toPoint.elevation = token.document.elevation;
 
-      this.drawCrossHighlight(fromPoint, true);
-      this.drawCrossHighlight(toPoint, true);
+      // this.drawCrossHighlight(fromPoint, true);
+      // this.drawCrossHighlight(toPoint, true);
 
       if (MODULE_CONFIG.measurement.volumetricTokens) {
         const { originElevation, targetElevation } = VolumetricUtilities.determineVolumetricTokenElevation(

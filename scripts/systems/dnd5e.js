@@ -7,9 +7,9 @@ export default class DnD5e extends GenericSystem {
     const allRanges = new Set([this._getUnitAdjustedRange(1)]);
 
     actor.items
-      .filter((item) => item.system.equipped && this._isMelee(item))
+      .filter((item) => item.system.equipped && item.system.range?.reach)
       .forEach((item) => {
-        if (item.system.properties.has('rch')) allRanges.add(this._getUnitAdjustedRange(2));
+        allRanges.add(item.system.range.reach);
       });
 
     return Array.from(allRanges);

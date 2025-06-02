@@ -286,15 +286,20 @@ export class RangeHighlighter {
 
         // Find shortest distance to this grid space from the edge of the token
         let shortest = 99999999999999999;
+        let sDiagonals = 0;
         for (const t of edge) {
-          let cd = canvas.grid.measurePath([unpack(t), { i, j }]).distance;
-          if (cd < shortest) shortest = cd;
+          let { distance, diagonals } = canvas.grid.measurePath([unpack(t), { i, j }], {});
+          if (distance < shortest) {
+            sDiagonals = diagonals;
+            shortest = distance;
+          }
         }
 
         // Store the grid space within the caches of ranges it is within
         for (let r = 0; r < ranges.length; r++) {
           const range = ranges[r];
-          if (shortest <= range.range) {
+
+          if (shortest <= range.range || range.cost?.({ distance: shortest, diagonals: sDiagonals }) <= range.range) {
             const { x: x0, y: y0 } = canvas.grid.getTopLeftPoint({ i, j });
             range.cache.push({ x: (x0 - x) / canvas.grid.size, y: (y0 - y) / canvas.grid.size });
           }

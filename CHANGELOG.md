@@ -1,3 +1,8 @@
+# 2.0.0
+
+- Foundry v13 Support
+- Improved efficiency of highlighting large ranges for very large tokens
+
 # 1.32.0
 
 - Fixed some DnD5e melee weapon ranges not being highlighted
@@ -175,10 +180,9 @@ Module support:
  *                                                        e.g. [5, 30, 60]
  *                                                        e.g. [ {range: 30, color: '#00ff00', alpha: 0.1, lineColor: '#00ff00', lineWidth: 2, lineAlpha: 0.4, shrink: 0.8, }]
  * @param {Item} opts.item                               Item to be evaluated by the system specific range calculator to determine `ranges` automatically
- * @param {Boolean} opts.roundToken                      If `true` the token will be treated as a circle instead of a rectangle on gridless scenes
  * @returns {null}
  */
-static rangeHighlight(token, { ranges, roundToken = MODULE_CONFIG.range.roundToken, item } = {})
+static rangeHighlight(token, { ranges, item } = {})
 ```
 
 - `TacticalGrid.clearRangeHighlight(...)`

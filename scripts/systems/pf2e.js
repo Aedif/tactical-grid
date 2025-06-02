@@ -72,8 +72,7 @@ export default class PF2e extends GenericSystem {
     }
 
     if (!ranges.length && item.isMelee) {
-      if (item.system.traits.value?.includes('reach'))
-        ranges.push({ range: 10, measureDistance: this._reachMeasureDistance });
+      if (item.system.traits.value?.includes('reach')) ranges.push({ range: 10, cost: this._reachModifiedCost });
       else ranges.push(5);
     }
 
@@ -81,27 +80,12 @@ export default class PF2e extends GenericSystem {
   }
 
   // PF2e has an exception for distance measurements for the 10ft reach.
-  // This is a modified PF2e `measureDistances` function to account for this
-  // TODO: check if it's still necessary as of v13
-  static _reachMeasureDistance(path) {
-    const ray = new Ray(path[0], path[1]);
-    const segments = [{ ray }];
-
-    let nDiagonal = 0;
-    const d = canvas.dimensions;
-
-    const result = segments.map((s) => {
-      const r = s.ray,
-        nx = Math.abs(Math.ceil(r.dx / d.size)),
-        ny = Math.abs(Math.ceil(r.dy / d.size)),
-        nd = Math.min(nx, ny),
-        ns = Math.abs(ny - nx);
-      nDiagonal += nd;
-      const nd10 = Math.floor(nDiagonal / 2) - Math.floor((nDiagonal - nd) / 2);
-      return (nd10 + (nd - nd10) + ns) * d.distance;
-    });
-
-    return { distance: result };
+  // This is a cost function which will modify distance to account for this
+  static _reachModifiedCost({ distance, diagonals }) {
+    if (distance === 15 && diagonals === 2) {
+      return distance - 5;
+    }
+    return distance;
   }
 
   static _registerActorSheetListeners() {
