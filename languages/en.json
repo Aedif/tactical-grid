@@ -1,13 +1,22 @@
 {
   "aedifs-tactical-grid": {
     "settings": {
+      "menu": {
+        "world": "World Settings",
+        "client": "Client Settings"
+      },
       "tabs": {
         "enable": "Enable Grid",
         "grid": "Grid",
         "ruler": "Ruler",
         "measurement": "Measurement",
         "cover": "Cover",
-        "range": "Range"
+        "range": "Range",
+        "misc": "Misc."
+      },
+      "disableTacticalGrid": {
+        "name": "Disable 'Tactical Grid'",
+        "hint": "Disable the 'Tactical Grid' module."
       },
       "defaultViewDistance": {
         "name": "Default Grid View Distance",
@@ -80,11 +89,11 @@
         "hint": "Tokens with a matching effect name will be ignored from measurement calculations."
       },
       "displayDistancesOnRulerDrag": {
-        "name": "Display Distances on Ruler Drag",
+        "name": "Ruler Drag",
         "hint": "When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them."
       },
       "displayDistancesOnTokenDrag": {
-        "name": "Display Distances on Token Drag",
+        "name": "Token Drag",
         "hint": "When enabled distances between the dragged token and all visible Tokens will be calculated and displayed on them."
       },
       "range": {
@@ -93,7 +102,11 @@
         "combat-only": "Combat Only",
         "ranges": "Ranges",
         "grid-shape-shrink": "Grid Shape Shrink",
-        "dispositions": "Dispositions Highlighted for Players"
+        "dispositions": "Dispositions Highlighted for Players",
+        "client-toggle": {
+          "name": "Range Highlighter",
+          "hint": "Turn on/off Token/Item range highlighting on hover."
+        }
       }
     },
     "keybindings": {

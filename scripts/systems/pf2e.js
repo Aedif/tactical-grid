@@ -106,8 +106,6 @@ export default class PF2e extends GenericSystem {
 
   static _registerActorSheetListeners() {
     Hooks.on('renderActorSheet', (actorSheet, html, options) => {
-      if (!RangeHighlightAPI.itemHighlightEnabled) return;
-
       // Strike Actions
       const strikeSelector = '.actions-list.strikes-list > .strike';
       html

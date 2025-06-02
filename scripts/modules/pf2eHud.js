@@ -13,8 +13,6 @@ function getPersistentToken() {
 
 export function register() {
   Hooks.on('renderPF2eHudPersistent', (hud, html, opts) => {
-    if (!RangeHighlightAPI.itemHighlightEnabled) return;
-
     // Shortcuts
     $(html)
       .on('mouseenter', '.shortcut', (event) => {
@@ -49,8 +47,6 @@ export function register() {
 
   // Sidebar
   Hooks.on('renderPF2eHudSidebar', (sidebar, html) => {
-    if (!RangeHighlightAPI.itemHighlightEnabled) return;
-
     // Items
     $(html)
       .on('mouseenter', '.item', (event) => {

@@ -38,8 +38,6 @@ export class GenericSystem {
    * Respond to mouse hovering over an item with itemId
    */
   static hoverItem({ item, itemId, actorSheet, actor, token } = {}) {
-    if (!RangeHighlightAPI.itemHighlightEnabled) return;
-
     actor = actor ?? actorSheet?.document ?? token?.actor;
     if (!actor) return;
 

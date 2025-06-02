@@ -1,0 +1,17 @@
+<div class="tab{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.displayDistancesOnRulerDrag.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="rulerActivatedDistanceMeasure" {{checked rulerActivatedDistanceMeasure}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.displayDistancesOnRulerDrag.hint"}}</p>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="tokenActivatedDistanceMeasure" {{checked tokenActivatedDistanceMeasure}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.displayDistancesOnTokenDrag.hint"}}</p>
+    </div>
+</div>

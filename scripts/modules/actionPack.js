@@ -11,7 +11,6 @@ export function register() {
     html
       .find('.item-name')
       .on('mouseover', async (event) => {
-        if (!RangeHighlightAPI.itemHighlightEnabled) return;
         RangeHighlightAPI.rangeHighlightItemUuid($(event.target).closest('.item').data('item-uuid'));
       })
       .on('mouseleave', async (event) => {

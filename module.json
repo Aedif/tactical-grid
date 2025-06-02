@@ -40,7 +40,6 @@
       }
     ]
   },
-  "socket": true,
   "url": "https://github.com/Aedif/tactical-grid",
   "readme": "https://github.com/Aedif/tactical-grid/blob/master/README.md"
 }

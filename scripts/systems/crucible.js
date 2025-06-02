@@ -33,8 +33,6 @@ export default class Crucible extends GenericSystem {
 
   static _registerActorSheetListeners() {
     Hooks.on('renderActorSheet', (actorSheet, html, options) => {
-      if (!RangeHighlightAPI.itemHighlightEnabled) return;
-
       html
         .find('.line-item')
         .on('mouseenter', (event) =>

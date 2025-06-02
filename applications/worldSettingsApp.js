@@ -1,7 +1,7 @@
 import { MODULE_ID } from '../scripts/utils.js';
 import { MODULE_CONFIG, updateSettings, VIEW_SHAPE_OPTIONS } from './settings.js';
 
-export default class SettingConfigApp extends foundry.applications.api.HandlebarsApplicationMixin(
+export default class WorldSettingConfigApp extends foundry.applications.api.HandlebarsApplicationMixin(
   foundry.applications.api.ApplicationV2
 ) {
   constructor() {
@@ -10,25 +10,25 @@ export default class SettingConfigApp extends foundry.applications.api.Handlebar
   }
 
   static DEFAULT_OPTIONS = {
-    id: `${MODULE_ID}-settings`,
+    id: `${MODULE_ID}-world-settings`,
     tag: 'form',
     form: {
-      handler: SettingConfigApp._onSubmit,
+      handler: WorldSettingConfigApp._onSubmit,
       submitOnChange: true,
       closeOnSubmit: false,
     },
     window: {
       contentClasses: ['standard-form'],
-      title: 'Tactical Grid Settings',
+      title: `${MODULE_ID}.settings.menu.world`,
     },
     position: {
       width: 600,
       height: 'auto',
     },
     actions: {
-      performUpdate: SettingConfigApp._onPerformUpdate,
-      addRangeColor: SettingConfigApp._onAddRangeColor,
-      removeRangeColor: SettingConfigApp._onRemoveRangeColor,
+      performUpdate: WorldSettingConfigApp._onPerformUpdate,
+      addRangeColor: WorldSettingConfigApp._onAddRangeColor,
+      removeRangeColor: WorldSettingConfigApp._onRemoveRangeColor,
     },
   };
 
@@ -125,8 +125,6 @@ export default class SettingConfigApp extends foundry.applications.api.Handlebar
    * Process form data
    */
   static async _onSubmit(event, form, formData) {
-    console.log(event, form, formData);
-
     const settings = foundry.utils.expandObject(formData.object);
 
     if (settings.range.colors) settings.range.colors = Object.values(settings.range.colors);

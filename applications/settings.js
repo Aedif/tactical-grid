@@ -1,6 +1,7 @@
 import { MODULE_ID, getGridColorString } from '../scripts/utils.js';
 import { GRID_MASK } from '../tactical-grid.js';
-import SettingConfigApp from './settingApp.js';
+import ClientSettingsConfigApp from './clientSettingsApp.js';
+import WorldSettingConfigApp from './worldSettingsApp.js';
 
 export const MODULE_CONFIG = {
   defaultViewDistance: 4,
@@ -101,16 +102,13 @@ export const MODULE_CONFIG = {
     },
   },
   distanceCalcOffset: 0,
-  displayBroadcastToggle: false,
 };
 
 export const MODULE_CLIENT_CONFIG = {
   rulerActivatedDistanceMeasure: false,
   tokenActivatedDistanceMeasure: false,
-  rulerDistanceMeasureGirdSpaces: true,
   disableTacticalGrid: false,
   rangeHighlighter: true,
-  broadcastMeasures: false,
 };
 
 export const VIEW_SHAPE_OPTIONS = [
@@ -133,6 +131,16 @@ export function registerSettings() {
   const settings = game.settings.get(MODULE_ID, 'settings');
   foundry.utils.mergeObject(MODULE_CONFIG, settings);
 
+  game.settings.register(MODULE_ID, 'clientSettings', {
+    scope: 'client',
+    config: false,
+    type: Object,
+    default: MODULE_CLIENT_CONFIG,
+    onChange: async (val) => _onClientSettingChange(val),
+  });
+  const clientSettings = game.settings.get(MODULE_ID, 'clientSettings');
+  foundry.utils.mergeObject(MODULE_CLIENT_CONFIG, clientSettings);
+
   // Hidden setting used to add a static offset for distance measurements
   game.settings.register(MODULE_ID, 'distanceCalcOffset', {
     scope: 'world',
@@ -145,108 +153,25 @@ export function registerSettings() {
   });
   MODULE_CONFIG.distanceCalcOffset = game.settings.get(MODULE_ID, 'distanceCalcOffset');
 
-  game.settings.register(MODULE_ID, 'disableTacticalGrid', {
-    name: 'Disable Tactical Grid',
-    hint: 'Disables tactical grid for this client.',
-    scope: 'client',
-    config: true,
-    type: Boolean,
-    default: false,
-    onChange: async (val) => {
-      MODULE_CLIENT_CONFIG.disableTacticalGrid = val;
-      GRID_MASK.container?.drawMask();
-    },
-  });
-  MODULE_CLIENT_CONFIG.disableTacticalGrid = game.settings.get(MODULE_ID, 'disableTacticalGrid');
-
-  game.settings.register(MODULE_ID, 'broadcastMeasures', {
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: false,
-    onChange: async (val) => {
-      MODULE_CLIENT_CONFIG.broadcastMeasures = val;
-    },
-  });
-  MODULE_CLIENT_CONFIG.broadcastMeasures = game.settings.get(MODULE_ID, 'broadcastMeasures');
-
   game.settings.registerMenu(MODULE_ID, 'settings', {
-    name: 'Configure Settings V2',
+    name: game.i18n.localize(`${MODULE_ID}.settings.menu.world`),
     hint: '',
-    label: 'Settings',
+    label: game.i18n.localize('Configure'),
     scope: 'world',
     icon: 'fas fa-cog',
-    type: SettingConfigApp,
+    type: WorldSettingConfigApp,
     restricted: true,
   });
 
-  game.settings.register(MODULE_ID, 'rulerActivatedDistanceMeasure', {
-    name: game.i18n.localize(`${MODULE_ID}.settings.displayDistancesOnRulerDrag.name`),
-    hint: game.i18n.localize(`${MODULE_ID}.settings.displayDistancesOnRulerDrag.hint`),
-    scope: 'client',
-    config: true,
-    type: Boolean,
-    default: false,
-    onChange: async (val) => {
-      MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure = val;
-      unregisterRulerLibWrapperMethods();
-      registerRulerLibWrapperMethods();
-    },
-  });
-  MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure = game.settings.get(MODULE_ID, 'rulerActivatedDistanceMeasure');
-
-  game.settings.register(MODULE_ID, 'tokenActivatedDistanceMeasure', {
-    name: game.i18n.localize(`${MODULE_ID}.settings.displayDistancesOnTokenDrag.name`),
-    hint: game.i18n.localize(`${MODULE_ID}.settings.displayDistancesOnTokenDrag.hint`),
-    scope: 'client',
-    config: true,
-    type: Boolean,
-    default: MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure,
-    onChange: (val) => {
-      MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = val;
-    },
-  });
-  MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure = game.settings.get(MODULE_ID, 'tokenActivatedDistanceMeasure');
-
-  game.settings.register(MODULE_ID, 'rulerDistanceMeasureGirdSpaces', {
-    name: 'Ruler: Grid Spaces',
-    hint: 'Calculate Ruler triggered distance measurements in grid space increments.',
-    scope: 'client',
-    config: true,
-    type: Boolean,
-    default: true,
-    onChange: async (val) => {
-      MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces = val;
-    },
-  });
-  MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces = game.settings.get(MODULE_ID, 'rulerDistanceMeasureGirdSpaces');
-
-  game.settings.register(MODULE_ID, 'rangeHighlighter', {
-    name: 'Enable Range Highlighter',
-    hint: 'Turn on/off Token/Item range highlighting on hover.',
-    scope: 'client',
-    config: true,
-    type: Boolean,
-    default: MODULE_CLIENT_CONFIG.rangeHighlighter,
-    onChange: async (val) => {
-      MODULE_CLIENT_CONFIG.rangeHighlighter = val;
-    },
-  });
-  MODULE_CLIENT_CONFIG.rangeHighlighter = game.settings.get(MODULE_ID, 'rangeHighlighter');
-
-  game.settings.register(MODULE_ID, 'displayBroadcastToggle', {
-    name: 'Display Broadcast Toggle Button',
-    hint: 'Scene control that allows broadcasting of measurements to all player clients.',
+  game.settings.registerMenu(MODULE_ID, 'clientSettings', {
+    name: game.i18n.localize(`${MODULE_ID}.settings.menu.client`),
+    hint: '',
+    label: game.i18n.localize('Configure'),
     scope: 'world',
-    config: true,
-    type: Boolean,
-    default: MODULE_CONFIG.displayBroadcastToggle,
-    onChange: async (val) => {
-      MODULE_CONFIG.displayBroadcastToggle = val;
-      ui.controls.render({ reset: true });
-    },
+    icon: 'fas fa-cog',
+    type: ClientSettingsConfigApp,
+    restricted: false,
   });
-  MODULE_CONFIG.displayBroadcastToggle = game.settings.get(MODULE_ID, 'displayBroadcastToggle');
 
   registerRulerLibWrapperMethods();
 
@@ -370,11 +295,29 @@ function _onSettingChange(newSettings) {
   }
 }
 
+function _onClientSettingChange(newSettings) {
+  const diff = foundry.utils.diffObject(MODULE_CLIENT_CONFIG, newSettings);
+  foundry.utils.mergeObject(MODULE_CLIENT_CONFIG, newSettings);
+
+  if ('rulerActivatedDistanceMeasure' in diff) {
+    unregisterRulerLibWrapperMethods();
+    registerRulerLibWrapperMethods();
+  }
+}
+
 export async function updateSettings(newSettings) {
   const settings = foundry.utils.mergeObject(foundry.utils.deepClone(MODULE_CONFIG), newSettings, {
     insertKeys: false,
   });
   await game.settings.set(MODULE_ID, 'settings', settings);
+}
+
+export async function updateClientSettings(newSettings) {
+  const settings = foundry.utils.mergeObject(foundry.utils.deepClone(MODULE_CLIENT_CONFIG), newSettings, {
+    insertKeys: false,
+  });
+
+  await game.settings.set(MODULE_ID, 'clientSettings', settings);
 }
 
 // ======================
@@ -420,9 +363,7 @@ export function registerRulerLibWrapperMethods() {
         GRID_MASK.container.setMaskPosition({ id: 'RULER', center: this.destination });
 
         if (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) {
-          TacticalGrid.distanceCalculator.showDistanceLabelsFromPoint(this.destination, {
-            gridSpaces: MODULE_CLIENT_CONFIG.rulerDistanceMeasureGirdSpaces,
-          });
+          TacticalGrid.distanceCalculator.showDistanceLabelsFromPoint(this.destination);
         }
       }
       return result;

@@ -1,0 +1,9 @@
+<div class="tab{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+    <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.disableTacticalGrid.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="disableTacticalGrid" {{checked disableTacticalGrid}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.disableTacticalGrid.hint"}}</p>
+    </div>
+</div>

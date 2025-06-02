@@ -134,7 +134,9 @@ export class TacticalGridCalculator {
    * Displays distance from origin point to all visible tokens.
    * @param {object} originPoint
    */
-  showDistanceLabelsFromPoint(originPoint, { gridSpaces = canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS } = {}) {
+  showDistanceLabelsFromPoint(originPoint, { gridSpaces } = {}) {
+    if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
+
     if (!originPoint) return;
     originPoint = { ...originPoint };
 
@@ -170,6 +172,8 @@ export class TacticalGridCalculator {
    * @param {Token} originToken
    */
   showDistanceLabelsFromToken(originToken, { gridSpaces } = {}) {
+    if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
+
     if (!originToken) return;
 
     if (gridSpaces == null) {
@@ -286,17 +290,7 @@ export class TacticalGridCalculator {
 
   hideLabels() {
     this.deleteLabels();
-
     canvas.interface.grid.destroyHighlightLayer(this._highlightLayerName);
-
-    if (MODULE_CLIENT_CONFIG.broadcastMeasures) {
-      const message = {
-        handlerName: 'measures',
-        args: { userId: game.user.id, sceneId: canvas.scene.id },
-        type: 'hide',
-      };
-      game.socket.emit(`module.${MODULE_ID}`, message);
-    }
   }
 
   /**

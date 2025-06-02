@@ -323,7 +323,6 @@ export class RangeHighlighter {
 
         const packed = pack(point);
         if (!highlighted.has(packed)) {
-          console.log(point);
           this._highlightGridPosition(hl, point, range);
           highlighted.add(packed);
         }
@@ -430,6 +429,7 @@ export class RangeHighlightAPI {
     if (!MODULE_CONFIG.range.item.enabled) return false;
     if (!MODULE_CLIENT_CONFIG.rangeHighlighter) return false;
     if (MODULE_CONFIG.range.item.combatOnly && !game.combat?.started) return false;
+    if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return false;
     return true;
   }
 
@@ -442,7 +442,9 @@ export class RangeHighlightAPI {
    * @param {Item} opts.item                               Item to be evaluated by the system specific range calculator to determine `ranges` automatically
    * @returns {null}
    */
-  static rangeHighlight(token, { ranges, item } = {}) {
+  static rangeHighlight(token, { ranges, item, force = false } = {}) {
+    if (!this.itemHighlightEnabled && !force) return;
+
     if (!ranges) {
       if (!this._rangeCalculator) return;
 

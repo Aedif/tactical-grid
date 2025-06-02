@@ -7,7 +7,6 @@ import { RangeHighlightAPI } from '../rangeHighlighter.js';
 
 export function register() {
   Hooks.on('renderCoreHUD', (hud, html, opts) => {
-    if (!RangeHighlightAPI.itemHighlightEnabled) return;
     hud.itemButtons.forEach((button) => {
       $(button.element)
         .on('mouseover', (event) => {
