@@ -380,7 +380,7 @@ export function registerRulerLibWrapperMethods() {
 
       GRID_MASK.container.setMaskPosition({ id: 'RULER', center: this.destination });
 
-      if (MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure) {
+      if (MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure && this.token._preview) {
         TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(this.token._preview);
       }
 

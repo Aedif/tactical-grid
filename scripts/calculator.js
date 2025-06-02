@@ -58,19 +58,19 @@ export class TacticalGridCalculator {
    * Handles canvas left-clicks.
    * @param {*} originPoint
    */
-  canvasLeftClick(originPoint, { gridSpaces = canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS }) {
+  canvasLeftClick(originPoint) {
     if (!this._measureKeyDown) return;
 
     if (canvas.tokens.controlled.length === 1) {
-      let token = this.createTokenPreview(canvas.tokens.controlled[0], originPoint, gridSpaces);
-      this.showDistanceLabelsFromToken(token, { gridSpaces });
+      let token = this.createTokenPreview(canvas.tokens.controlled[0], originPoint);
+      this.showDistanceLabelsFromToken(token);
     } else {
-      this.drawCrossHighlight(originPoint);
-      this.showDistanceLabelsFromPoint(originPoint, { gridSpaces });
+      this.drawCrossHighlight(canvas.grid.getCenterPoint(originPoint));
+      this.showDistanceLabelsFromPoint(originPoint);
     }
   }
 
-  createTokenPreview(token, position, snap = true) {
+  createTokenPreview(token, position) {
     if (this._tokenClone && this._tokenClone.document.id !== token.document.id) {
       const c = this._tokenClone;
       this._tokenClone = null;
@@ -80,12 +80,13 @@ export class TacticalGridCalculator {
     const clone = this._tokenClone ?? token.clone();
 
     let center = { x: position.x - token.w / 2, y: position.y - token.h / 2 };
-    if (snap) center = clone.getSnappedPosition(center);
+    center = clone.getSnappedPosition(center);
 
     clone.document.x = center.x;
     clone.document.y = center.y;
 
-    clone.document.alpha = 0.4;
+    clone.document.alpha = 0.7;
+    clone.document.texture.tint = Color.fromString('#00ff00');
 
     clone.draw().then((c) => (c.visible = true));
 
@@ -134,33 +135,22 @@ export class TacticalGridCalculator {
    * Displays distance from origin point to all visible tokens.
    * @param {object} originPoint
    */
-  showDistanceLabelsFromPoint(originPoint, { gridSpaces } = {}) {
+  showDistanceLabelsFromPoint(originPoint) {
     if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
 
-    if (!originPoint) return;
-    originPoint = { ...originPoint };
-
-    if (gridSpaces == null) {
-      gridSpaces =
-        canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
-        !game.keyboard.isModifierActive(foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS.SHIFT);
-    }
+    originPoint = canvas.grid.getTopLeftPoint(originPoint);
 
     const visibleTokens = this.getVisibleTokens();
     for (const token of visibleTokens) {
       const fromPoint = { ...originPoint };
-      this.drawCrossHighlight(fromPoint, true); // test
       const toPoint = DistanceUtilities.targetPoint(originPoint, token);
-      this.drawCrossHighlight(toPoint, true); // test
 
       if (MODULE_CONFIG.measurement.volumetricTokens) {
         fromPoint.elevation = DistanceUtilities.determineVolumetricPointElevation(fromPoint, token);
       }
 
       // Calculate distance
-      const distance = DistanceCalculator.calculateDistance(fromPoint, toPoint, token, {
-        gridSpaces,
-      });
+      const distance = DistanceCalculator.calculateDistance(fromPoint, toPoint, token);
 
       // Display distance
       this.addUpdateLabel(token, token.center, this.genLabel(distance));
@@ -171,16 +161,8 @@ export class TacticalGridCalculator {
    * Displays distance from origin token to all other visible tokens.
    * @param {Token} originToken
    */
-  showDistanceLabelsFromToken(originToken, { gridSpaces } = {}) {
+  showDistanceLabelsFromToken(originToken) {
     if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
-
-    if (!originToken) return;
-
-    if (gridSpaces == null) {
-      gridSpaces =
-        canvas.grid.type !== CONST.GRID_TYPES.GRIDLESS &&
-        !game.keyboard.isModifierActive(foundry.helpers.interaction.KeyboardManager.MODIFIER_KEYS.SHIFT);
-    }
 
     this.clearHighlightLayer(); // test
 
@@ -189,9 +171,7 @@ export class TacticalGridCalculator {
       if (token.id === originToken.id) continue;
 
       const fromPoint = DistanceUtilities.nearestOriginPoint(originToken, token);
-      this.drawCrossHighlight(fromPoint, true); // test
       const toPoint = DistanceUtilities.targetPoint(fromPoint, token);
-      this.drawCrossHighlight(toPoint, true); // test
 
       if (MODULE_CONFIG.measurement.volumetricTokens) {
         const { originElevation, targetElevation } = DistanceUtilities.determineVolumetricTokenElevation(
@@ -212,7 +192,6 @@ export class TacticalGridCalculator {
       // Calculate distance
       const distance = DistanceCalculator.calculateDistance(fromPoint, toPoint, token, {
         originToken,
-        gridSpaces,
       });
 
       // Display distance and cover label
@@ -517,14 +496,14 @@ export class DistanceUtilities {
 }
 
 class DistanceCalculator {
-  static calculateDistance(originPoint, targetPoint, targetToken, { originToken, gridSpaces = true } = {}) {
+  static calculateDistance(originPoint, targetPoint, targetToken, { originToken } = {}) {
     // Delegate distance measurements to PF2e's `distanceTo` util
     if (game.system.id === 'pf2e' && targetToken && originToken) {
       return this._applyPrecision(originToken.distanceTo(targetToken));
     }
 
     const result = canvas.grid.measurePath([originPoint, targetPoint]);
-    return this._applyPrecision(gridSpaces ? result.distance : result.euclidean);
+    return this._applyPrecision(result.distance);
   }
 
   static _applyPrecision(distance) {
