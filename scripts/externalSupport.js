@@ -17,6 +17,9 @@ export async function registerGameSystem() {
     case 'dc20rpg':
       gameSystem = (await import('./systems/dc20.js')).default;
       break;
+    case 'demonlord':
+      gameSystem = (await import('./systems/demonlord.js')).default;
+      break;
     default:
       gameSystem = GenericSystem;
   }
