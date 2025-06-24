@@ -1,3 +1,8 @@
+# 2.1.0
+
+- Range Highlight support for **Shadow of the Demon Lord** game system
+  - Courtesy of: **sasquach45932**
+
 # 2.0.0
 
 - Foundry v13 Support
