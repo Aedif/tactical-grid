@@ -1,4 +1,3 @@
-import { RangeHighlightAPI } from '../rangeHighlighter.js';
 import { GenericSystem } from './generic.js';
 
 export default class Crucible extends GenericSystem {

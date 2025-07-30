@@ -320,11 +320,11 @@ export class VolumetricUtilities {
     let targetElevation;
 
     if (originTop <= targetBottom) {
-      originElevation = originTop - canvas.grid.distance;
+      originElevation = originTop - (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS ? 0 : canvas.grid.distance);
       targetElevation = targetBottom;
     } else if (originBottom >= targetTop) {
       originElevation = originBottom;
-      targetElevation = targetTop - canvas.grid.distance;
+      targetElevation = targetTop - (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS ? 0 : canvas.grid.distance);
     } else {
       originElevation = originBottom;
       targetElevation = originBottom;
@@ -340,7 +340,10 @@ export class VolumetricUtilities {
     if (originPoint.elevation < targetTop && originPoint.elevation > targetBottom) {
       return targetBottom;
     } else if (originPoint.elevation >= targetTop) {
-      return originPoint.elevation - (targetTop - canvas.grid.distance - targetBottom);
+      return (
+        originPoint.elevation -
+        (targetTop - (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS ? 0 : canvas.grid.distance) - targetBottom)
+      );
     }
 
     return originPoint.elevation;

@@ -1,3 +1,7 @@
+# 2.1.1
+
+- Fixed incorrect gridless scene distance calculations when 'Three-dimensional Tokens` setting is enabled
+
 # 2.1.0
 
 - Range Highlight support for **Shadow of the Demon Lord** game system
