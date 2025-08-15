@@ -39,6 +39,8 @@ export function registerModules() {
   if (game.modules.get('token-action-hud-core')?.active)
     import('./modules/tokenActionHud.js').then((module) => module.register());
   if (game.modules.get('pf2e-hud')?.active) import('./modules/pf2eHud.js').then((module) => module.register());
+  if (game.modules.get('bg3-inspired-hotbar')?.active)
+    import('./modules/bg3InspiredHotbar.js').then((module) => module.register());
 
   // Cover
 

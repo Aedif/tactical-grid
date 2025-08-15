@@ -1,3 +1,7 @@
+# 2.2.0
+
+- Range Highlighter support for **BG3 Inspired HUD** module
+
 # 2.1.1
 
 - Fixed incorrect gridless scene distance calculations when 'Three-dimensional Tokens` setting is enabled
