@@ -20,6 +20,7 @@ Hooks.on('init', () => {
     rangeHighlight: RangeHighlightAPI.rangeHighlight,
     clearRangeHighlight: RangeHighlightAPI.clearRangeHighlight,
     distanceCalculator: new TacticalGridCalculator(),
+    COVER: { FULL_COVER: 999, THREE_QUARTERS_COVER: 5, HALF_COVER: 2, NO_COVER: 0 },
   };
 
   registerSettings();

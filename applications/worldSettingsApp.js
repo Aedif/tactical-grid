@@ -82,19 +82,9 @@ export default class WorldSettingConfigApp extends foundry.applications.api.Hand
 
     settings.units = canvas.scene?.grid.units || 'ft';
 
-    settings.calculators = [
-      { name: 'None', value: 'none' },
-      { name: "Simbul's Cover Calculator", value: 'simbuls-cover-calculator' },
-      { name: 'Levels Auto Cover', value: 'levelsautocover' },
-      { name: 'MidiQOL (mirror `Calculate Cover` setting)', value: 'midi-qol' },
-      { name: 'PF2e Perception', value: 'pf2e-perception' },
-      { name: 'Alternative Token Cover', value: 'tokencover' },
-    ];
-
-    for (const calculator of settings.calculators) {
-      if (calculator.value !== 'none') {
-        calculator.disabled = !game.modules.get(calculator.value)?.active;
-      }
+    settings.calculators = [];
+    for (const [id, entry] of Object.entries(TacticalGrid.coverCalculators)) {
+      settings.calculators.push({ name: entry.name, value: id, disabled: !entry.calculateCover });
     }
 
     settings.dispositions = [];

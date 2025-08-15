@@ -1,6 +1,5 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
 import { ClosestPointUtilities } from './closestPointUtilities.js';
-import { computeCoverBonus } from './cover.js';
 import { tokenHasEffect } from './utils.js';
 
 export class TacticalGridCalculator {
@@ -194,7 +193,7 @@ export class TacticalGridCalculator {
       /// Calculate Cover
       let cover;
       if (MODULE_CONFIG.cover.calculator !== 'none' && (!MODULE_CONFIG.cover.combatOnly || game.combat?.started)) {
-        cover = computeCoverBonus(originToken, token);
+        cover = TacticalGrid.coverCalculators[MODULE_CONFIG.cover.calculator]?.calculateCover(originToken, token);
       }
 
       // Calculate distance
