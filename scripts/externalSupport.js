@@ -49,6 +49,7 @@ export function registerModules() {
     none: { name: 'None', calculateCover: true /* To make this setting always selectable */ },
     'simbuls-cover-calculator': { name: "Simbul's Cover Calculator" },
     levelsautocover: { name: 'Levels - Automatic Cover Calculator' },
+    'pf2e-visioner': { name: 'PF2E Visioner' },
   };
 
   // Import and assign 'calculateCover' functions for enabled modules
@@ -57,4 +58,6 @@ export function registerModules() {
     import('./modules/simbuls.js').then((module) => module.register());
   if (game.modules.get('levelsautocover')?.active)
     import('./modules/levelsautocover.js').then((module) => module.register());
+  if (game.modules.get('pf2e-visioner')?.active)
+    import('./modules/pf2eVisioner.js').then((module) => module.register());
 }

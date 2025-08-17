@@ -1,3 +1,8 @@
+# 2.3.0
+
+- Added support for **PF2e Visioner** (https://foundryvtt.com/packages/pf2e-visioner) module as a cover calculator
+- Fixed setting rendering issues on smaller monitors
+
 # 2.2.0
 
 - Range Highlighter support for **BG3 Inspired HUD** module
