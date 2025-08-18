@@ -15,7 +15,8 @@ export class TacticalGridCalculator {
   refreshTextStyle() {
     this._textStyle = foundry.canvas.containers.PreciseText.getTextStyle({
       ...MODULE_CONFIG.measurement,
-      fontFamily: [MODULE_CONFIG.measurement.fontFamily, 'fontAwesome'].join(','),
+      fontFamily: [MODULE_CONFIG.measurement.fontFamily, 'Font Awesome 6 Pro'].join(','),
+      fontWeight: '600',
     });
   }
 
@@ -193,7 +194,7 @@ export class TacticalGridCalculator {
       /// Calculate Cover
       let cover;
       if (MODULE_CONFIG.cover.calculator !== 'none' && (!MODULE_CONFIG.cover.combatOnly || game.combat?.started)) {
-        cover = TacticalGrid.coverCalculators[MODULE_CONFIG.cover.calculator]?.calculateCover(originToken, token);
+        cover = TacticalGrid.coverCalculators[MODULE_CONFIG.cover.calculator]?.calculateCover?.(originToken, token);
       }
 
       // Calculate distance

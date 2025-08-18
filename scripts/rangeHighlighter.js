@@ -540,7 +540,7 @@ export class RangeHighlightAPI {
 async function _tokensAndItemFromItemUuid(uuid) {
   const item = await fromUuid(uuid);
   if (!item) return {};
-  const embedded = parseUuid(uuid).embedded;
+  const embedded = foundry.utils.parseUuid(uuid).embedded;
   const tokenId = embedded[embedded.findIndex((t) => t === 'Token') + 1];
   const token = canvas.tokens.get(tokenId);
 

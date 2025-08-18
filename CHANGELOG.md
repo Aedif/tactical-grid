@@ -1,3 +1,8 @@
+# 2.3.1
+
+- Fixed v13 range highlighter compatibility with `PF2e HUD` module
+- Fixed Font Awesome glyphs not rendering properly when displaying cover labels
+
 # 2.3.0
 
 - Added support for **PF2e Visioner** (https://foundryvtt.com/packages/pf2e-visioner) module as a cover calculator

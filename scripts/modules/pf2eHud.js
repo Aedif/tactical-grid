@@ -1,62 +1,40 @@
 /**
  * PF2e HUD
  * https://foundryvtt.com/packages/pf2e-hud
- * TODO: check for v13 implementation
  */
 
 import { RangeHighlightAPI } from '../rangeHighlighter.js';
-import PF2e from '../systems/pf2e.js';
-
-function getPersistentToken() {
-  return game.hud.persistent.actor.getActiveTokens().filter((t) => t.controlled)[0];
-}
 
 export function register() {
-  Hooks.on('renderPF2eHudPersistent', (hud, html, opts) => {
-    // Shortcuts
+  Hooks.on('renderPersistentShortcutsPF2eHUD', (hud, html, options, context) => {
     $(html)
-      .on('mouseenter', '.shortcut', (event) => {
-        const persistent = game.hud.persistent;
-
-        const shortcut = persistent.shortcuts.getShortcutFromElement(event.currentTarget);
-        const item = persistent.actor.items.get(shortcut.itemId);
-        const token = getPersistentToken();
-
-        if (item && token) RangeHighlightAPI.rangeHighlight(token, { item });
+      .on('mouseenter', '.item.shortcut', (event) => {
+        RangeHighlightAPI.rangeHighlightItemUuid(options.shortcuts[event.target.dataset.slot].item.uuid);
       })
-      .on('mouseleave', '.shortcut', () => {
-        const token = getPersistentToken();
-        if (token) RangeHighlightAPI.clearRangeHighlight(token);
-      });
-
-    // Macros
-    $(html)
-      .on('mouseenter', '.macro', (event) => {
-        const item = PF2e.getItemFromMacro(
-          game.macros.get($(event.currentTarget).data('macroId')),
-          game.hud.persistent.actor
-        );
-        const token = getPersistentToken();
-        if (item && token) RangeHighlightAPI.rangeHighlight(token, { item });
-      })
-      .on('mouseleave', '.macro', () => {
-        const token = getPersistentToken();
-        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      .on('mouseleave', '.item.shortcut', (event) => {
+        RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens());
       });
   });
 
-  // Sidebar
-  Hooks.on('renderPF2eHudSidebar', (sidebar, html) => {
-    // Items
+  Hooks.on('renderItemsSidebarPF2eHUD', (hud, html, options, context) => {
     $(html)
       .on('mouseenter', '.item', (event) => {
-        const item = game.hud.persistent.actor.items.get($(event.currentTarget).data('itemId'));
-        const token = getPersistentToken();
-        if (item && token) RangeHighlightAPI.rangeHighlight(token, { item });
+        const uuid = hud.parent.actor.items.get(event.currentTarget.dataset.itemId)?.uuid;
+        if (uuid) RangeHighlightAPI.rangeHighlightItemUuid(uuid);
       })
-      .on('mouseleave', '.item', () => {
-        const token = getPersistentToken();
-        if (token) RangeHighlightAPI.clearRangeHighlight(token);
+      .on('mouseleave', '.item', (event) => {
+        RangeHighlightAPI.clearRangeHighlight(hud.parent.actor.getActiveTokens());
+      });
+  });
+
+  Hooks.on('renderSpellsSidebarPF2eHUD', (hud, html, options, context) => {
+    $(html)
+      .on('mouseenter', '.item', (event) => {
+        const uuid = hud.actor.items.get(event.currentTarget.dataset.itemId)?.uuid;
+        if (uuid) RangeHighlightAPI.rangeHighlightItemUuid(uuid);
+      })
+      .on('mouseleave', '.item', (event) => {
+        RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens());
       });
   });
 }
