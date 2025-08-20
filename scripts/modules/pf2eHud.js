@@ -8,33 +8,32 @@ import { RangeHighlightAPI } from '../rangeHighlighter.js';
 export function register() {
   Hooks.on('renderPersistentShortcutsPF2eHUD', (hud, html, options, context) => {
     $(html)
-      .on('mouseenter', '.item.shortcut', (event) => {
-        RangeHighlightAPI.rangeHighlightItemUuid(options.shortcuts[event.target.dataset.slot].item.uuid);
-      })
-      .on('mouseleave', '.item.shortcut', (event) => {
-        RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens());
-      });
+      .on('mouseenter', '.item.shortcut', (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
+      .on('mouseleave', '.item.shortcut', (event) =>
+        RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens())
+      );
   });
 
   Hooks.on('renderItemsSidebarPF2eHUD', (hud, html, options, context) => {
     $(html)
-      .on('mouseenter', '.item', (event) => {
-        const uuid = hud.parent.actor.items.get(event.currentTarget.dataset.itemId)?.uuid;
-        if (uuid) RangeHighlightAPI.rangeHighlightItemUuid(uuid);
-      })
-      .on('mouseleave', '.item', (event) => {
-        RangeHighlightAPI.clearRangeHighlight(hud.parent.actor.getActiveTokens());
-      });
+      .on('mouseenter', '.item', (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
+      .on('mouseleave', '.item', (event) => RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens()));
   });
 
   Hooks.on('renderSpellsSidebarPF2eHUD', (hud, html, options, context) => {
     $(html)
-      .on('mouseenter', '.item', (event) => {
-        const uuid = hud.actor.items.get(event.currentTarget.dataset.itemId)?.uuid;
-        if (uuid) RangeHighlightAPI.rangeHighlightItemUuid(uuid);
-      })
-      .on('mouseleave', '.item', (event) => {
-        RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens());
-      });
+      .on('mouseenter', '.item', (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
+      .on('mouseleave', '.item', (event) => RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens()));
   });
+
+  Hooks.on('renderActionsSidebarPF2eHUD', (hud, html, options, context) => {
+    $(html)
+      .on('mouseenter', '.item', (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
+      .on('mouseleave', '.item', (event) => RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens()));
+  });
+}
+
+function highlightItemById(itemId, actor) {
+  const item = actor.items.get(itemId) ?? actor.system.actions.find((action) => action.item?.id === itemId)?.item;
+  if (item) RangeHighlightAPI.rangeHighlight(actor.getActiveTokens()[0], { item });
 }

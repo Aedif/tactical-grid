@@ -107,6 +107,7 @@ export const MODULE_CONFIG = {
 export const MODULE_CLIENT_CONFIG = {
   rulerActivatedDistanceMeasure: false,
   tokenActivatedDistanceMeasure: false,
+  combatOnlyDistanceMeasure: false,
   disableTacticalGrid: false,
   rangeHighlighter: true,
 };
@@ -363,8 +364,10 @@ export function registerRulerLibWrapperMethods() {
         GRID_MASK.container.setMaskPosition({ id: 'RULER', center: this.destination });
 
         if (MODULE_CLIENT_CONFIG.rulerActivatedDistanceMeasure) {
-          if (this.destination) TacticalGrid.distanceCalculator.showDistanceLabelsFromPoint(this.destination);
-          else TacticalGrid.distanceCalculator.hideLabels();
+          if (!MODULE_CLIENT_CONFIG.combatOnlyDistanceMeasure || game.combat?.active) {
+            if (this.destination) TacticalGrid.distanceCalculator.showDistanceLabelsFromPoint(this.destination);
+            else TacticalGrid.distanceCalculator.hideLabels();
+          }
         }
       }
       return result;
@@ -382,7 +385,9 @@ export function registerRulerLibWrapperMethods() {
       GRID_MASK.container.setMaskPosition({ id: 'RULER', center: this.destination });
 
       if (MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure && this.token._preview) {
-        TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(this.token._preview);
+        if (!MODULE_CLIENT_CONFIG.combatOnlyDistanceMeasure || game.combat?.active) {
+          TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(this.token._preview);
+        }
       }
 
       return result;

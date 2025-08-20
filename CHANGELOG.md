@@ -1,3 +1,9 @@
+# 2.4.0
+
+- New client setting: **Measurement > Combat Only**
+  - Disables **Measurement > Ruler Drag** and **Measurement > Token Drag** setting while not in combat
+- Fixed **PF2e HUD** actions not highlighting ranges on hover
+
 # 2.3.1
 
 - Fixed v13 range highlighter compatibility with `PF2e HUD` module
