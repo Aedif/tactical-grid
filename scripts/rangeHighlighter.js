@@ -30,6 +30,7 @@ export class RangeHighlighter {
     this.ranges.forEach((range) => {
       if (range.color) range.color = new PIXI.Color(range.color).toNumber();
       if (range.lineColor) range.lineColor = new PIXI.Color(range.lineColor).toNumber();
+      if (range.shadeColor) range.shadeColor = new PIXI.Color(range.shadeColor).toNumber();
 
       if (gridType !== CONST.GRID_TYPES.GRIDLESS) {
         // Full unique key to store highlight grid offsets within
@@ -90,6 +91,10 @@ export class RangeHighlighter {
    */
   clear() {
     const hl = canvas.interface.grid.getHighlightLayer(this.highlightId);
+    // Remove any previously added shaded graphics (tagged)
+    for (const child of [...hl.children]) {
+      if (child?.isTacticalShade) child.parent?.removeChild(child)?.destroy({ children: true });
+    }
     hl.clear();
     clearTimeout(this._timer);
   }
@@ -134,6 +139,13 @@ export class RangeHighlighter {
       hl._tgCustomVisibility = true;
     }
 
+    // Remove any previously added shaded graphics (these are added as child Graphics objects and are
+    // not affected by hl.clear()). Without this, shaded permanent ranges cause old shaded overlays
+    // (including those from temporary hover highlights) to persist after hover-out.
+    for (const child of [...hl.children]) {
+      if (child?.isTacticalShade) child.parent?.removeChild(child)?.destroy({ children: true });
+    }
+
     hl.clear();
 
     // If we are in grid-less mode, highlight the shape directly
@@ -154,7 +166,11 @@ export class RangeHighlighter {
   _highlightGridlessShape(hl) {
     this.ranges = this.ranges.sort((r1, r2) => r2.range - r1.range);
 
-    const shapes = this.ranges.map((r) => {
+    // Separate shaded ranges so we can render overlays last
+    const normalRanges = this.ranges.filter((r) => !r.shaded);
+    const shadedRanges = this.ranges.filter((r) => r.shaded);
+
+    const shapes = normalRanges.map((r) => {
       let shape;
 
       // Token shape
@@ -200,6 +216,16 @@ export class RangeHighlighter {
 
       this._drawShape(hl, shape, style);
     }
+
+    // Shaded overlays: always render as circles regardless of base token shape
+    const { width, height } = this.token.document.getSize();
+    const { x, y } = this.token.center;
+    const maxDim = Math.max(width, height);
+    for (const r of shadedRanges) {
+      const radius = r.range * canvas.dimensions.distancePixels + maxDim / 2;
+      const shape = new PIXI.Circle(x, y, radius);
+      this._drawShadedShape(hl, shape, r);
+    }
   }
 
   /**
@@ -215,6 +241,45 @@ export class RangeHighlighter {
     if (Number.isFinite(lineColor)) hl.lineStyle(lineWidth, lineColor, lineAlpha);
 
     hl.drawShape(shape).endFill();
+  }
+
+  /**
+   * Draw diagonal hatch lines across a circle of radius R centered at (cx, cy).
+   * Used for both gridless circular shading and masked rectangular shading.
+   */
+  _drawHatchLines(gfx, { cx, cy, R, lineWidth, coverage, color, alpha }) {
+    if (coverage <= 0) return 0;
+    // lineCount proportional to coverage fraction of solid fill circumference area surrogate
+    const lineCount = Math.max(1, Math.ceil((coverage * 2 * R) / lineWidth));
+    gfx.lineStyle(lineWidth, color, alpha);
+    const sqrt2 = Math.SQRT2;
+    for (let i = 0; i < lineCount; i++) {
+      const di = -R + (i + 0.5) * ((2 * R) / lineCount);
+      const kPrime = di * sqrt2;
+      const k2 = kPrime * kPrime;
+      if (k2 > 2 * R * R) continue; // outside
+      const disc = 2 * R * R - k2;
+      if (disc < 0) continue;
+      const root = Math.sqrt(disc);
+      const u1 = (-kPrime - root) / 2;
+      const u2 = (-kPrime + root) / 2;
+      const v1 = u1 + kPrime;
+      const v2 = u2 + kPrime;
+      gfx.moveTo(cx + u1, cy + v1).lineTo(cx + u2, cy + v2);
+    }
+    return lineCount;
+  }
+
+  // Centralized shade parameter extraction (color/alpha/lineWidth/coverage)
+  _getShadeParams(range) {
+    const color = range.shadeColor ?? range.color ?? 0xffffff;
+    const alpha = range.shadeAlpha ?? 0.35;
+    if (alpha <= 0) return null;
+    const lineWidth = range.shadeLineWidth ?? 9;
+    let coverage = range.shadeCoverage;
+    coverage = coverage != null ? Math.clamped(coverage, 0, 1) : 0.25;
+    if (coverage === 0) return null;
+    return { color, alpha, lineWidth, coverage };
   }
 
   /**
@@ -285,7 +350,7 @@ export class RangeHighlighter {
         if (occupied.has(pack({ i, j }))) continue;
 
         // Find shortest distance to this grid space from the edge of the token
-        let shortest = 99999999999999999;
+        let shortest = Number.MAX_SAFE_INTEGER;
         let sDiagonals = 0;
         for (const t of edge) {
           let { distance, diagonals } = canvas.grid.measurePath([unpack(t), { i, j }], {});
@@ -322,7 +387,10 @@ export class RangeHighlighter {
     const { x, y } = canvas.grid.getTopLeftPoint(this.token.document._positionToGridOffset());
 
     const highlighted = new Set();
-    for (const range of this.ranges) {
+    const shadedCellsByRange = [];
+
+    // Draw normal ranges first (excluding shaded)
+    for (const range of this.ranges.filter((r) => !r.shaded)) {
       for (const offset of range.cache) {
         const point = { x: x + offset.x * canvas.grid.size, y: y + offset.y * canvas.grid.size };
 
@@ -332,6 +400,21 @@ export class RangeHighlighter {
           highlighted.add(packed);
         }
       }
+    }
+
+    // Collect shaded cells (draw on top with pattern)
+    for (const range of this.ranges.filter((r) => r.shaded)) {
+      const cells = [];
+      for (const offset of range.cache) {
+        const point = { x: x + offset.x * canvas.grid.size, y: y + offset.y * canvas.grid.size };
+        cells.push(point);
+      }
+      shadedCellsByRange.push({ range, cells });
+    }
+
+    // Render shaded overlays (hatch pattern over union mask)
+    for (const { range, cells } of shadedCellsByRange) {
+      this._drawShadedCellsHatch(hl, range, cells); // ignore failure silently
     }
   }
 
@@ -355,6 +438,57 @@ export class RangeHighlighter {
         )
       )
       .endFill();
+  }
+
+  /**
+   * Gridless shaded shape (circle only)
+   * @param {GridHighlight} hl
+   * @param {PIXI.Circle} shape
+   * @param {object} range
+   */
+  _drawShadedShape(hl, shape, range) {
+    if (!(shape instanceof PIXI.Circle)) return;
+    const p = this._getShadeParams(range);
+    if (!p) return;
+    const { color, alpha, lineWidth, coverage } = p;
+    const R = shape.radius;
+    this._drawHatchLines(hl, { cx: shape.x, cy: shape.y, R, lineWidth, coverage, color, alpha });
+  }
+
+  _drawShadedCellsHatch(hl, range, cells) {
+    const p = this._getShadeParams(range);
+    if (!p) return false;
+    const { color, alpha, lineWidth, coverage } = p;
+    const size = canvas.grid.size;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const c of cells) {
+      if (c.x < minX) minX = c.x;
+      if (c.y < minY) minY = c.y;
+      if (c.x + size > maxX) maxX = c.x + size;
+      if (c.y + size > maxY) maxY = c.y + size;
+    }
+    if (!isFinite(minX)) return false;
+    const mask = new PIXI.Graphics();
+    mask.beginFill(0xffffff, 1.0);
+    const fudge = Math.max(1, Math.ceil(lineWidth / 6));
+    for (const c of cells) mask.drawRect(c.x - fudge, c.y - fudge, size + fudge * 2, size + fudge * 2);
+    mask.endFill();
+    const w = maxX - minX;
+    const h = maxY - minY;
+    const g = new PIXI.Graphics();
+    g.position.set(minX, minY);
+    if (coverage === 1) {
+      g.beginFill(color, alpha).drawRect(0, 0, w, h).endFill();
+    } else {
+      const R = 0.5 * Math.sqrt(w * w + h * h);
+      this._drawHatchLines(g, { cx: w / 2, cy: h / 2, R, lineWidth, coverage, color, alpha });
+    }
+    g.mask = mask;
+    g.isTacticalShade = true;
+    mask.isTacticalShade = true;
+    hl.addChild(g);
+    hl.addChild(mask);
+    return true;
   }
 }
 
@@ -468,16 +602,20 @@ export class RangeHighlightAPI {
     ranges = ranges
       .sort((a, b) => a.range - b.range)
       .map((r, i) => {
-        const c = i < colors.length ? colors[i] : MODULE_CONFIG.range.defaultColor;
+        const baseColorCfg = i < colors.length ? colors[i] : MODULE_CONFIG.range.defaultColor;
 
         if (Number.isFinite(r)) {
           return {
             range: r,
-            ...c,
+            ...baseColorCfg,
           };
+        } else if (r.shaded && r.color == null && r.lineColor == null) {
+          // Shaded ranges default to the next color index (wrap around) for distinction
+          const nextIdx = colors.length ? (i + 1) % colors.length : 0;
+          const nextColorCfg = colors.length ? colors[nextIdx] : MODULE_CONFIG.range.defaultColor;
+          return { ...nextColorCfg, ...r };
         } else if (r.color == null && r.lineColor == null) {
-          const c = i < colors.length ? colors[i] : MODULE_CONFIG.range.defaultColor;
-          return { ...c, ...r };
+          return { ...baseColorCfg, ...r };
         }
         return r;
       });
