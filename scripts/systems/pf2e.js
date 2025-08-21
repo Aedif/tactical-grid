@@ -34,8 +34,14 @@ export default class PF2e extends GenericSystem {
 
   /** @override */
   static getTokenRange(token) {
-    const reach = { range: token.actor?.getReach?.({ action: 'attack' }) || 0 };
-    if (reach.range === 10) reach.measureDistance = this._reachMeasureDistance;
+    const actor = token.actor;
+    // Enforce swarm: swarms have 0 reach regardless of size or gear
+    if (actor?.system?.traits?.value?.includes?.('swarm')) return [{ range: 0 }];
+
+    const reachValue = actor?.getReach?.({ action: 'attack' }) || 0;
+    const reach = { range: reachValue };
+    // Use cost-based adjustment for PF2e's 10ft reach exception
+    if (reach.range === 10) reach.cost = this._reachModifiedCost;
     return [reach];
   }
 
@@ -65,15 +71,18 @@ export default class PF2e extends GenericSystem {
       if (Number.isFinite(item.system.area.value)) ranges.push(item.system.area.value);
     }
 
-    let range = item.system.range?.value;
-    if (range) {
-      range = parseInt(range);
-      if (Number.isFinite(range)) range = range;
-    }
-
+    // For melee items, use PF2e's reach calculation and enforce swarm behavior.
     if (!ranges.length && item.isMelee) {
-      if (item.system.traits.value?.includes('reach')) ranges.push({ range: 10, cost: this._reachModifiedCost });
-      else ranges.push(5);
+      const actor = item.actor;
+
+      // Swarms always have 0 reach
+      if (actor?.system?.traits?.value?.includes?.('swarm')) {
+        ranges.push(0);
+      } else {
+        const reach = actor?.getReach?.({ action: 'attack', weapon: item }) || 0;
+        if (reach === 10) ranges.push({ range: 10, cost: this._reachModifiedCost });
+        else ranges.push(reach);
+      }
     }
 
     return ranges;
