@@ -1,3 +1,10 @@
+# 2.4.1
+
+- PF2e Range Highlighting improvements/fixes courtesy of @fotoply
+  - Fixes to creature reach
+  - Swarm reach exception
+  - Volley trait penalty zone highlighting
+
 # 2.4.0
 
 - New client setting: **Measurement > Combat Only**

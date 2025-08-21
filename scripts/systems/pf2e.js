@@ -1,4 +1,3 @@
-import { RangeHighlightAPI } from '../rangeHighlighter.js';
 import { GenericSystem } from './generic.js';
 
 export default class PF2e extends GenericSystem {
@@ -91,7 +90,7 @@ export default class PF2e extends GenericSystem {
       const volleyRange = parseInt(volleyTrait.split('-')[1]);
       if (Number.isFinite(volleyRange) && volleyRange > 0) {
         // Shaded overlay inside volley penalty distance
-        ranges.push({ range: volleyRange, shaded: true, shadeColor: '#ff0000', shadeCoverage: 0.25});
+        ranges.push({ range: volleyRange, shaded: true, shadeColor: '#ff0000', shadeCoverage: 0.25 });
       }
     }
 
