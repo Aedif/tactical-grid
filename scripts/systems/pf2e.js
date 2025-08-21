@@ -85,6 +85,16 @@ export default class PF2e extends GenericSystem {
       }
     }
 
+    // Volley trait (e.g. "volley-30"): shade the penalty zone inside this distance
+    const volleyTrait = item.system?.traits?.value?.find((t) => t.startsWith('volley-'));
+    if (volleyTrait) {
+      const volleyRange = parseInt(volleyTrait.split('-')[1]);
+      if (Number.isFinite(volleyRange) && volleyRange > 0) {
+        // Shaded overlay inside volley penalty distance
+        ranges.push({ range: volleyRange, shaded: true, shadeColor: '#ff0000', shadeCoverage: 0.25});
+      }
+    }
+
     return ranges;
   }
 
