@@ -107,6 +107,7 @@ export const MODULE_CONFIG = {
 export const MODULE_CLIENT_CONFIG = {
   rulerActivatedDistanceMeasure: false,
   tokenActivatedDistanceMeasure: false,
+  tokenHoverActivatedDistanceMeasure: false,
   combatOnlyDistanceMeasure: false,
   disableTacticalGrid: false,
   rangeHighlighter: true,

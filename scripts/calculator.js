@@ -168,7 +168,7 @@ export class TacticalGridCalculator {
   showDistanceLabelsFromToken(originToken) {
     if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
 
-    this.clearHighlightLayer(); // test
+    // this.clearHighlightLayer(); // test
 
     const visibleTokens = this.getVisibleTokens();
     for (const token of visibleTokens) {
@@ -205,6 +205,47 @@ export class TacticalGridCalculator {
       // Display distance and cover label
       this.addUpdateLabel(token, token.center, this.genLabel(distance), cover);
     }
+  }
+
+  /**
+   * Displays distance to target token from the currently controlled token
+   * @param {Token} targetToken
+   */
+  showDistanceLabelToToken(targetToken) {
+    if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
+
+    const { token: originTokenId, scene } = ChatMessage.getSpeaker();
+    if (!originTokenId || targetToken.id === originTokenId || canvas.scene.id !== scene) return;
+    const originToken = canvas.tokens.get(originTokenId);
+
+    const { pointA: fromPoint, pointB: toPoint } = ClosestPointUtilities.tokenToToken(originToken, targetToken);
+    fromPoint.elevation = originToken.document.elevation;
+    toPoint.elevation = targetToken.document.elevation;
+
+    if (MODULE_CONFIG.measurement.volumetricTokens) {
+      const { originElevation, targetElevation } = VolumetricUtilities.determineVolumetricTokenElevation(
+        originToken,
+        targetToken
+      );
+
+      fromPoint.elevation = originElevation;
+      toPoint.elevation = targetElevation;
+    }
+
+    /// Calculate Cover
+    let cover;
+    if (MODULE_CONFIG.cover.calculator !== 'none' && (!MODULE_CONFIG.cover.combatOnly || game.combat?.started)) {
+      cover = TacticalGrid.coverCalculators[MODULE_CONFIG.cover.calculator]?.calculateCover?.(originToken, targetToken);
+    }
+
+    // Calculate distance
+    const distance = DistanceCalculator.calculateDistance(fromPoint, toPoint, targetToken, {
+      originToken,
+    });
+
+    // Display distance and cover label
+    this.addUpdateLabel(targetToken, targetToken.center, this.genLabel(distance), cover);
+    this.addUpdateLabel(originToken, originToken.center, '');
   }
 
   /**

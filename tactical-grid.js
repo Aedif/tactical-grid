@@ -1,6 +1,6 @@
 import { GridMaskContainer } from './scripts/container.js';
 import { MODULE_ID, cleanLayerName, registerGridWrappers, unregisterGridWrappers } from './scripts/utils.js';
-import { MODULE_CONFIG, registerSettings } from './applications/settings.js';
+import { MODULE_CLIENT_CONFIG, MODULE_CONFIG, registerSettings } from './applications/settings.js';
 import { registerKeybindings } from './scripts/keybindings.js';
 import { RangeHighlightAPI, registerRangeHighlightHooks } from './scripts/rangeHighlighter.js';
 
@@ -119,6 +119,16 @@ Hooks.on('canvasInit', (canvas) => {
       registerGridWrappers(tacticalLineWidth);
     } else {
       unregisterGridWrappers();
+    }
+  }
+});
+
+// Display distances on hover
+Hooks.on('hoverToken', (token, hoverIn) => {
+  if (MODULE_CLIENT_CONFIG.tokenHoverActivatedDistanceMeasure) {
+    if (!MODULE_CLIENT_CONFIG.combatOnlyDistanceMeasure || game.combat?.active) {
+      if (hoverIn) TacticalGrid.distanceCalculator.showDistanceLabelToToken(token);
+      else if (!TacticalGrid.distanceCalculator._measureKeyDown) TacticalGrid.distanceCalculator.hideLabels();
     }
   }
 });

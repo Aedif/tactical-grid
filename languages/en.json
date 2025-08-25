@@ -96,6 +96,10 @@
         "name": "Token Drag",
         "hint": "When enabled distances between the dragged token and all visible Tokens will be calculated and displayed on them."
       },
+      "displayDistancesOnTokenHover": {
+        "name": "Token Hover",
+        "hint": "When enabled distances between the controlled and hovered Tokens will be calculated and displayed on the hovered Token."
+      },
       "range": {
         "item-range": "Item Range Highlighter",
         "token-range": "Token Range Highlighter",

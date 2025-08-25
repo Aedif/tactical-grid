@@ -1,3 +1,8 @@
+# 2.5.0
+
+- New client setting: **Measurement > Token Hover**
+  - When enabled distance/cover will be displayed between the controlled and hovered over tokens
+
 # 2.4.1
 
 - PF2e Range Highlighting improvements/fixes courtesy of @fotoply
