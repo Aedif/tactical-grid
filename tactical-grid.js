@@ -125,10 +125,10 @@ Hooks.on('canvasInit', (canvas) => {
 
 // Display distances on hover
 Hooks.on('hoverToken', (token, hoverIn) => {
-  if (MODULE_CLIENT_CONFIG.tokenHoverActivatedDistanceMeasure) {
+  if (MODULE_CLIENT_CONFIG.tokenHoverActivatedDistanceMeasure && !TacticalGrid.distanceCalculator._measureKeyDown) {
     if (!MODULE_CLIENT_CONFIG.combatOnlyDistanceMeasure || game.combat?.active) {
       if (hoverIn) TacticalGrid.distanceCalculator.showDistanceLabelToToken(token);
-      else if (!TacticalGrid.distanceCalculator._measureKeyDown) TacticalGrid.distanceCalculator.hideLabels();
+      else TacticalGrid.distanceCalculator.hideLabels();
     }
   }
 });
