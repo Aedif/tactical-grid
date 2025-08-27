@@ -6,7 +6,7 @@
 import { RangeHighlightAPI } from '../rangeHighlighter.js';
 
 export function register() {
-  Hooks.on('renderPersistentShortcutsPF2eHUD', (hud, html, options, context) => {
+  Hooks.once('renderPersistentShortcutsPF2eHUD', (hud, html, options, context) => {
     $(html)
       .on('mouseenter', '.item.shortcut', (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
       .on('mouseleave', '.item.shortcut', (event) =>
@@ -14,19 +14,19 @@ export function register() {
       );
   });
 
-  Hooks.on('renderItemsSidebarPF2eHUD', (hud, html, options, context) => {
+  Hooks.once('renderItemsSidebarPF2eHUD', (hud, html, options, context) => {
     $(html)
       .on('mouseenter', '.item', (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
       .on('mouseleave', '.item', (event) => RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens()));
   });
 
-  Hooks.on('renderSpellsSidebarPF2eHUD', (hud, html, options, context) => {
+  Hooks.once('renderSpellsSidebarPF2eHUD', (hud, html, options, context) => {
     $(html)
       .on('mouseenter', '.item', (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
       .on('mouseleave', '.item', (event) => RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens()));
   });
 
-  Hooks.on('renderActionsSidebarPF2eHUD', (hud, html, options, context) => {
+  Hooks.once('renderActionsSidebarPF2eHUD', (hud, html, options, context) => {
     $(html)
       .on('mouseenter', '.item', (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
       .on('mouseleave', '.item', (event) => RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens()));
