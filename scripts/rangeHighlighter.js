@@ -389,10 +389,20 @@ export class RangeHighlighter {
     const highlighted = new Set();
     const shadedCellsByRange = [];
 
+    // Scene bounds and cell size for quick rejection of out-of-bounds cells
+    const sceneW = canvas.dimensions.width;
+    const sceneH = canvas.dimensions.height;
+    const cellW = canvas.grid.sizeX ?? canvas.grid.size;
+    const cellH = canvas.grid.sizeY ?? canvas.grid.size;
+    const isCellOutOfBounds = (px, py) => px >= sceneW || py >= sceneH || px + cellW <= 0 || py + cellH <= 0;
+
     // Draw normal ranges first (excluding shaded)
     for (const range of this.ranges.filter((r) => !r.shaded)) {
       for (const offset of range.cache) {
         const point = { x: x + offset.x * canvas.grid.size, y: y + offset.y * canvas.grid.size };
+
+        // Skip cells fully outside the scene bounds
+        if (isCellOutOfBounds(point.x, point.y)) continue;
 
         const packed = pack(point);
         if (!highlighted.has(packed)) {
@@ -407,6 +417,8 @@ export class RangeHighlighter {
       const cells = [];
       for (const offset of range.cache) {
         const point = { x: x + offset.x * canvas.grid.size, y: y + offset.y * canvas.grid.size };
+        // Skip cells fully outside the scene bounds
+        if (isCellOutOfBounds(point.x, point.y)) continue;
         cells.push(point);
       }
       shadedCellsByRange.push({ range, cells });
