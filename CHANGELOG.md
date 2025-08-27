@@ -1,3 +1,10 @@
+# 2.5.1
+
+Courtesy of @fotoply:
+
+- Range highlight performance improvement for very large ranges
+- PF2e HUD integration bug fix
+
 # 2.5.0
 
 - New client setting: **Measurement > Token Hover**

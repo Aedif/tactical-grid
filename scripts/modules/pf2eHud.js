@@ -7,11 +7,11 @@ import { RangeHighlightAPI } from '../rangeHighlighter.js';
 
 export function register() {
   Hooks.on('renderPersistentShortcutsPF2eHUD', (hud, html, options, context) => {
-    const shortcuts = html.querySelectorAll(".shortcut");
+    const shortcuts = html.querySelectorAll('.shortcut');
     for (const shortcut of shortcuts) {
       $(shortcut)
-          .on("mouseenter", null, (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
-          .on("mouseleave", null, (event) => RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens()));
+        .on('mouseenter', null, (event) => highlightItemById(event.currentTarget.dataset.itemId, hud.actor))
+        .on('mouseleave', null, (event) => RangeHighlightAPI.clearRangeHighlight(hud.actor.getActiveTokens()));
     }
   });
 

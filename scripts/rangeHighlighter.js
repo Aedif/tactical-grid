@@ -472,7 +472,10 @@ export class RangeHighlighter {
     if (!p) return false;
     const { color, alpha, lineWidth, coverage } = p;
     const size = canvas.grid.size;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
     for (const c of cells) {
       if (c.x < minX) minX = c.x;
       if (c.y < minY) minY = c.y;
