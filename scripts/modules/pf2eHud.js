@@ -35,6 +35,11 @@ export function register() {
 }
 
 function highlightItemById(itemId, actor) {
-  const item = actor.items.get(itemId) ?? actor.system.actions.find((action) => action.item?.id === itemId)?.item;
+  // For most cases this returns the item we want to highlight
+  // NOTE: If the item is disabled, for any reason, the itemId will be undefined
+  let item = actor.items.get(itemId);
+  // In some cases though, there is a more relevant action that we want to highlight, e.g., if the item is an effect
+  // that grants a temporary strike, since the effect itself does not have a range
+  item = actor.system.actions.find((action) => action.item?.id === itemId)?.item ?? item;
   if (item) RangeHighlightAPI.rangeHighlight(actor.getActiveTokens()[0], { item });
 }
