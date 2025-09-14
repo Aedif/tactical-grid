@@ -7,7 +7,7 @@
 # Features
 - Item & Token range highlighting
 - Distance measurements to Tokens during:
-   - Token drag
+   - Token drag/hover
    - Ruler drag
    - Keybind press (`H` by default)
 - Integration with cover modules
