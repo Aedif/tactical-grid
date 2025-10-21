@@ -5,6 +5,9 @@ export async function registerGameSystem() {
   let gameSystem;
 
   switch (game.system.id) {
+    case 'dnd4e':
+      gameSystem = (await import('./systems/dnd4e.js')).default;
+      break;
     case 'dnd5e':
       gameSystem = (await import('./systems/dnd5e.js')).default;
       break;
