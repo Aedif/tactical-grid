@@ -35,7 +35,7 @@ export default class DnD4e extends GenericSystem {
       } else if (item.system.area) {
         range = Number(item.system.area) || Number(rangeData.rangeTextBlock);
       }
-      let longRange = item.system.range.long || 0;
+      let longRange = Number(item.system.range.long) || 0;
 
       if (item.system.rangeType === 'touch') {
         range = 1;
