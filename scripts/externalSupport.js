@@ -20,6 +20,9 @@ export async function registerGameSystem() {
     case 'demonlord':
       gameSystem = (await import('./systems/demonlord.js')).default;
       break;
+    case 'draw-steel':
+      gameSystem = (await import('./systems/drawsteel.js')).default;
+      break;
     default:
       gameSystem = GenericSystem;
   }
