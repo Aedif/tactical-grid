@@ -1,3 +1,13 @@
+# 2.5.2
+
+Courtesy of @fotoply:
+
+- `PF2e HUD`: Fixed temporary strikes (from battle-forms) not highlighting by reach
+
+Courtesy of @Dragodoth
+
+- `Draw Steel` game system support
+
 # 2.5.1
 
 Courtesy of @fotoply:

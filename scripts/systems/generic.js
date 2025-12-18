@@ -37,13 +37,14 @@ export class GenericSystem {
   /**
    * Respond to mouse hovering over an item with itemId
    */
-  static hoverItem({ item, itemId, actorSheet, actor, token } = {}) {
+  static hoverItem({ item, itemId, itemUuid, actorSheet, actor, token } = {}) {
     actor = actor ?? actorSheet?.document ?? token?.actor;
     if (!actor) return;
 
     token = token ?? actorSheet?.token?.object ?? actor?.getActiveTokens()[0];
     if (!token) return;
 
+    if (itemUuid) itemId = foundry.utils.parseUuid(itemUuid).id;
     item = item ?? actor.items.get(itemId);
 
     if (!item) {
