@@ -12,7 +12,7 @@ export default class DnD4e extends GenericSystem {
         .filter((item) => (item.system.equipped || item.type === 'power') && this._isMelee(item))
         .forEach((item) => {
             if (item.properties?.rch) allRanges.add(this._getUnitAdjustedRange(2));
-            else if (item.system.rangeType === 'reach') allRanges.add(this._getUnitAdjustedRange(item.system.rangePower))
+            else if (['reach', 'melee'].includes(item.system.rangeType)) allRanges.add(this._getUnitAdjustedRange(item.system.rangePower))
         });
     }
 
