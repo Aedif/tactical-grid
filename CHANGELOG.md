@@ -1,3 +1,12 @@
+# 2.5.3
+
+- Fixed `Assign Color Based on Disposition` setting not applying
+- Aligned `Levels - Automatic Cover Calculator` use closer with `MidiQOL`
+
+Courtesy of @SagaTympana
+
+- `DnD4e` game system support
+
 # 2.5.2
 
 Courtesy of @fotoply:
@@ -131,7 +140,6 @@ Courtesy of @fotoply:
 # 1.24.0
 
 - **Distance Measurement**
-
   - Now takes into account token volume (token z-axis height is assumed to be the same as its y-axis height)
   - On a square grids diagonal and double-diagonal movement multipliers can now be configured
     - Diagonals (grid-space moves in x and y direction) are 1.5x by default (equivalent to 5/10/5 rule)
@@ -142,7 +150,6 @@ Courtesy of @fotoply:
   - On PF2e, token-to-token measurements will be delegated to the system provided `distanceTo` function
 
 - **Range Highlighter**
-
   - Permanent highlights can now be setup via `ranges` flag
     - e.g. `_token.document.setFlag('aedifs-tactical-grid', 'ranges', [ {range: 10, lineColor: '#00ff00', lineWidth: 2, lineAlpha: 0.4, id: "MyCustomAura" }])`
     - e.g. `_token.document.unsetFlag('aedifs-tactical-grid', 'ranges')`
@@ -274,7 +281,6 @@ static clearRangeHighlight(token)
 # 1.18.2
 
 - `Settings` > `Cover` > `Cover Calculator` : `MidiQOL`
-
   - No longer requires game reload to take effect after the setting is changed.
 
 - Drag Ruler: Fixed cover calculations being offset on tokens larger than 1x1
@@ -309,7 +315,6 @@ static clearRangeHighlight(token)
 # 1.16.0
 
 - New option: `Settings` > `Cover`
-
   - Allows to specify a cover calculator module and labels to be used to indicate different levels of cover when performing measurements
   - Supported modules: `Simbul's Cover Calculator`, `Levels Auto Cover`, and `Alternative Token Visibility`
 
@@ -439,7 +444,6 @@ New Controls
 # 1.5.0
 
 - New settings
-
   - Default Color: Disposition - Will assign Red, Green, and Blue view shape colors based on Token disposition
   - Can be viewed and changed via:
 

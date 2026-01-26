@@ -7,12 +7,13 @@ export default class DnD4e extends GenericSystem {
     if (actor.statuses.has('dead')) return [];
     const allRanges = new Set([this._getUnitAdjustedRange(1)]);
 
-    if (actor.items.some(i => i.name === 'Threatening Reach')) {
-        actor.items
+    if (actor.items.some((i) => i.name === 'Threatening Reach')) {
+      actor.items
         .filter((item) => (item.system.equipped || item.type === 'power') && this._isMelee(item))
         .forEach((item) => {
-            if (item.properties?.rch) allRanges.add(this._getUnitAdjustedRange(2));
-            else if (['reach', 'melee'].includes(item.system.rangeType)) allRanges.add(this._getUnitAdjustedRange(item.system.rangePower))
+          if (item.properties?.rch) allRanges.add(this._getUnitAdjustedRange(2));
+          else if (['reach', 'melee'].includes(item.system.rangeType))
+            allRanges.add(this._getUnitAdjustedRange(item.system.rangePower));
         });
     }
 
@@ -24,7 +25,6 @@ export default class DnD4e extends GenericSystem {
     if (item.type != 'power') return;
     const rangeData = item.rangeData();
     const ranges = new Set();
-
 
     if (item.system.range) {
       let range = 0;
@@ -69,7 +69,9 @@ export default class DnD4e extends GenericSystem {
     return (
       ['melee', 'reach', 'touch'].includes(item.system.rangeType) ||
       (item.system.rangeType === 'weapon' && item.system.weaponType === 'melee') ||
-      (item.system.rangeType === 'weapon' && item.system.weaponType === 'meleeRanged' && (item.system.properties?.thv || item.system.properties?.tlg)) ||
+      (item.system.rangeType === 'weapon' &&
+        item.system.weaponType === 'meleeRanged' &&
+        (item.system.properties?.thv || item.system.properties?.tlg)) ||
       item.system.weaponType?.slice(-1) === 'M'
     );
   }
@@ -94,7 +96,7 @@ export default class DnD4e extends GenericSystem {
   /** @override */
   static _getUnitAdjustedRange(gridSpaces) {
     const units = canvas.scene.grid.units;
-    if (units === 'sq') return (Number(gridSpaces) || 0);
+    if (units === 'sq') return Number(gridSpaces) || 0;
     else if (units === 'ft') return 5 * (Number(gridSpaces) || 0);
     else if (units === 'm') return 1.5 * (Number(gridSpaces) || 0);
     return 0;
