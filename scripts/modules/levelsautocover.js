@@ -9,21 +9,13 @@ export function register() {
 
 function calculateCover(attacker, target) {
   const coverData = AutoCover.calculateCover(attacker, target, { apiMode: true });
+  const coverDetail = AutoCover.getCoverData();
 
-  const percentCover = 100 - coverData.rawCover;
+  if (coverData.rawCover === 0) return TacticalGrid.COVER.FULL_COVER;
+  else if (coverData.rawCover > coverDetail[1].percent) return TacticalGrid.COVER.NO_COVER;
+  else if (coverData.rawCover < coverDetail[0].percent) return TacticalGrid.COVER.THREE_QUARTERS_COVER;
+  else if (coverData.rawCover < coverDetail[1].percent) return TacticalGrid.COVER.HALF_COVER;
 
-  // We'll assume that the first defined cover is half-cover
-  // 2nd is three-quarter cover
-  // 3rd is full-cover
-  let coverDetail = AutoCover.getCoverData();
-  coverDetail = {
-    half: coverDetail[0].percent,
-    three: coverDetail[1].percent,
-    full: coverDetail[2]?.percent ?? 100,
-  };
-
-  if (percentCover === 0 || percentCover < coverDetail.half) return TacticalGrid.COVER.NO_COVER;
-  else if (percentCover < coverDetail.three) return TacticalGrid.COVER.HALF_COVER;
-  else if (percentCover < coverDetail.full) return TacticalGrid.COVER.THREE_QUARTERS_COVER;
-  return TacticalGrid.COVER.FULL_COVER;
+  // Shouldn't reach here
+  return TacticalGrid.COVER.NO_COVER;
 }
