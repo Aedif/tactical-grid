@@ -1,10 +1,11 @@
 import { GridMaskContainer } from './scripts/container.js';
 import { MODULE_ID, cleanLayerName, registerGridWrappers, unregisterGridWrappers } from './scripts/utils.js';
-import { MODULE_CLIENT_CONFIG, MODULE_CONFIG, registerSettings } from './applications/settings.js';
+import { MODULE_CLIENT_CONFIG, MODULE_CONFIG, registerSettings, updateSettings } from './applications/settings.js';
 import { registerKeybindings } from './scripts/keybindings.js';
 import { RangeHighlightAPI, registerRangeHighlightHooks } from './scripts/rangeHighlighter.js';
 
 import { TacticalGridCalculator } from './scripts/calculator.js';
+import { broadcast, registerBroadcasts } from './scripts/broadcaster.js';
 
 // Container used as Grid Mask
 export const GRID_MASK = {
@@ -26,6 +27,7 @@ Hooks.on('init', () => {
   registerSettings();
   registerKeybindings();
   registerRangeHighlightHooks();
+  registerBroadcasts();
 
   game.modules.get(MODULE_ID).api = globalThis.TacticalGrid;
   CONFIG.debug.atg = false;
@@ -130,5 +132,25 @@ Hooks.on('hoverToken', (token, hoverIn) => {
       if (hoverIn) TacticalGrid.distanceCalculator.showDistanceLabelToToken(token);
       else TacticalGrid.distanceCalculator.hideLabels();
     }
+  }
+});
+
+Hooks.on('getSceneControlButtons', (controls) => {
+  if (MODULE_CONFIG.measurement.broadcastControl) {
+    controls.tokens.tools.tgBroadcast = {
+      name: 'tgBroadcast',
+      title: 'Tactical Grid: Broadcast',
+      icon: 'fa-solid fa-tower-broadcast',
+      visible: game.user.isGM,
+      active: MODULE_CONFIG.measurement.broadcast,
+      toggle: true,
+      onChange: () => {
+        updateSettings({
+          measurement: {
+            broadcast: !MODULE_CONFIG.measurement.broadcast,
+          },
+        });
+      },
+    };
   }
 });

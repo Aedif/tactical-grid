@@ -1,3 +1,8 @@
+# 2.6.0
+
+- New setting: `World Settings` > `Measurement` > `Insert Broadcast Control`
+  - When enabled a Token scene control will be added to allow toggling of global broadcasting of GM's distance measurements
+
 # 2.5.3
 
 - Fixed `Assign Color Based on Disposition` setting not applying

@@ -42,6 +42,8 @@ export const MODULE_CONFIG = {
     enableFontScaling: true,
     baseGridSize: 100,
     ignoreEffect: '',
+    broadcastControl: false,
+    broadcast: false,
   },
   marker: {
     color: 0xff0000,
@@ -242,7 +244,7 @@ export function registerSettings() {
         }
         return result;
       },
-      'WRAPPER'
+      'WRAPPER',
     );
   });
 
@@ -340,7 +342,7 @@ export function registerRulerLibWrapperMethods() {
         if (this.user.id === game.user.id) GRID_MASK.container.drawMask();
         return result;
       },
-      'WRAPPER'
+      'WRAPPER',
     );
     rulerWrappers.push(id);
     id = libWrapper.register(
@@ -351,7 +353,7 @@ export function registerRulerLibWrapperMethods() {
         if (this.user.id === game.user.id) GRID_MASK.container.setMaskPosition(this);
         return result;
       },
-      'WRAPPER'
+      'WRAPPER',
     );
     rulerWrappers.push(id);
   }
@@ -373,7 +375,7 @@ export function registerRulerLibWrapperMethods() {
       }
       return result;
     },
-    'WRAPPER'
+    'WRAPPER',
   );
   rulerWrappers.push(id);
 
@@ -387,13 +389,13 @@ export function registerRulerLibWrapperMethods() {
 
       if (MODULE_CLIENT_CONFIG.tokenActivatedDistanceMeasure && this.token._preview) {
         if (!MODULE_CLIENT_CONFIG.combatOnlyDistanceMeasure || game.combat?.active) {
-          TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(this.token._preview);
+          TacticalGrid.distanceCalculator.showDistanceLabelsFromToken(this.token._preview, true);
         }
       }
 
       return result;
     },
-    'WRAPPER'
+    'WRAPPER',
   );
   rulerWrappers.push(id);
 
@@ -408,7 +410,7 @@ export function registerRulerLibWrapperMethods() {
       }
       return result;
     },
-    'WRAPPER'
+    'WRAPPER',
   );
   rulerWrappers.push(id);
 }

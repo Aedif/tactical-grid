@@ -1,5 +1,12 @@
 <div class="tab{{#if tab.active}} active{{/if}} scrollable" data-group="{{tab.group}}" data-tab="{{tab.id}}">
     <div class="form-group">
+        <label>{{localize "aedifs-tactical-grid.settings.broadcastControl.name"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="measurement.broadcastControl" data-dtype="Boolean" value="{{measurement.broadcastControl}}" {{checked measurement.broadcastControl}}>
+        </div>
+        <p class="hint">{{localize "aedifs-tactical-grid.settings.broadcastControl.hint"}}</p>
+    </div>
+    <div class="form-group">
         <label>{{localize "aedifs-tactical-grid.settings.volumetricTokens.name"}}</label>
         <div class="form-fields">
             <input type="checkbox" name="measurement.volumetricTokens" data-dtype="Boolean" value="{{measurement.volumetricTokens}}" {{#if measurement.volumetricTokens}}checked{{/if}}>

@@ -1,4 +1,5 @@
 import { MODULE_CLIENT_CONFIG, MODULE_CONFIG } from '../applications/settings.js';
+import { broadcast } from './broadcaster.js';
 import { ClosestPointUtilities } from './closestPointUtilities.js';
 import { tokenHasEffect } from './utils.js';
 
@@ -46,7 +47,7 @@ export class TacticalGridCalculator {
     let visibleTokens = canvas.tokens.placeables.filter(
       (p) =>
         ((p.visible || p.impreciseVisible) && p.document.disposition !== CONST.TOKEN_DISPOSITIONS.SECRET) ||
-        game.user.isGM
+        game.user.isGM,
     );
 
     if (MODULE_CONFIG.measurement.ignoreEffect) {
@@ -64,7 +65,7 @@ export class TacticalGridCalculator {
 
     if (canvas.tokens.controlled.length === 1) {
       let token = this.createTokenPreview(canvas.tokens.controlled[0], originPoint);
-      this.showDistanceLabelsFromToken(token);
+      this.showDistanceLabelsFromToken(token, true);
     } else {
       this.drawCrossHighlight(canvas.grid.getCenterPoint(originPoint));
       this.showDistanceLabelsFromPoint(originPoint);
@@ -98,6 +99,8 @@ export class TacticalGridCalculator {
 
   drawCrossHighlight({ x, y } = {}, skipClear = false) {
     if (!skipClear) this.clearHighlightLayer();
+    if (game.user.isGM && MODULE_CONFIG.measurement.broadcast)
+      broadcast('drawCrossHighlight', { point: { x, y }, sceneId: canvas.scene.id });
 
     let r = 20;
     let points = [];
@@ -126,7 +129,7 @@ export class TacticalGridCalculator {
       layer.lineStyle(
         canvas.grid.thickness,
         MODULE_CONFIG.marker.border,
-        Math.min(MODULE_CONFIG.marker.alpha * 1.5, 1.0)
+        Math.min(MODULE_CONFIG.marker.alpha * 1.5, 1.0),
       );
 
     layer.drawShape(shape).endFill();
@@ -138,6 +141,8 @@ export class TacticalGridCalculator {
    */
   showDistanceLabelsFromPoint(originPoint) {
     if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
+    if (game.user.isGM && MODULE_CONFIG.measurement.broadcast)
+      broadcast('showDistanceLabelsFromPoint', { point: originPoint, sceneId: canvas.scene.id });
 
     const elevation = originPoint.elevation;
     originPoint = canvas.grid.getTopLeftPoint(originPoint);
@@ -165,8 +170,18 @@ export class TacticalGridCalculator {
    * Displays distance from origin token to all other visible tokens.
    * @param {Token} originToken
    */
-  showDistanceLabelsFromToken(originToken) {
+  showDistanceLabelsFromToken(originToken, isPreview = false) {
     if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
+    if (game.user.isGM && MODULE_CONFIG.measurement.broadcast) {
+      if (isPreview) {
+        const { x, y, elevation } = originToken.document;
+        broadcast('showDistanceLabelsFromPoint', {
+          point: { x, y, elevation },
+          sceneId: originToken.document.parent.id,
+        });
+      } else
+        broadcast('showDistanceLabelsFromToken', { tokenId: originToken.id, sceneId: originToken.document.parent.id });
+    }
 
     // this.clearHighlightLayer(); // test
 
@@ -178,13 +193,10 @@ export class TacticalGridCalculator {
       fromPoint.elevation = originToken.document.elevation;
       toPoint.elevation = token.document.elevation;
 
-      // this.drawCrossHighlight(fromPoint, true);
-      // this.drawCrossHighlight(toPoint, true);
-
       if (MODULE_CONFIG.measurement.volumetricTokens) {
         const { originElevation, targetElevation } = VolumetricUtilities.determineVolumetricTokenElevation(
           originToken,
-          token
+          token,
         );
 
         fromPoint.elevation = originElevation;
@@ -211,12 +223,21 @@ export class TacticalGridCalculator {
    * Displays distance to target token from the currently controlled token
    * @param {Token} targetToken
    */
-  showDistanceLabelToToken(targetToken) {
+  showDistanceLabelToToken(targetToken, originToken = null) {
     if (MODULE_CLIENT_CONFIG.disableTacticalGrid) return;
 
-    const { token: originTokenId, scene } = ChatMessage.getSpeaker();
-    if (!originTokenId || targetToken.id === originTokenId || canvas.scene.id !== scene) return;
-    const originToken = canvas.tokens.get(originTokenId);
+    if (!originToken) {
+      const { token: originTokenId, scene } = ChatMessage.getSpeaker();
+      if (!originTokenId || targetToken.id === originTokenId || canvas.scene.id !== scene) return;
+      originToken = canvas.tokens.get(originTokenId);
+    }
+
+    if (game.user.isGM && MODULE_CONFIG.measurement.broadcast)
+      broadcast('showDistanceLabelToToken', {
+        originTokenId: originToken.id,
+        targetTokenId: targetToken.id,
+        sceneId: originToken.document.parent.id,
+      });
 
     const { pointA: fromPoint, pointB: toPoint } = ClosestPointUtilities.tokenToToken(originToken, targetToken);
     fromPoint.elevation = originToken.document.elevation;
@@ -225,7 +246,7 @@ export class TacticalGridCalculator {
     if (MODULE_CONFIG.measurement.volumetricTokens) {
       const { originElevation, targetElevation } = VolumetricUtilities.determineVolumetricTokenElevation(
         originToken,
-        targetToken
+        targetToken,
       );
 
       fromPoint.elevation = originElevation;
@@ -316,15 +337,11 @@ export class TacticalGridCalculator {
     else token._atgLabels = [pText];
   }
 
-  hideLabels() {
-    this.deleteLabels();
-    canvas.interface.grid.destroyHighlightLayer(this._highlightLayerName);
-  }
-
   /**
    * Deletes token labels created by TacticalGridCalculator
    */
-  deleteLabels() {
+  hideLabels() {
+    if (game.user.isGM && MODULE_CONFIG.measurement.broadcast) broadcast('hideLabels', { sceneId: canvas.scene.id });
     canvas.tokens.placeables.forEach((p) => {
       if (p._atgLabels) {
         p._atgLabels.forEach((t) => t.parent.removeChild(t)?.destroy());
@@ -341,6 +358,8 @@ export class TacticalGridCalculator {
       this._tokenClone = null;
       c.destroy();
     }
+
+    canvas.interface.grid.destroyHighlightLayer(this._highlightLayerName);
   }
 }
 
@@ -405,7 +424,7 @@ class DistanceCalculator {
   static _applyPrecision(distance) {
     let precision = 10 ** MODULE_CONFIG.measurement.precision;
     let number = parseFloat(
-      (Math.round(distance * precision) / precision).toFixed(MODULE_CONFIG.measurement.precision)
+      (Math.round(distance * precision) / precision).toFixed(MODULE_CONFIG.measurement.precision),
     );
     return number + MODULE_CONFIG.distanceCalcOffset;
   }

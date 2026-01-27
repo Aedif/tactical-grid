@@ -1,45 +1,55 @@
 {
   "id": "aedifs-tactical-grid",
   "title": "Aedif's Tactical Grid",
-  "description": "Only show the grid when needed.",
-  "version": "2.5.3",
-  "download": "https://github.com/Aedif/tactical-grid/releases/download/2.5.3/aedifs-tactical-grid.zip",
+  "description": "<p>Only show the grid when needed.</p>",
+  "version": "2.6.0",
+  "download": "https://github.com/Aedif/tactical-grid/releases/download/2.6.0/aedifs-tactical-grid.zip",
   "manifest": "https://raw.githubusercontent.com/Aedif/tactical-grid/main/module.json",
   "compatibility": {
-    "minimum": 13,
-    "verified": 13
+    "minimum": "13",
+    "verified": "13"
   },
   "authors": [
     {
       "name": "Aedif",
       "url": "https://github.com/aedif",
-      "discord": "Aedif#7268"
+      "discord": "Aedif#7268",
+      "flags": {}
     }
   ],
-  "esmodules": ["bundle/tactical-grid.js"],
-  "scripts": [],
-  "styles": ["styles/style.css"],
-  "packs": [],
+  "esmodules": [
+    "bundle/tactical-grid.js"
+  ],
+  "styles": [
+    {
+      "src": "styles/style.css"
+    }
+  ],
   "languages": [
     {
       "lang": "en",
       "name": "English",
-      "path": "languages/en.json"
+      "path": "languages/en.json",
+      "flags": {}
     },
     {
       "lang": "ja",
       "name": "日本語",
-      "path": "languages/ja.json"
+      "path": "languages/ja.json",
+      "flags": {}
     }
   ],
   "relationships": {
     "requires": [
       {
         "id": "lib-wrapper",
-        "type": "module"
+        "type": "module",
+        "compatibility": {}
       }
     ]
   },
   "url": "https://github.com/Aedif/tactical-grid",
-  "readme": "https://github.com/Aedif/tactical-grid/blob/master/README.md"
+  "readme": "https://github.com/Aedif/tactical-grid/blob/master/README.md",
+  "socket": true,
+  "flags": {}
 }

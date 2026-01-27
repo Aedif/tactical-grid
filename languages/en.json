@@ -71,6 +71,10 @@
         "name": "Three-dimensional Tokens",
         "hint": "When enabled token height will be taken into account when calculating distances for elevated tokens."
       },
+      "broadcastControl": {
+        "name": "Insert Broadcast Control",
+        "hint": "When enabled a control will be added to Token scene controls to toggle global broadcasting of GM's distance measurements."
+      },
       "scaleFontSize": "Scale Font Size to Canvas Grid",
       "baseGridSize": {
         "name": "Base Grid Size",
