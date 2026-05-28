@@ -1,19 +1,19 @@
 {
   "id": "aedifs-tactical-grid",
   "title": "Aedif's Tactical Grid",
-  "description": "<p>Only show the grid when needed.</p>",
-  "version": "2.6.0",
-  "download": "https://github.com/Aedif/tactical-grid/releases/download/2.6.0/aedifs-tactical-grid.zip",
+  "description": "<p>Grid toggling, item range highlighting, distance measurement, and more.</p>",
+  "version": "2.6.1",
+  "download": "https://github.com/Aedif/tactical-grid/releases/download/2.6.1/aedifs-tactical-grid.zip",
   "manifest": "https://raw.githubusercontent.com/Aedif/tactical-grid/main/module.json",
   "compatibility": {
     "minimum": "13",
-    "verified": "13"
+    "verified": "14.363"
   },
   "authors": [
     {
       "name": "Aedif",
       "url": "https://github.com/aedif",
-      "discord": "Aedif#7268",
+      "discord": "aedif",
       "flags": {}
     }
   ],

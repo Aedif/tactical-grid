@@ -1,7 +1,12 @@
+# 2.6.1
+
+- Verified for Foundry version 14.363
+- Fixed `BG3 Inspired HUD` compatibility
+
 # 2.6.0
 
 - New setting: `World Settings` > `Measurement` > `Insert Broadcast Control`
-  - When enabled a Token scene control will be added to allow toggling of global broadcasting of GM's distance measurements
+    - When enabled a Token scene control will be added to allow toggling of global broadcasting of GM's distance measurements
 
 # 2.5.3
 
@@ -32,19 +37,19 @@ Courtesy of @fotoply:
 # 2.5.0
 
 - New client setting: **Measurement > Token Hover**
-  - When enabled distance/cover will be displayed between the controlled and hovered over tokens
+    - When enabled distance/cover will be displayed between the controlled and hovered over tokens
 
 # 2.4.1
 
 - PF2e Range Highlighting improvements/fixes courtesy of @fotoply
-  - Fixes to creature reach
-  - Swarm reach exception
-  - Volley trait penalty zone highlighting
+    - Fixes to creature reach
+    - Swarm reach exception
+    - Volley trait penalty zone highlighting
 
 # 2.4.0
 
 - New client setting: **Measurement > Combat Only**
-  - Disables **Measurement > Ruler Drag** and **Measurement > Token Drag** setting while not in combat
+    - Disables **Measurement > Ruler Drag** and **Measurement > Token Drag** setting while not in combat
 - Fixed **PF2e HUD** actions not highlighting ranges on hover
 
 # 2.3.1
@@ -68,7 +73,7 @@ Courtesy of @fotoply:
 # 2.1.0
 
 - Range Highlight support for **Shadow of the Demon Lord** game system
-  - Courtesy of: **sasquach45932**
+    - Courtesy of: **sasquach45932**
 
 # 2.0.0
 
@@ -84,9 +89,9 @@ Courtesy of @fotoply:
 # 1.31.0
 
 - New setting: `Display Broadcast Toggle Button`
-  - Controls display of a scene control that allows broadcasting of GM measurements to players
+    - Controls display of a scene control that allows broadcasting of GM measurements to players
 - Improved PF2e ranged weapon highlighting
-  - Each range increment will now be displayed instead of just the first and maximum
+    - Each range increment will now be displayed instead of just the first and maximum
 
 # 1.30.0
 
@@ -98,7 +103,7 @@ Courtesy of @fotoply:
 **Misc.**
 
 - New toggle added to Token Controls: `Broadcast Measurements`
-  - When active measurements made by the GM via TG will be broadcast to all other users
+    - When active measurements made by the GM via TG will be broadcast to all other users
 
 # 1.28.0
 
@@ -140,42 +145,42 @@ Courtesy of @fotoply:
 
 - Hex distance calculation improvements
 - DnD5e >=3.0.0 item range highlight fixes
-  - Thrown melee weapons will now include melee, short, and long range
+    - Thrown melee weapons will now include melee, short, and long range
 
 # 1.24.0
 
 - **Distance Measurement**
-  - Now takes into account token volume (token z-axis height is assumed to be the same as its y-axis height)
-  - On a square grids diagonal and double-diagonal movement multipliers can now be configured
-    - Diagonals (grid-space moves in x and y direction) are 1.5x by default (equivalent to 5/10/5 rule)
-    - Double-diagonals (grid-space moves in x, y, and z direction) are 1.75 by default
-  - On gridless scenes with `Gridless: Circle Border` setting enabled, the module will consider tokens to be cylindrical
-  - Fixed point to token measurements on gridless scenes
-  - Fixed measurements returning as zero when dragging a token over another
-  - On PF2e, token-to-token measurements will be delegated to the system provided `distanceTo` function
+    - Now takes into account token volume (token z-axis height is assumed to be the same as its y-axis height)
+    - On a square grids diagonal and double-diagonal movement multipliers can now be configured
+        - Diagonals (grid-space moves in x and y direction) are 1.5x by default (equivalent to 5/10/5 rule)
+        - Double-diagonals (grid-space moves in x, y, and z direction) are 1.75 by default
+    - On gridless scenes with `Gridless: Circle Border` setting enabled, the module will consider tokens to be cylindrical
+    - Fixed point to token measurements on gridless scenes
+    - Fixed measurements returning as zero when dragging a token over another
+    - On PF2e, token-to-token measurements will be delegated to the system provided `distanceTo` function
 
 - **Range Highlighter**
-  - Permanent highlights can now be setup via `ranges` flag
-    - e.g. `_token.document.setFlag('aedifs-tactical-grid', 'ranges', [ {range: 10, lineColor: '#00ff00', lineWidth: 2, lineAlpha: 0.4, id: "MyCustomAura" }])`
-    - e.g. `_token.document.unsetFlag('aedifs-tactical-grid', 'ranges')`
-    - Highlights setup via flags will be visible to all players
-  - New setting `Range` > `Token` > `Dispositions Highlighted for Players`
-    - Players will only see reach highlights for owned tokens or tokens with dispositions selected here
+    - Permanent highlights can now be setup via `ranges` flag
+        - e.g. `_token.document.setFlag('aedifs-tactical-grid', 'ranges', [ {range: 10, lineColor: '#00ff00', lineWidth: 2, lineAlpha: 0.4, id: "MyCustomAura" }])`
+        - e.g. `_token.document.unsetFlag('aedifs-tactical-grid', 'ranges')`
+        - Highlights setup via flags will be visible to all players
+    - New setting `Range` > `Token` > `Dispositions Highlighted for Players`
+        - Players will only see reach highlights for owned tokens or tokens with dispositions selected here
 
 - **Cover**
-  - New setting: `Combat Only`
-    - When enabled cover will only be calculated in active combat
+    - New setting: `Combat Only`
+        - When enabled cover will only be calculated in active combat
 
 # 1.23.1
 
 - Courtesy of [CarlosFdez](https://github.com/CarlosFdez) PF2e range highlighting now supports [10ft reach](https://2e.aonprd.com/Rules.aspx?ID=352) measurement exception
 
-  `Unlike with measuring most distances, 10-foot reach can reach 2 squares diagonally. Reach greater than 10 feet is measured normally; 20-foot reach can reach 3 squares diagonally, 30-foot reach can reach 4, and so on.`
+    `Unlike with measuring most distances, 10-foot reach can reach 2 squares diagonally. Reach greater than 10 feet is measured normally; 20-foot reach can reach 3 squares diagonally, 30-foot reach can reach 4, and so on.`
 
 # 1.23.0
 
 - While dragging a ruler originating at a token the module will use clone of the token to perform cover calculations and take into account elevation
-  - Clicking on the canvas while holding the `Display Distances` control will do the same
+    - Clicking on the canvas while holding the `Display Distances` control will do the same
 
 # 1.22.1
 
@@ -199,8 +204,8 @@ Module support:
 **Range Highlighter**
 
 - DnD5e
-  - Throwable melee weapons will no longer display their throw range on Token hover
-  - Hovering over Item Macros on the macro bar will now trigger Item Highlighting if enabled
+    - Throwable melee weapons will no longer display their throw range on Token hover
+    - Hovering over Item Macros on the macro bar will now trigger Item Highlighting if enabled
 
 # 1.20.0
 
@@ -224,9 +229,9 @@ Module support:
 - Highlights during Token drag will now show ranges based off of snapped Token position
 - Highlight calls are now throttled on square and hex scenes
 - Module support:
-  - Action Pack
-  - Argon - Combat HUD
-  - Token Action HUD
+    - Action Pack
+    - Argon - Combat HUD
+    - Token Action HUD
 
 # 1.19.1
 
@@ -235,7 +240,7 @@ Module support:
 # 1.19.0
 
 - New settings: `Range`
-  - Allows on-hover token and item range highlighting
+    - Allows on-hover token and item range highlighting
 
 **API**
 
@@ -286,11 +291,11 @@ static clearRangeHighlight(token)
 # 1.18.2
 
 - `Settings` > `Cover` > `Cover Calculator` : `MidiQOL`
-  - No longer requires game reload to take effect after the setting is changed.
+    - No longer requires game reload to take effect after the setting is changed.
 
 - Drag Ruler: Fixed cover calculations being offset on tokens larger than 1x1
 - `CONFIG.debug.atg = true`
-  - Shows the location that the cover calculations are actually being done from
+    - Shows the location that the cover calculations are actually being done from
 
 # 1.18.1
 
@@ -299,8 +304,8 @@ static clearRangeHighlight(token)
 # 1.18.0
 
 - New client setting: `Display Distances on Token Drag`
-  - Only available when `Drag Ruler` module is installed
-  - When enabled perform distance measurement calculations between the dragged token and all other visible tokens
+    - Only available when `Drag Ruler` module is installed
+    - When enabled perform distance measurement calculations between the dragged token and all other visible tokens
 - Errors thrown by cover calculator modules should no longer break token drag
 - Tactical Grid marker will no longer be shown during ruler/token drag
 
@@ -311,7 +316,7 @@ static clearRangeHighlight(token)
 # 1.17.0
 
 - New option: `Settings` > `Measurement` > `Ignore Tokens with Effect`
-  - Tokens with matching effect name to this option will be ignored during distance/cover calculations
+    - Tokens with matching effect name to this option will be ignored during distance/cover calculations
 - Measurement/Cover Support for Vision5e's imprecise sense
 - Added `PF2e Perception` module as one of the cover calculator options courtesy of **@ChasarooniZ**
 - Japanese Translation courtesy of **@doumoku**
@@ -320,18 +325,18 @@ static clearRangeHighlight(token)
 # 1.16.0
 
 - New option: `Settings` > `Cover`
-  - Allows to specify a cover calculator module and labels to be used to indicate different levels of cover when performing measurements
-  - Supported modules: `Simbul's Cover Calculator`, `Levels Auto Cover`, and `Alternative Token Visibility`
+    - Allows to specify a cover calculator module and labels to be used to indicate different levels of cover when performing measurements
+    - Supported modules: `Simbul's Cover Calculator`, `Levels Auto Cover`, and `Alternative Token Visibility`
 
 - API
-  - `game.modules.get("aedifs-tactical-grid").api`
-  - `highlightReach(token, ranges)`
-    - Highlights grid for the provided token using an array of reach ranges
-    - `token` the token you want the reach to be drawn for
-    - `ranges` an array of reach ranges and colors
-      - e.g. [{reach: 5, color: "#00ff00"}, {reach: 10, color: "#0000ff", alpha: 0.3}]
-  - `clearReach(token)`
-    - clears/removes drawn reaches using `highlightReach(...)`
+    - `game.modules.get("aedifs-tactical-grid").api`
+    - `highlightReach(token, ranges)`
+        - Highlights grid for the provided token using an array of reach ranges
+        - `token` the token you want the reach to be drawn for
+        - `ranges` an array of reach ranges and colors
+            - e.g. [{reach: 5, color: "#00ff00"}, {reach: 10, color: "#0000ff", alpha: 0.3}]
+    - `clearReach(token)`
+        - clears/removes drawn reaches using `highlightReach(...)`
 
 # 1.15.1
 
@@ -340,9 +345,9 @@ static clearRangeHighlight(token)
 # 1.15.0
 
 - New option: `Measurement` > `Scale Font Size to Canvas Grid`
-  - Enabled scaling of the distance measurement text based of scene's configured `Grid Size`
+    - Enabled scaling of the distance measurement text based of scene's configured `Grid Size`
 - New option `Measurement` > `Base Grid Size`
-  - Grid larger or smaller than this value will result in `Measurement` > `Font Size` being scaled proportionally
+    - Grid larger or smaller than this value will result in `Measurement` > `Font Size` being scaled proportionally
 
 # 1.14.1
 
@@ -351,25 +356,25 @@ static clearRangeHighlight(token)
 # 1.14.0
 
 - New setting: `Grid` >`Token Property`
-  - Define a path to the token property to be used as the view distance
+    - Define a path to the token property to be used as the view distance
 - New setting: `Grid` > `Use Token Property Based Distance`
-  - Toggle between `Default Grid View Distance` and `Token Property` settings
+    - Toggle between `Default Grid View Distance` and `Token Property` settings
 
 # 1.13.0
 
 - New client setting: `Disable Tactical Grid`
-  - Disabled tactical grid per client
+    - Disabled tactical grid per client
 
 # 1.12.0
 
 Measurement Tool
 
 - Replaced `Measure to Token center only` option with `Shortest Distance Only`
-  - Instead of measuring distance to the centre of the token, the module will either:
-    - Find the closest occupied Token grid space (Square/Hex grid)
-    - Find the closest point on the Token border (Gridless)
-  - Sub-option: `Gridless: Circle Border`
-    - If your system displays Token borders on a gridless scene as a circle, this options will make the module calculate distances to that circle's edge.
+    - Instead of measuring distance to the centre of the token, the module will either:
+        - Find the closest occupied Token grid space (Square/Hex grid)
+        - Find the closest point on the Token border (Gridless)
+    - Sub-option: `Gridless: Circle Border`
+        - If your system displays Token borders on a gridless scene as a circle, this options will make the module calculate distances to that circle's edge.
 - Fixed some random errors in the console
 - Fixed a bug causing ruler measurements to show up on other player clients
 - When using `Drag Ruler` module, measurements during a drag operations will now properly take into account token size
@@ -377,7 +382,7 @@ Measurement Tool
 # 1.11.1
 
 - Measurement Tool
-  - Added `Drag Ruler` module support
+    - Added `Drag Ruler` module support
 
 # 1.11.0
 
@@ -388,7 +393,7 @@ Measurement Tool
 - New option to exclude elevation in calculations
 - New option to measure distances to token centre only
 - New options to customize the 'origin' marker
-  - Color, Border, Alpha
+    - Color, Border, Alpha
 
 # 1.10.0
 
@@ -397,10 +402,10 @@ Measurement Tool
 # 1.9.0
 
 - New world settings to customizes the look of measured distances
-  - Measurement > `Precision`
-  - Measurement > `Font Family`
-  - Measurement > `Font Size`
-  - Measurement > `Color`
+    - Measurement > `Precision`
+    - Measurement > `Font Family`
+    - Measurement > `Font Size`
+    - Measurement > `Color`
 - During `Ruler` drag and `Display Distances` key press, the hovered over Token's elevation will now be picked up and used in the distance calculation
 - Fixed interactions with Layers added by other modules
 
@@ -409,15 +414,15 @@ Measurement Tool
 - Reworked settings into a neater `Tactical Grid Settings` form
 - Disposition based grid colors can now be configured via a UI
 - New world settings:
-  - Ruler > `View Distance`
-  - Ruler > `View Shape`
-  - Ruler > `Color`
-    - Token equivalents specific to the Ruler
+    - Ruler > `View Distance`
+    - Ruler > `View Shape`
+    - Ruler > `Color`
+        - Token equivalents specific to the Ruler
 - New client settings
-  - `Display Distance on Ruler Drag`
-    - When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them
-  - `Ruler: Grid Spaces`
-    - Ruler triggered distance measurements will be calculated grid space increments
+    - `Display Distance on Ruler Drag`
+        - When enabled distances between the leading point of the ruler and all visible Tokens will be calculated and displayed on them
+    - `Ruler: Grid Spaces`
+        - Ruler triggered distance measurements will be calculated grid space increments
 
 # 1.7.1
 
@@ -429,18 +434,18 @@ New Controls
 
 - Display Distances
 - Display Distances (Grid Spacing)
-  - When when held the module will display relative distances for all tokens currently visible on the screen
-  - If a single token is under control when the key is pressed the origin of these distances will be that token
-  - While the key is held you can click anywhere on the map to change the origin of these measurements (indicated by a red square)
-  - At the moment only Square grids are properly supported
+    - When when held the module will display relative distances for all tokens currently visible on the screen
+    - If a single token is under control when the key is pressed the origin of these distances will be that token
+    - While the key is held you can click anywhere on the map to change the origin of these measurements (indicated by a red square)
+    - At the moment only Square grids are properly supported
 
 * General bug fixes
 
 # 1.6.0
 
 - Added scene specific Tactical Grid toggle
-  - Triggered either by long pressing the old `Toggle Grid on Current Layer` key
-  - Or assigning a new key to the `Toggle Grid on Current Layer (Scene)` control
+    - Triggered either by long pressing the old `Toggle Grid on Current Layer` key
+    - Or assigning a new key to the `Toggle Grid on Current Layer (Scene)` control
 
 # 1.5.1
 
@@ -449,22 +454,22 @@ New Controls
 # 1.5.0
 
 - New settings
-  - Default Color: Disposition - Will assign Red, Green, and Blue view shape colors based on Token disposition
-  - Can be viewed and changed via:
+    - Default Color: Disposition - Will assign Red, Green, and Blue view shape colors based on Token disposition
+    - Can be viewed and changed via:
 
-    `game.settings.get('aedifs-tactical-grid', 'dispositionColors')`
+        `game.settings.get('aedifs-tactical-grid', 'dispositionColors')`
 
-    `game.settings.set('aedifs-tactical-grid', 'dispositionColors', {playerOwner: 0x00ff00, friendly: 0x00ff00, neutral: 0x0000ff, hostile: 0xff0000})`
+        `game.settings.set('aedifs-tactical-grid', 'dispositionColors', {playerOwner: 0x00ff00, friendly: 0x00ff00, neutral: 0x0000ff, hostile: 0xff0000})`
 
-  - Mix Colors
-    - When enable instead of view shape colors overriding each other they will be blended
+    - Mix Colors
+        - When enable instead of view shape colors overriding each other they will be blended
 
 - New Token option
-  - Tactical Grid: Color
-    - Assigns a color to the view shape of this token
+    - Tactical Grid: Color
+        - Assigns a color to the view shape of this token
 - New Scene option
-  - Tactical Grid: Grid Line Width
-    - Changes the default grid line width
+    - Tactical Grid: Grid Line Width
+        - Changes the default grid line width
 
 # 1.4.2
 

@@ -1,37 +1,35 @@
 /**
- * BG3 Inspired HUD
- * https://foundryvtt.com/packages/bg3-inspired-hotbar
+ * BG3 Inspired HUD - Core
+ * https://foundryvtt.com/packages/bg3-hud-core
  */
 
 import { RangeHighlightAPI } from '../rangeHighlighter.js';
 
 export function register() {
-  Hooks.on('renderBG3Hotbar', (hud, html, opts) => {
-    registerHotBarListeners(hud.components.container);
-    registerWeaponListeners(hud.components.weapon);
-  });
+    Hooks.on('renderBG3Hotbar', (bg3Hotbar, html, opts) => {
+        registerHotBarListeners(bg3Hotbar.components.hotbar);
+        registerWeaponListeners(bg3Hotbar.components.weaponSets);
+    });
 }
 
 function registerHotBarListeners(hotbar) {
-  for (const container of hotbar.components.hotbar) {
-    $(container.element)
-      .on('mouseover', '.hotbar-cell.has-item', (event) => {
-        RangeHighlightAPI.rangeHighlightItemUuid(container.data.items[event.currentTarget.dataset.slot]?.uuid);
-      })
-      .on('mouseleave', '.hotbar-cell.has-item', (event) => {
-        RangeHighlightAPI.clearRangeHighlight(hotbar.token);
-      });
-  }
+    for (const container of hotbar.gridContainers) {
+        $(container.element)
+            .on('mouseover', '.bg3-grid-cell.filled', (event) => {
+                RangeHighlightAPI.rangeHighlightItemUuid(event.currentTarget.dataset.uuid);
+            })
+            .on('mouseleave', '.bg3-grid-cell.filled', (event) => {
+                RangeHighlightAPI.clearRangeHighlight(hotbar.token);
+            });
+    }
 }
 
 function registerWeaponListeners(weapon) {
-  $(weapon.element)
-    .on('mouseover', '.bg3-weapon-set .hotbar-cell.has-item', (event) => {
-      RangeHighlightAPI.rangeHighlightItemUuid(
-        weapon.data.weapon[weapon.activeSet]?.items[event.currentTarget.dataset.slot]?.uuid
-      );
-    })
-    .on('mouseleave', '.bg3-weapon-set .hotbar-cell.has-item', (event) => {
-      RangeHighlightAPI.clearRangeHighlight(weapon.token);
-    });
+    $(weapon.element)
+        .on('mouseover', '.bg3-weapon-set .bg3-grid-cell.filled', (event) => {
+            RangeHighlightAPI.rangeHighlightItemUuid(event.currentTarget.dataset.uuid);
+        })
+        .on('mouseleave', '.bg3-weapon-set .bg3-grid-cell.filled', (event) => {
+            RangeHighlightAPI.clearRangeHighlight(weapon.token);
+        });
 }
