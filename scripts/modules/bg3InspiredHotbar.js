@@ -13,6 +13,7 @@ export function register() {
 }
 
 function registerHotBarListeners(hotbar) {
+    if (!hotbar) return;
     for (const container of hotbar.gridContainers) {
         $(container.element)
             .on('mouseover', '.bg3-grid-cell.filled', (event) => {
@@ -25,6 +26,7 @@ function registerHotBarListeners(hotbar) {
 }
 
 function registerWeaponListeners(weapon) {
+    if (!weapon) return;
     $(weapon.element)
         .on('mouseover', '.bg3-weapon-set .bg3-grid-cell.filled', (event) => {
             RangeHighlightAPI.rangeHighlightItemUuid(event.currentTarget.dataset.uuid);

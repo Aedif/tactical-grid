@@ -1,3 +1,9 @@
+# 2.6.2
+
+- Fixed errors thrown due to early Ruler refresh
+- Fixed intermittent errors thrown with `BG3 Inspired HUD` module active
+- Improved formatting of Tactical Grid token settings
+
 # 2.6.1
 
 - Verified for Foundry version 14.363
