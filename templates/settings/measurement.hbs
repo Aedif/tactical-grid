@@ -34,7 +34,7 @@
         <legend>{{localize "EDITOR.Font"}}</legend>
     
         <div class="form-group">
-            <label>{{localize "DRAWING.FontFamily"}}</label>
+            <label>{{localize "DRAWING.FIELDS.fontFamily.label"}}</label>
             <div class="form-fields">
                 <select name="measurement.fontFamily">
                 {{#each fonts as |font|}}
@@ -44,7 +44,7 @@
             </div>
         </div>
         <div class="form-group">
-            <label>{{localize "DRAWING.FontSize"}}</label>
+            <label>{{localize "DRAWING.FIELDS.fontSize.label"}}</label>
             <div class="form-fields">
                 <range-picker name="measurement.fontSize" value="{{measurement.fontSize}}" min="4" max="100" step="1"></range-picker>
             </div>

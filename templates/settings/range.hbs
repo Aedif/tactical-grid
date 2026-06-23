@@ -53,7 +53,7 @@
             <legend><a data-index="{{@index}}" data-action="removeRangeColor"><i class="fa-solid fa-trash-can"></i></a></legend>
 
             <div class="form-group">
-                <label>{{localize "DRAWING.FillColor"}}</label>
+                <label>{{localize "DRAWING.FIELDS.fillColor.label"}}</label>
                 <div class="form-fields">
                     <color-picker name="{{concat "range.colors." @index ".color"}}" value="{{color.color}}"></color-picker>
                 </div>
@@ -84,14 +84,14 @@
                 </div>
 
                 <div class="form-group">
-                    <label>{{localize "DRAWING.LineOpacity"}}</label>
+                    <label>{{localize "DRAWING.FIELDS.strokeAlpha.label"}}</label>
                     <div class="form-fields">
                         <range-picker name="{{concat "range.colors." @index ".lineAlpha"}}" value="{{color.lineAlpha}}" min="0" max="1" step="0.01"></range-picker>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>{{localize "DRAWING.LineWidth"}}</label>
+                    <label>{{localize "DRAWING.FIELDS.strokeWidth.label"}}</label>
                     <div class="form-fields">
                         <range-picker name="{{concat "range.colors." @index ".lineWidth"}}" value="{{color.lineWidth}}" min="0" max="10" step="1"></range-picker>
                     </div>

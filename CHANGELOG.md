@@ -1,3 +1,9 @@
+# 2.6.3
+
+- Fixed localization
+- Fixed RangeHighlighter token owner check
+- Fixed RangeHighlighter shader error
+
 # 2.6.2
 
 - Fixed errors thrown due to early Ruler refresh
